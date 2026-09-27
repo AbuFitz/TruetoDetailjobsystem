@@ -3,24 +3,36 @@ import { cn } from "@/lib/utils";
 
 interface TtdLogoProps {
   size?: "sm" | "md" | "lg";
+  /** "auto" (default) follows the surrounding text colour; "light" forces white text for dark surfaces. */
+  tone?: "auto" | "light";
   className?: string;
 }
 
-/** Wordmark lockup: True / To / Detail, "To" in signal orange — matches truetodetail.co.uk. */
-export function TtdLogo({ size = "md", className }: TtdLogoProps) {
+/**
+ * The real truetodetail.co.uk wordmark: "TRUE TO" + a small orange pill/dot
+ * + "DETAIL", set in the display font (Bebas Neue) with slight letter-
+ * spacing — reproduced from components/Navbar.tsx on the marketing site, not
+ * a "True / To / Detail" text split. Keep this in sync if the marketing
+ * site's Navbar ever changes its logo markup.
+ */
+export function TtdLogo({ size = "md", tone = "auto", className }: TtdLogoProps) {
+  const textColor = tone === "light" ? "text-white" : "text-foreground";
   return (
     <span
       className={cn(
-        "font-display font-normal uppercase leading-none tracking-wide",
-        size === "sm" && "text-lg",
-        size === "md" && "text-xl lg:text-2xl",
-        size === "lg" && "text-[26px] sm:text-3xl",
+        "inline-flex items-baseline font-display font-normal leading-none",
+        size === "sm" && "text-lg gap-[6px]",
+        size === "md" && "text-xl gap-[7px] lg:text-2xl",
+        size === "lg" && "text-[26px] gap-2 sm:text-3xl",
         className,
       )}
     >
-      <span className="text-foreground">True</span>
-      <span className="text-signal"> To </span>
-      <span className="text-foreground">Detail</span>
+      <span className={cn("uppercase tracking-[0.06em]", textColor)}>True to</span>
+      <span
+        aria-hidden
+        className="mb-[1px] inline-block h-[0.42em] w-[0.22em] shrink-0 rounded-[50%/55%] bg-signal"
+      />
+      <span className={cn("uppercase tracking-[0.06em]", textColor)}>Detail</span>
     </span>
   );
 }

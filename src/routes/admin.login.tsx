@@ -58,7 +58,7 @@ function AdminLogin() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-ink px-5 py-12 text-ink-foreground">
       <div className="w-full max-w-sm">
         <div className="text-center">
-          <TtdLogo size="lg" className="text-ink-foreground" />
+          <TtdLogo size="lg" tone="light" />
           <p className="eyebrow mt-2 text-ink-foreground/60">Staff console</p>
         </div>
 

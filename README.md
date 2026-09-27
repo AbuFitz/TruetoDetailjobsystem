@@ -86,7 +86,7 @@ Sign in at `/admin/login` (Supabase Auth + a `staff_users` row — see
 [Create the staff account](#3-create-the-staff-account)):
 
 - `/admin` — stats, **today's schedule per detailer** (start–end time blocks with the travel gap
-  to the *next* job — `↓ 18 min travel`, or a red overlap warning if two jobs are booked too
+  to the _next_ job — `↓ 18 min travel`, or a red overlap warning if two jobs are booked too
   tight), unassigned bookings, active jobs, history, search/filter.
 - `/admin/bookings/new` — create a booking on a customer's behalf (search an existing customer,
   pick their saved address/vehicle, choose package/add-ons/schedule).
@@ -285,6 +285,7 @@ labelled straight-line estimate (`src/lib/schedule.ts`'s `estimateTravelMinutesF
    ```
 
 `get-eta` is called two ways (see its own header comment for the full detail):
+
 - **Booking-scoped** (`{ bookingId }`) — the customer's live-job ETA card. Resolves the booking
   through the caller's own Supabase Auth JWT, so RLS — not client-supplied coordinates — decides
   what they can see.
@@ -309,7 +310,7 @@ labelled straight-line estimate (`src/lib/schedule.ts`'s `estimateTravelMinutesF
   FixNow's stricter model — see the comment in
   `supabase/migrations/20260927120500_booking_stages_and_checkin.sql` for why: the detailer app
   has no auth session to hand an Edge Function, and photo evidence is low-sensitivity). Every
-  *table* write around it (which check-in a photo belongs to) still goes through
+  _table_ write around it (which check-in a photo belongs to) still goes through
   `detailer_add_check_in_photo()`.
 - `service_areas` is public-read (needed before a customer signs in, at the booking flow's
   postcode gate), staff-write only.
@@ -356,7 +357,7 @@ IBM Plex Mono — see `src/styles.css`.
 
 To keep this a real, buildable job system rather than a wishlist:
 
-- **New-customer creation from the admin console.** Staff create a booking for an *existing*
+- **New-customer creation from the admin console.** Staff create a booking for an _existing_
   customer (`/admin/bookings/new` searches by name/email/phone); a walk-in customer with no
   account yet needs to sign up themselves first (`/account/login`), same as any customer-facing
   SaaS — creating a Supabase Auth user server-side needs the `service_role` key, which this app

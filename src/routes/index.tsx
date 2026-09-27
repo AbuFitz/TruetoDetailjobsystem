@@ -18,18 +18,46 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
+const NAV_LINKS = [
+  { label: "Services", href: ttdSiteLinks.services },
+  { label: "Areas", href: ttdSiteLinks.areas },
+];
+
 function Landing() {
   return (
     <main className="min-h-screen bg-background">
-      <header className="border-b border-hairline px-5 py-5 sm:px-6">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
-          <TtdLogo size="lg" />
-          <a
-            href={ttdSiteLinks.website}
-            className="press text-[13px] font-semibold text-muted-foreground hover:text-foreground"
-          >
-            truetodetail.co.uk
+      {/* Same dark bar / wordmark / uppercase-links / orange-CTA language as the
+          truetodetail.co.uk marketing nav (components/Navbar.tsx there) — this
+          app's "front door" page borrows it directly rather than the lighter
+          in-app header used once you're signed into your account. */}
+      <header className="sticky top-0 z-30 bg-ink">
+        <div className="mx-auto flex h-20 w-full max-w-5xl items-center gap-4 px-5 sm:px-6">
+          <a href={ttdSiteLinks.website} className="press shrink-0">
+            <TtdLogo size="lg" tone="light" />
           </a>
+          <nav className="ml-auto hidden items-center gap-1 md:flex">
+            {NAV_LINKS.map((l) => (
+              <a
+                key={l.label}
+                href={l.href}
+                className="press rounded-md px-3.5 py-2 text-[13px] font-medium uppercase tracking-[0.04em] text-white/55 hover:text-white"
+              >
+                {l.label}
+              </a>
+            ))}
+            <Link
+              to="/account/login"
+              className="press rounded-md px-3.5 py-2 text-[13px] font-medium uppercase tracking-[0.04em] text-white/55 hover:text-white"
+            >
+              My account
+            </Link>
+          </nav>
+          <span className="hidden h-5 w-px bg-white/10 md:ml-2 md:block" />
+          <Link to="/book" className="ml-auto shrink-0 md:ml-0">
+            <span className="press inline-flex min-h-11 items-center bg-signal px-6 font-display text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep">
+              Book now
+            </span>
+          </Link>
         </div>
       </header>
 
