@@ -1,0 +1,338 @@
+import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, TriangleAlert } from "lucide-react";
+import { TtdHeader } from "@/components/ttd/Header";
+import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
+import { searchCustomers, type Customer } from "@/lib/customers";
+import { getCustomerAddresses } from "@/lib/addresses";
+import { getCustomerVehicles, vehicleDescription } from "@/lib/vehicles";
+import { createBookingForCustomer } from "@/lib/bookings";
+import { checkServiceArea, type ServiceAreaResult } from "@/lib/service-area";
+import {
+  DETAIL_ADDONS,
+  DETAIL_PACKAGES,
+  VEHICLE_SIZE_LABELS,
+  type VehicleSize,
+} from "@/lib/constants";
+import { useRequireStaffSession } from "@/hooks/use-session";
+
+export const Route = createFileRoute("/admin/bookings/new")({
+  head: () => ({
+    meta: [{ title: "New booking | True To Detail" }, { name: "robots", content: "noindex" }],
+  }),
+  component: NewBooking,
+});
+
+function NewBooking() {
+  useRequireStaffSession();
+  const navigate = useNavigate();
+
+  const [query, setQuery] = useState("");
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const { data: results } = useQuery({
+    queryKey: ["customer-search", query],
+    queryFn: () => searchCustomers(query),
+    enabled: query.trim().length > 1,
+  });
+
+  const { data: addresses } = useQuery({
+    queryKey: ["customer-addresses", customer?.id],
+    queryFn: () => getCustomerAddresses(customer!.id),
+    enabled: Boolean(customer),
+  });
+  const { data: vehicles } = useQuery({
+    queryKey: ["customer-vehicles", customer?.id],
+    queryFn: () => getCustomerVehicles(customer!.id),
+    enabled: Boolean(customer),
+  });
+
+  const [addressId, setAddressId] = useState<string | null>(null);
+  const [vehicleId, setVehicleId] = useState<string | null>(null);
+  const [vehicleSize, setVehicleSize] = useState<VehicleSize>("midsize");
+  const [packageId, setPackageId] = useState(DETAIL_PACKAGES[1]!.id);
+  const [addonIds, setAddonIds] = useState<string[]>([]);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("10:00");
+  const [internalNotes, setInternalNotes] = useState("");
+  const [areaResult, setAreaResult] = useState<ServiceAreaResult | null>(null);
+
+  const selectedAddress = addresses?.find((a) => a.id === addressId);
+  const selectedVehicle = vehicles?.find((v) => v.id === vehicleId);
+  const selectedPackage = DETAIL_PACKAGES.find((p) => p.id === packageId)!;
+  const addonTotal = DETAIL_ADDONS.filter((a) => addonIds.includes(a.id)).reduce(
+    (s, a) => s + a.price,
+    0,
+  );
+  const totalPrice = selectedPackage.priceBySize[vehicleSize] + addonTotal;
+
+  const submit = useMutation({
+    mutationFn: async () => {
+      if (!customer) throw new Error("Select a customer first.");
+      if (!selectedAddress) throw new Error("Select a service address.");
+      if (!selectedVehicle) throw new Error("Select a vehicle.");
+      const scheduledStart = new Date(date);
+      const [h, m] = time.split(":").map(Number);
+      scheduledStart.setHours(h ?? 10, m ?? 0, 0, 0);
+
+      return createBookingForCustomer({
+        customer_id: customer.id,
+        vehicle_id: selectedVehicle.id,
+        vehicle_registration: selectedVehicle.registration,
+        vehicle_description: vehicleDescription(selectedVehicle) ?? undefined,
+        address_id: selectedAddress.id,
+        service_address_line1: selectedAddress.line1,
+        service_address_line2: selectedAddress.line2 ?? undefined,
+        service_address_city: selectedAddress.city ?? undefined,
+        service_postcode: selectedAddress.postcode,
+        destination_lat: selectedAddress.lat ?? undefined,
+        destination_lng: selectedAddress.lng ?? undefined,
+        package_id: selectedPackage.id,
+        package_name: selectedPackage.name,
+        vehicle_size: vehicleSize,
+        addon_ids: addonIds,
+        addon_labels: DETAIL_ADDONS.filter((a) => addonIds.includes(a.id)).map((a) => a.label),
+        price: totalPrice,
+        scheduled_start: scheduledStart.toISOString(),
+        estimated_duration_minutes: selectedPackage.durationMinutes,
+      });
+    },
+    onSuccess: (booking) => navigate({ to: "/admin/bookings/$id", params: { id: booking.id } }),
+  });
+
+  return (
+    <main className="min-h-screen bg-background pb-16">
+      <TtdHeader eyebrow="New booking" containerClassName="max-w-2xl" />
+
+      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
+        <Link
+          to="/admin"
+          className="press inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Dashboard
+        </Link>
+
+        <h1 className="mt-4 font-display text-[28px] leading-none">Create a booking</h1>
+
+        <section className="mt-5">
+          <span className="eyebrow block text-muted-foreground">Customer</span>
+          {customer ? (
+            <div className="mt-2 flex items-center justify-between rounded-xl border border-signal/30 bg-signal/8 p-3.5">
+              <p className="text-[14px] font-semibold">
+                {customer.first_name} {customer.last_name} · {customer.email}
+              </p>
+              <button
+                type="button"
+                onClick={() => setCustomer(null)}
+                className="text-[12px] font-semibold text-muted-foreground underline"
+              >
+                Change
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name, email or phone"
+                className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+              />
+              {results && results.length > 0 ? (
+                <div className="mt-2 flex flex-col gap-1.5">
+                  {results.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCustomer(c)}
+                      className="press rounded-lg border border-hairline bg-surface p-3 text-left text-sm hover:bg-surface-2"
+                    >
+                      {c.first_name} {c.last_name} · {c.email}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
+        </section>
+
+        {customer ? (
+          <>
+            <section className="mt-5">
+              <span className="eyebrow block text-muted-foreground">Service address</span>
+              <div className="mt-2 flex flex-col gap-1.5">
+                {(addresses ?? []).map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setAddressId(a.id)}
+                    className={`rounded-lg border p-3 text-left text-sm ${addressId === a.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
+                  >
+                    {a.label} — {a.line1}, {a.postcode}
+                  </button>
+                ))}
+                {addresses && addresses.length === 0 ? (
+                  <p className="text-[13px] text-muted-foreground">
+                    This customer has no saved addresses yet.
+                  </p>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="mt-5">
+              <span className="eyebrow block text-muted-foreground">Vehicle</span>
+              <div className="mt-2 flex flex-col gap-1.5">
+                {(vehicles ?? []).map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setVehicleId(v.id)}
+                    className={`rounded-lg border p-3 text-left text-sm ${vehicleId === v.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
+                  >
+                    {vehicleDescription(v) ?? "Vehicle"} — {v.registration}
+                  </button>
+                ))}
+                {vehicles && vehicles.length === 0 ? (
+                  <p className="text-[13px] text-muted-foreground">
+                    This customer has no saved vehicles yet.
+                  </p>
+                ) : null}
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {(Object.keys(VEHICLE_SIZE_LABELS) as VehicleSize[]).map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setVehicleSize(size)}
+                    className={`min-h-10 rounded-lg border text-[12px] font-semibold ${vehicleSize === size ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                  >
+                    {VEHICLE_SIZE_LABELS[size]}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="mt-5">
+              <span className="eyebrow block text-muted-foreground">Package</span>
+              <div className="mt-2 flex flex-col gap-1.5">
+                {DETAIL_PACKAGES.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPackageId(p.id)}
+                    className={`flex items-center justify-between rounded-lg border p-3 text-left text-sm ${packageId === p.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
+                  >
+                    <span>{p.name}</span>
+                    <span className="font-semibold">£{p.priceBySize[vehicleSize]}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {DETAIL_ADDONS.map((a) => (
+                  <label
+                    key={a.id}
+                    className="press inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-2 px-3 py-1.5 text-[12px]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={addonIds.includes(a.id)}
+                      onChange={(e) =>
+                        setAddonIds((prev) =>
+                          e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
+                        )
+                      }
+                    />
+                    {a.label} (+£{a.price})
+                  </label>
+                ))}
+              </div>
+            </section>
+
+            <section className="mt-5 grid grid-cols-2 gap-3">
+              <div>
+                <span className="eyebrow block text-muted-foreground">Date</span>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                />
+              </div>
+              <div>
+                <span className="eyebrow block text-muted-foreground">Time</span>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                />
+              </div>
+            </section>
+
+            <section className="mt-5">
+              <span className="eyebrow block text-muted-foreground">
+                Internal notes (detailer only)
+              </span>
+              <textarea
+                value={internalNotes}
+                onChange={(e) => setInternalNotes(e.target.value)}
+                rows={2}
+                className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-2.5 text-sm outline-none focus:border-signal"
+              />
+            </section>
+
+            {selectedAddress ? (
+              <AreaCheck postcode={selectedAddress.postcode} onResult={setAreaResult} />
+            ) : null}
+
+            {submit.isError ? (
+              <p className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] text-destructive">
+                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
+                {submit.error instanceof Error
+                  ? submit.error.message
+                  : "Couldn't create this booking."}
+              </p>
+            ) : null}
+
+            <PrimaryActionButton
+              className="mt-6"
+              loading={submit.isPending}
+              disabled={
+                !selectedAddress ||
+                !selectedVehicle ||
+                !date ||
+                (areaResult ? !areaResult.covered : false)
+              }
+              onClick={() => submit.mutate()}
+            >
+              Create booking · £{totalPrice}
+            </PrimaryActionButton>
+          </>
+        ) : null}
+      </div>
+    </main>
+  );
+}
+
+function AreaCheck({
+  postcode,
+  onResult,
+}: {
+  postcode: string;
+  onResult: (r: ServiceAreaResult) => void;
+}) {
+  const { data } = useQuery({
+    queryKey: ["area-check", postcode],
+    queryFn: async () => {
+      const result = await checkServiceArea(postcode);
+      onResult(result);
+      return result;
+    },
+  });
+  if (!data) return null;
+  return data.covered ? null : (
+    <p className="mt-3 flex items-center gap-2 text-[13px] font-medium text-destructive">
+      <TriangleAlert className="h-4 w-4" /> {postcode} is outside the mobile service area.
+    </p>
+  );
+}

@@ -1,0 +1,257 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * True To Detail Job System — design system.
+ * Palette lifted from truetodetail.co.uk: near-black ink, warm signal
+ * orange, parchment/cream light surfaces. Same semantic-token shape as a
+ * FixNow-style operational app (background, surface, ink, signal, success,
+ * hairline, …) so components stay portable, just re-skinned to TTD's brand.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Bebas Neue is display-only (single 400 weight, all-caps by design) — same
+     headline font truetodetail.co.uk uses. DM Sans is body/UI. IBM Plex Mono
+     is reserved for booking refs / registration plates, same role as before. */
+  --font-display: "Bebas Neue", system-ui, sans-serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-signal: var(--signal);
+  --color-signal-deep: var(--signal-deep);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-hairline: var(--hairline);
+
+  --shadow-card: 0 1px 2px rgb(12 12 12 / 0.05), 0 8px 24px -12px rgb(12 12 12 / 0.14);
+  --shadow-lift: 0 2px 4px rgb(12 12 12 / 0.07), 0 18px 40px -20px rgb(12 12 12 / 0.26);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Parchment — TTD's light palette */
+  --background: #fafaf8;
+  --foreground: #0c0c0c;
+  --card: #ffffff;
+  --card-foreground: #0c0c0c;
+  --popover: #ffffff;
+  --popover-foreground: #0c0c0c;
+
+  --primary: #0c0c0c;
+  --primary-foreground: #fafaf8;
+  --secondary: #f0ede8;
+  --secondary-foreground: #0c0c0c;
+  --muted: #f0ede8;
+  --muted-foreground: #6f6d66;
+  --accent: #f0ede8;
+  --accent-foreground: #0c0c0c;
+  --destructive: #c0392b;
+  --destructive-foreground: #fafaf8;
+  --border: #e6e3db;
+  --input: #e6e3db;
+  --ring: #e84a0c;
+
+  --ink: #0c0c0c;
+  --ink-soft: #242420;
+  --ink-foreground: #fafaf8;
+  --signal: #e84a0c;
+  --signal-deep: #c53d08;
+  --signal-foreground: #ffffff;
+  --success: #1f8a4c;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #2b1a00;
+  --surface: #ffffff;
+  --surface-2: #f5f4f1;
+  --hairline: #e6e3db;
+}
+
+.dark {
+  /* Ink — TTD's dark palette, used for the staff console and hero sections */
+  --background: #0c0c0c;
+  --foreground: #fafaf8;
+  --card: #161614;
+  --card-foreground: #fafaf8;
+  --popover: #161614;
+  --popover-foreground: #fafaf8;
+  --primary: #e84a0c;
+  --primary-foreground: #0c0c0c;
+  --secondary: #242420;
+  --secondary-foreground: #fafaf8;
+  --muted: #242420;
+  --muted-foreground: #a8a69f;
+  --accent: #242420;
+  --accent-foreground: #fafaf8;
+  --destructive: #e5484d;
+  --destructive-foreground: #fafaf8;
+  --warning: #d97706;
+  --warning-foreground: #2b1a00;
+  --border: rgb(255 255 255 / 12%);
+  --input: rgb(255 255 255 / 15%);
+  --ring: #e84a0c;
+  --surface: #161614;
+  --surface-2: #1d1d19;
+  --hairline: rgb(255 255 255 / 12%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv01";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Every top-level page header is a real <header> element — one rule here
+   * covers all of them. Needed because the root route's apple-mobile-web-
+   * app-status-bar-style is "black-translucent" combined with
+   * viewport-fit=cover: in standalone/home-screen-installed mode, the page
+   * draws edge-to-edge behind the status bar instead of the OS reserving
+   * space for it, so the header has to reserve that space itself or it
+   * renders underneath the clock/signal/battery icons. A ::before spacer
+   * sidesteps Tailwind v4's utility-always-wins cascade-layer fight with a
+   * plain padding-top override.
+   */
+  header::before {
+    content: "";
+    display: block;
+    height: env(safe-area-inset-top, 0px);
+  }
+
+  @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+    header::before {
+      height: max(env(safe-area-inset-top, 0px), 24px);
+    }
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+}
+
+/* --- True To Detail utilities ------------------------------------------- */
+
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+@utility mono-ref {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+@utility press {
+  transition:
+    transform 140ms cubic-bezier(0.2, 0.8, 0.3, 1),
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+  &:active {
+    transform: scale(0.975);
+  }
+}
+
+@utility hairline-grid {
+  background-image:
+    linear-gradient(to right, var(--hairline) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--hairline) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+@utility diagonal-hazard {
+  background-image: repeating-linear-gradient(-45deg, var(--signal) 0 10px, transparent 10px 20px);
+}
+
+@keyframes ttd-pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+@keyframes ttd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility pulse-ring {
+  animation: ttd-pulse-ring 2.4s cubic-bezier(0.3, 0, 0.2, 1) infinite;
+}
+
+@utility rise-in {
+  animation: ttd-rise 420ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
