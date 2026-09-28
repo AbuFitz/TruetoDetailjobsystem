@@ -63,16 +63,29 @@ function AccountLogin() {
   }
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center bg-background px-5 py-12">
-      <ThemeToggle className="absolute right-5 top-5" />
-      <div className="w-full max-w-sm">
-        <div className="text-center">
-          <TtdLogo size="xl" />
-        </div>
+    <main className="relative flex min-h-screen flex-col bg-ink text-ink-foreground">
+      <ThemeToggle className="absolute right-5 top-5 z-10 border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
 
-        <div className="mt-8 rounded-2xl border border-hairline bg-surface p-6">
-          <p className="eyebrow mb-5 text-center text-muted-foreground">Sign in to your account</p>
+      {/*
+        Dark hero collapsing into a light sheet — the same two-tone move
+        BookingModal uses on the main site (dark header, white body), so the
+        front door to this app actually feels like it belongs to the brand
+        instead of a generic auth template dropped onto a blank page.
+      */}
+      <div className="px-6 pb-14 pt-14 sm:px-10 sm:pt-16">
+        <TtdLogo size="md" tone="light" />
+        <p className="eyebrow mt-10 text-ink-foreground/30">Your account</p>
+        <h1 className="mt-2 font-display text-[56px] leading-[0.88] sm:text-[72px]">
+          WELCOME
+          <br />
+          <span className="text-ink-foreground/35">
+            BACK<span className="text-signal">.</span>
+          </span>
+        </h1>
+      </div>
 
+      <div className="flex-1 rounded-t-3xl bg-background px-6 pb-10 pt-8 text-foreground sm:px-10">
+        <div className="mx-auto w-full max-w-sm">
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <Field
               id="email"
@@ -98,22 +111,22 @@ function AccountLogin() {
               Sign in
             </PrimaryActionButton>
           </form>
-        </div>
 
-        {/*
-          No self-service "create account" here on purpose — accounts are
-          created as part of booking on the main site, not by typing a
-          name/email/password in on this app directly. Anyone without an
-          account yet gets sent to book there instead.
-        */}
-        <p className="mt-6 text-center text-[13px] text-muted-foreground">
-          Don&rsquo;t have an account yet?{" "}
-          <a href={ttdSiteLinks.website} className="underline underline-offset-2">
-            Book a detail
-          </a>{" "}
-          to get set up.
-        </p>
-        <LegalLinks className="mt-3" />
+          {/*
+            No self-service "create account" here on purpose — accounts are
+            created as part of booking on the main site, not by typing a
+            name/email/password in on this app directly. Anyone without an
+            account yet gets sent to book there instead.
+          */}
+          <p className="mt-6 text-center text-[13px] text-muted-foreground">
+            Don&rsquo;t have an account yet?{" "}
+            <a href={ttdSiteLinks.website} className="underline underline-offset-2">
+              Book a detail
+            </a>{" "}
+            to get set up.
+          </p>
+          <LegalLinks className="mt-3" />
+        </div>
       </div>
     </main>
   );

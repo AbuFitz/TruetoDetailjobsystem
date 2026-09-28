@@ -99,11 +99,20 @@ function AccountDashboard() {
         }
       />
 
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        <h1 className="font-display text-[32px] leading-none">
-          Welcome back{profile?.first_name ? `, ${profile.first_name}` : ""}
-        </h1>
+      <div className="bg-ink px-5 py-7 text-ink-foreground sm:px-6">
+        <div className="mx-auto w-full max-w-2xl">
+          <p className="eyebrow text-ink-foreground/30">{format(new Date(), "EEEE, d MMMM")}</p>
+          <h1 className="mt-1 font-display text-[40px] leading-[0.9] sm:text-[48px]">
+            WELCOME BACK
+            {profile?.first_name ? (
+              <span className="text-ink-foreground/40">, {profile.first_name.toUpperCase()}</span>
+            ) : null}
+            <span className="text-signal">.</span>
+          </h1>
+        </div>
+      </div>
 
+      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
         {bookingsLoading ? (
           <BrandedLoading label="Loading your bookings" className="mt-8" />
         ) : nextBooking ? (
@@ -158,8 +167,11 @@ function AccountDashboard() {
 
         <Section title="TTD Rewards">
           <div className="rounded-xl border border-hairline bg-surface p-4">
-            <p className="font-display text-2xl leading-none">{qualifyingVisits} / 7</p>
-            <p className="mt-1.5 text-[13px] text-muted-foreground">
+            <div className="flex items-baseline gap-1.5">
+              <p className="font-display text-[44px] leading-none">{qualifyingVisits}</p>
+              <p className="font-display text-xl leading-none text-muted-foreground/50">/ 7</p>
+            </div>
+            <p className="mt-2 text-[13px] text-muted-foreground">
               qualifying visits toward your next reward
             </p>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">

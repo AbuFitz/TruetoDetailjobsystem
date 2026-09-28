@@ -57,40 +57,48 @@ function AdminLogin() {
   }
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center bg-ink px-5 py-12 text-ink-foreground">
-      <ThemeToggle className="absolute right-5 top-5 border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
-      <div className="w-full max-w-sm">
-        <div className="text-center">
-          <TtdLogo size="xl" tone="light" />
-          <p className="eyebrow mt-2 text-ink-foreground/60">Staff console</p>
-        </div>
+    <main className="relative flex min-h-screen flex-col bg-ink text-ink-foreground">
+      <ThemeToggle className="absolute right-5 top-5 z-10 border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="mt-8 flex flex-col gap-4 rounded-2xl border border-white/10 bg-surface p-6 text-foreground"
-        >
-          <Field
-            id="email"
-            label="Email"
-            type="email"
-            inputProps={register("email", { required: true })}
-          />
-          <Field
-            id="password"
-            label="Password"
-            type="password"
-            inputProps={register("password", { required: true })}
-          />
-          {error ? (
-            <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
-              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
-              {error}
-            </p>
-          ) : null}
-          <PrimaryActionButton type="submit" variant="ink" loading={submitting}>
-            Sign in
-          </PrimaryActionButton>
-        </form>
+      <div className="px-6 pb-14 pt-14 sm:px-10 sm:pt-16">
+        <TtdLogo size="md" tone="light" />
+        <p className="eyebrow mt-10 text-ink-foreground/30">Internal</p>
+        <h1 className="mt-2 font-display text-[56px] leading-[0.88] sm:text-[72px]">
+          STAFF
+          <br />
+          <span className="text-ink-foreground/35">
+            CONSOLE<span className="text-signal">.</span>
+          </span>
+        </h1>
+      </div>
+
+      <div className="flex-1 rounded-t-3xl bg-background px-6 pb-10 pt-8 text-foreground sm:px-10">
+        <div className="mx-auto w-full max-w-sm">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <Field
+              id="email"
+              label="Email"
+              type="email"
+              inputProps={register("email", { required: true })}
+            />
+            <Field
+              id="password"
+              label="Password"
+              type="password"
+              inputProps={register("password", { required: true })}
+            />
+            {error ? (
+              <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
+                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
+                {error}
+              </p>
+            ) : null}
+            <PrimaryActionButton type="submit" loading={submitting}>
+              Sign in
+            </PrimaryActionButton>
+          </form>
+          <LegalLinks className="mt-6" />
+        </div>
       </div>
     </main>
   );
