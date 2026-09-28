@@ -85,6 +85,32 @@ export async function listCustomers(): Promise<Customer[]> {
   return (data ?? []) as Customer[];
 }
 
+/** Staff-only: a specific customer, for the admin customer detail page. */
+export async function getCustomerById(id: string): Promise<Customer> {
+  const { data, error } = await supabase.from("customers").select("*").eq("id", id).single();
+  if (error) throw dbError(error, "Couldn't load this customer.");
+  return data as Customer;
+}
+
+export interface StaffCustomerUpdate {
+  first_name?: string;
+  last_name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+}
+
+/** Staff-only: edits any customer's identity details, signed up or walk-in. */
+export async function updateCustomer(id: string, patch: StaffCustomerUpdate): Promise<Customer> {
+  const { data, error } = await supabase
+    .from("customers")
+    .update(patch)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw dbError(error, "Couldn't update this customer.");
+  return data as Customer;
+}
+
 /** Staff-only: search customers by name/email/phone, for the "New booking" flow. */
 export async function searchCustomers(query: string): Promise<Customer[]> {
   const q = query.trim();

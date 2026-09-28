@@ -23,6 +23,7 @@ import { Route as DTokenRouteImport } from './routes/d.$token'
 import { Route as AccountBookingsIdRouteImport } from './routes/account.bookings.$id'
 import { Route as AdminBookingsIdRouteImport } from './routes/admin.bookings.$id'
 import { Route as AdminBookingsNewRouteImport } from './routes/admin.bookings.new'
+import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers.$id'
 import { Route as AdminDetailersIdRouteImport } from './routes/admin.detailers_.$id'
 import { Route as AdminDetailersNewRouteImport } from './routes/admin.detailers_.new'
 import { Route as DTokenBookingIdRouteImport } from './routes/d.$token_.$bookingId'
@@ -97,6 +98,11 @@ const AdminBookingsNewRoute = AdminBookingsNewRouteImport.update({
   path: '/admin/bookings/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCustomersIdRoute = AdminCustomersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminCustomersRoute,
+} as any)
 const AdminDetailersIdRoute = AdminDetailersIdRouteImport.update({
   id: '/admin/detailers_/$id',
   path: '/admin/detailers/$id',
@@ -119,7 +125,7 @@ export interface FileRoutesByFullPath {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
-  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
   '/d/$token': typeof DTokenRoute
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/account/bookings/$id': typeof AccountBookingsIdRoute
   '/admin/bookings/$id': typeof AdminBookingsIdRoute
   '/admin/bookings/new': typeof AdminBookingsNewRoute
+  '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/detailers/$id': typeof AdminDetailersIdRoute
   '/admin/detailers/new': typeof AdminDetailersNewRoute
   '/d/$token/$bookingId': typeof DTokenBookingIdRoute
@@ -138,7 +145,7 @@ export interface FileRoutesByTo {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
-  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
   '/d/$token': typeof DTokenRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/account/bookings/$id': typeof AccountBookingsIdRoute
   '/admin/bookings/$id': typeof AdminBookingsIdRoute
   '/admin/bookings/new': typeof AdminBookingsNewRoute
+  '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/detailers/$id': typeof AdminDetailersIdRoute
   '/admin/detailers/new': typeof AdminDetailersNewRoute
   '/d/$token/$bookingId': typeof DTokenBookingIdRoute
@@ -158,7 +166,7 @@ export interface FileRoutesById {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
-  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/customers': typeof AdminCustomersRouteWithChildren
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
   '/d/$token': typeof DTokenRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/account/bookings/$id': typeof AccountBookingsIdRoute
   '/admin/bookings/$id': typeof AdminBookingsIdRoute
   '/admin/bookings/new': typeof AdminBookingsNewRoute
+  '/admin/customers/$id': typeof AdminCustomersIdRoute
   '/admin/detailers_/$id': typeof AdminDetailersIdRoute
   '/admin/detailers_/new': typeof AdminDetailersNewRoute
   '/d/$token_/$bookingId': typeof DTokenBookingIdRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/account/bookings/$id'
     | '/admin/bookings/$id'
     | '/admin/bookings/new'
+    | '/admin/customers/$id'
     | '/admin/detailers/$id'
     | '/admin/detailers/new'
     | '/d/$token/$bookingId'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/account/bookings/$id'
     | '/admin/bookings/$id'
     | '/admin/bookings/new'
+    | '/admin/customers/$id'
     | '/admin/detailers/$id'
     | '/admin/detailers/new'
     | '/d/$token/$bookingId'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/account/bookings/$id'
     | '/admin/bookings/$id'
     | '/admin/bookings/new'
+    | '/admin/customers/$id'
     | '/admin/detailers_/$id'
     | '/admin/detailers_/new'
     | '/d/$token_/$bookingId'
@@ -237,7 +249,7 @@ export interface RootRouteChildren {
   AccountAddressesRoute: typeof AccountAddressesRoute
   AccountLoginRoute: typeof AccountLoginRoute
   AccountVehiclesRoute: typeof AccountVehiclesRoute
-  AdminCustomersRoute: typeof AdminCustomersRoute
+  AdminCustomersRoute: typeof AdminCustomersRouteWithChildren
   AdminDetailersRoute: typeof AdminDetailersRoute
   AdminLoginRoute: typeof AdminLoginRoute
   DTokenRoute: typeof DTokenRoute
@@ -351,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/customers/$id': {
+      id: '/admin/customers/$id'
+      path: '/$id'
+      fullPath: '/admin/customers/$id'
+      preLoaderRoute: typeof AdminCustomersIdRouteImport
+      parentRoute: typeof AdminCustomersRoute
+    }
     '/admin/detailers_/$id': {
       id: '/admin/detailers_/$id'
       path: '/admin/detailers/$id'
@@ -375,13 +394,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminCustomersRouteChildren {
+  AdminCustomersIdRoute: typeof AdminCustomersIdRoute
+}
+
+const AdminCustomersRouteChildren: AdminCustomersRouteChildren = {
+  AdminCustomersIdRoute: AdminCustomersIdRoute,
+}
+
+const AdminCustomersRouteWithChildren = AdminCustomersRoute._addFileChildren(
+  AdminCustomersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookRoute: BookRoute,
   AccountAddressesRoute: AccountAddressesRoute,
   AccountLoginRoute: AccountLoginRoute,
   AccountVehiclesRoute: AccountVehiclesRoute,
-  AdminCustomersRoute: AdminCustomersRoute,
+  AdminCustomersRoute: AdminCustomersRouteWithChildren,
   AdminDetailersRoute: AdminDetailersRoute,
   AdminLoginRoute: AdminLoginRoute,
   DTokenRoute: DTokenRoute,

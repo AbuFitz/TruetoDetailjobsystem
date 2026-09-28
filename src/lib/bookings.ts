@@ -219,6 +219,17 @@ export async function getBookingById(id: string): Promise<BookingWithDetailer> {
   return data as unknown as BookingWithDetailer;
 }
 
+/** Staff-only: a specific customer's booking history, for the admin customer detail page. */
+export async function getCustomerBookings(customerId: string): Promise<BookingWithDetailer[]> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select(WITH_DETAILER_SELECT)
+    .eq("customer_id", customerId)
+    .order("scheduled_start", { ascending: false });
+  if (error) throw dbError(error, "Couldn't load this customer's bookings.");
+  return (data ?? []) as unknown as BookingWithDetailer[];
+}
+
 export interface StaffCreateBookingInput extends CreateBookingInput {
   customer_id: string;
 }

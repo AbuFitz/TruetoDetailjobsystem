@@ -78,9 +78,11 @@ function CustomersList() {
         ) : filtered.length > 0 ? (
           <div className="mt-5 flex flex-col gap-2">
             {filtered.map((c) => (
-              <div
+              <Link
                 key={c.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5"
+                to="/admin/customers/$id"
+                params={{ id: c.id }}
+                className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5"
               >
                 <div className="min-w-0">
                   <p className="truncate text-[14px] font-semibold">
@@ -99,7 +101,7 @@ function CustomersList() {
                 >
                   {c.auth_user_id ? "Signed up" : "Walk-in"}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         ) : query ? (
