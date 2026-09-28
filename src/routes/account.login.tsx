@@ -7,6 +7,7 @@ import { Field } from "@/components/ttd/FormField";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
+import { QuickBookingModal } from "@/components/ttd/QuickBookingModal";
 import { useForm } from "react-hook-form";
 import { signIn, isStaff } from "@/lib/auth";
 import { useSession } from "@/hooks/use-session";
@@ -33,6 +34,7 @@ function AccountLogin() {
   const { session } = useSession();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
   const { register, handleSubmit } = useForm<FormValues>({
     defaultValues: { email: "", password: "" },
   });
@@ -116,20 +118,27 @@ function AccountLogin() {
 
           {/*
             No self-service "create account" here on purpose — accounts are
-            created as part of booking on the main site, not by typing a
-            name/email/password in on this app directly. Anyone without an
-            account yet gets sent to book there instead.
+            created as part of booking, either on the main site or via this
+            popup, not by typing a name/email/password in cold. Anyone
+            without an account yet gets a booking form right here, with the
+            option to set one up straight after submitting.
           */}
           <p className="mt-6 text-center text-[13px] text-muted-foreground">
             Don&rsquo;t have an account yet?{" "}
-            <a href={ttdSiteLinks.website} className="underline underline-offset-2">
+            <button
+              type="button"
+              onClick={() => setBookingOpen(true)}
+              className="press underline underline-offset-2"
+            >
               Book a detail
-            </a>{" "}
+            </button>{" "}
             to get set up.
           </p>
           <LegalLinks className="mt-3" />
         </div>
       </div>
+
+      <QuickBookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} />
     </main>
   );
 }
