@@ -5,6 +5,7 @@ import { z } from "zod";
 import { TtdLogo } from "@/components/ttd/Header";
 import { Field } from "@/components/ttd/FormField";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
+import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { useForm } from "react-hook-form";
 import { signIn, signUpCustomer } from "@/lib/auth";
 import { useSession } from "@/hooks/use-session";
@@ -69,7 +70,7 @@ function AccountLogin() {
           <TtdLogo size="xl" />
         </div>
 
-        <div className="mt-8 border border-hairline bg-surface p-6 ">
+        <div className="mt-8 border border-hairline bg-surface p-6">
           <div className="mb-5 grid grid-cols-2 gap-1 bg-surface-2 p-1">
             <button
               type="button"
@@ -118,6 +119,20 @@ function AccountLogin() {
             <PrimaryActionButton type="submit" loading={submitting}>
               {mode === "sign-up" ? "Create account" : "Sign in"}
             </PrimaryActionButton>
+
+            {mode === "sign-up" ? (
+              <p className="text-center text-[12px] leading-relaxed text-muted-foreground">
+                By creating an account you agree to our{" "}
+                <a href={ttdSiteLinks.terms} className="underline underline-offset-2">
+                  Terms
+                </a>{" "}
+                and{" "}
+                <a href={ttdSiteLinks.privacy} className="underline underline-offset-2">
+                  Privacy Policy
+                </a>
+                .
+              </p>
+            ) : null}
           </form>
         </div>
 
@@ -126,6 +141,7 @@ function AccountLogin() {
             Back to True To Detail
           </a>
         </p>
+        <LegalLinks className="mt-3" />
       </div>
     </main>
   );

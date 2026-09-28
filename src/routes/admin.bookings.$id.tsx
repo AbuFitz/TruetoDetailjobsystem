@@ -112,7 +112,7 @@ function AdminBookingDetail() {
           Dashboard
         </Link>
 
-        <section className="mt-5 border border-hairline bg-surface p-5 ">
+        <section className="mt-5 border border-hairline bg-surface p-5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
@@ -146,7 +146,7 @@ function AdminBookingDetail() {
           ) : null}
         </section>
 
-        <section className="mt-4 border border-hairline bg-surface p-5 ">
+        <section className="mt-4 border border-hairline bg-surface p-5">
           <p className="eyebrow text-muted-foreground">Detailer</p>
           <select
             value={booking.assigned_detailer_id ?? ""}
@@ -191,14 +191,14 @@ function AdminBookingDetail() {
         </section>
 
         {stages && stages.length > 0 ? (
-          <section className="mt-4 border border-hairline bg-surface p-5 ">
+          <section className="mt-4 border border-hairline bg-surface p-5">
             <p className="eyebrow mb-3 text-muted-foreground">Detail checklist</p>
             <StageChecklist stages={stages} />
           </section>
         ) : null}
 
         {checkIn ? (
-          <section className="mt-4 border border-hairline bg-surface p-5 ">
+          <section className="mt-4 border border-hairline bg-surface p-5">
             <p className="eyebrow mb-3 text-muted-foreground">Check-in record</p>
             <dl className="flex flex-col gap-2 text-[13px]">
               {checkIn.mileage != null ? (
@@ -268,7 +268,7 @@ function AdminBookingDetail() {
           </section>
         ) : null}
 
-        <section className="mt-4 border border-hairline bg-surface p-5 ">
+        <section className="mt-4 border border-hairline bg-surface p-5">
           <p className="eyebrow text-muted-foreground">Progress</p>
           <BookingTimeline className="mt-4" steps={timelineForStatus(booking.status)} />
         </section>

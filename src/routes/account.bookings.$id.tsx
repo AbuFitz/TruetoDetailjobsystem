@@ -100,7 +100,7 @@ function BookingDetail() {
           Your account
         </Link>
 
-        <section className="mt-5 border border-hairline bg-surface p-5 ">
+        <section className="mt-5 border border-hairline bg-surface p-5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
@@ -156,13 +156,13 @@ function BookingDetail() {
         ) : null}
 
         {booking.status === "in_progress" ? (
-          <section className="mt-4 border border-hairline bg-surface p-5 ">
+          <section className="mt-4 border border-hairline bg-surface p-5">
             <p className="eyebrow text-muted-foreground">Detail in progress</p>
             <BookingStages bookingId={booking.id} />
           </section>
         ) : null}
 
-        <section className="mt-4 border border-hairline bg-surface p-5 ">
+        <section className="mt-4 border border-hairline bg-surface p-5">
           <p className="eyebrow text-muted-foreground">Progress</p>
           <BookingTimeline className="mt-4" steps={timelineForStatus(booking.status)} />
         </section>

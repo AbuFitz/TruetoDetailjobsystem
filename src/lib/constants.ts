@@ -12,6 +12,7 @@ export const ttdSiteLinks = {
   faq: "https://www.truetodetail.co.uk/#faq",
   terms: "https://www.truetodetail.co.uk/terms",
   privacy: "https://www.truetodetail.co.uk/privacy",
+  cookies: "https://www.truetodetail.co.uk/cookies",
 };
 
 export type VehicleSize = "small" | "midsize" | "largesuv";

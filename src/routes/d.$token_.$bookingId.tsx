@@ -183,7 +183,7 @@ function DetailerJob() {
           Your jobs
         </Link>
 
-        <section className="mt-5 border border-hairline bg-surface p-5 ">
+        <section className="mt-5 border border-hairline bg-surface p-5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <p className="mono-ref text-muted-foreground">{job.booking_reference}</p>
@@ -252,7 +252,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "assigned" ? (
-          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5">
             <PrimaryActionButton loading={tracking.starting} onClick={tracking.startJourney}>
               <Navigation className="h-5 w-5 rotate-45" strokeWidth={2.6} />
               Start journey
@@ -264,7 +264,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "en_route" ? (
-          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5">
             <p
               className={`text-[13px] font-medium ${schedule.tone === "on-track" ? "text-success" : "text-muted-foreground"}`}
             >
@@ -323,7 +323,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "arrived" ? (
-          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5">
             <PrimaryActionButton
               loading={transitioning}
               onClick={async () => {
@@ -345,14 +345,14 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "check_in" ? (
-          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5">
             <p className="eyebrow mb-3 text-muted-foreground">Vehicle check-in</p>
             <CheckInForm token={token} bookingId={job.id} onSubmitted={() => refetch()} />
           </section>
         ) : null}
 
         {job.status === "in_progress" || job.status === "qc" ? (
-          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5">
             <p className="eyebrow mb-3 text-muted-foreground">Detail in progress</p>
             <StageChecklist
               stages={stages ?? []}
@@ -365,7 +365,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "qc" ? (
-          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5">
             <PrimaryActionButton loading={transitioning} onClick={handleStartHandover}>
               Start handover
             </PrimaryActionButton>
@@ -373,7 +373,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "handover" ? (
-          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5">
             <PrimaryActionButton variant="success" loading={transitioning} onClick={handleComplete}>
               Complete job
             </PrimaryActionButton>

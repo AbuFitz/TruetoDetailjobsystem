@@ -5,6 +5,7 @@ import { TriangleAlert } from "lucide-react";
 import { TtdLogo } from "@/components/ttd/Header";
 import { Field } from "@/components/ttd/FormField";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
+import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { isStaff, signIn, signOut } from "@/lib/auth";
 import { useSession } from "@/hooks/use-session";
 
@@ -64,7 +65,7 @@ function AdminLogin() {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="mt-8 flex flex-col gap-4 border border-white/10 bg-surface p-6 text-foreground "
+          className="mt-8 flex flex-col gap-4 border border-white/10 bg-surface p-6 text-foreground"
         >
           <Field
             id="email"

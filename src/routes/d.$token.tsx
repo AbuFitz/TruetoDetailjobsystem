@@ -88,7 +88,7 @@ function DetailerQueue() {
                   key={job.id}
                   to="/d/$token/$bookingId"
                   params={{ token, bookingId: job.id }}
-                  className="press relative overflow-hidden border border-hairline bg-surface p-4 "
+                  className="press relative overflow-hidden border border-hairline bg-surface p-4"
                 >
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">
@@ -137,7 +137,7 @@ function DetailerQueue() {
 function InvalidDetailerLink() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-12">
-      <div className="rise-in border border-hairline bg-surface p-7 text-center ">
+      <div className="rise-in border border-hairline bg-surface p-7 text-center">
         <TtdLogo size="lg" />
         <span className="mt-7 inline-grid h-14 w-14 place-items-center bg-surface-2 text-muted-foreground">
           <Clock3 className="h-6 w-6" strokeWidth={2} />
