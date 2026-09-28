@@ -121,7 +121,7 @@ function AdminDashboard() {
             <Link
               to="/admin/customers"
               aria-label="Customers"
-              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-hairline bg-surface-2 px-2.5 text-[12px] font-medium text-muted-foreground hover:text-foreground sm:px-3"
+              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[12px] font-medium text-ink-foreground/70 hover:text-ink-foreground sm:px-3"
             >
               <Users className="h-3.5 w-3.5" strokeWidth={2.2} />
               <span className="hidden sm:inline">Customers</span>
@@ -129,7 +129,7 @@ function AdminDashboard() {
             <Link
               to="/admin/detailers"
               aria-label="Detailers"
-              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-hairline bg-surface-2 px-2.5 text-[12px] font-medium text-muted-foreground hover:text-foreground sm:px-3"
+              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[12px] font-medium text-ink-foreground/70 hover:text-ink-foreground sm:px-3"
             >
               <UserRound className="h-3.5 w-3.5" strokeWidth={2.2} />
               <span className="hidden sm:inline">Detailers</span>
@@ -138,7 +138,7 @@ function AdminDashboard() {
               type="button"
               onClick={() => signOut()}
               aria-label="Sign out"
-              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-hairline bg-surface-2 px-2.5 text-[12px] font-medium text-muted-foreground hover:text-foreground sm:px-3"
+              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[12px] font-medium text-ink-foreground/70 hover:text-ink-foreground sm:px-3"
             >
               <LogOut className="h-3.5 w-3.5" strokeWidth={2.2} />
               <span className="hidden sm:inline">Sign out</span>

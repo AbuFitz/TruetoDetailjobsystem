@@ -64,17 +64,17 @@ export function TtdHeader({
 }: TtdHeaderProps) {
   const inner = (
     <div className="flex min-w-0 flex-col gap-1">
-      <TtdLogo />
-      {eyebrow ? <span className="eyebrow pl-0 text-muted-foreground">{eyebrow}</span> : null}
+      <TtdLogo tone="light" />
+      {eyebrow ? <span className="eyebrow pl-0 text-ink-foreground/40">{eyebrow}</span> : null}
     </div>
   );
 
   return (
+    // Solid ink black, matching the main site's own navbar exactly — not a
+    // translucent/blurred bar over the page background, which is what this
+    // used to be before the portals switched to the same dark nav treatment.
     <header
-      className={cn(
-        "sticky top-0 z-30 border-b border-hairline bg-background/85 backdrop-blur-xl",
-        className,
-      )}
+      className={cn("sticky top-0 z-30 border-b border-white/10 bg-ink", className)}
     >
       <div
         className={cn(
@@ -90,7 +90,7 @@ export function TtdHeader({
           inner
         )}
         <div className="flex shrink-0 items-center gap-2">
-          <ThemeToggle />
+          <ThemeToggle className="border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
           {right}
         </div>
       </div>
