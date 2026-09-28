@@ -33,15 +33,28 @@ export function useSession(): SessionState {
   return state;
 }
 
-/** Redirects to /account/login the moment we know there's no customer session. */
+/**
+ * Redirects to /account/login the moment we know there's no customer
+ * session — and staff off to /admin, since a staff sign-in (via this page
+ * or the main site's popup) should never land on the customer dashboard.
+ */
 export function useRequireCustomerSession(): SessionState {
   const { session, loading } = useSession();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !session) {
+    if (loading) return;
+    if (!session) {
       navigate({ to: "/account/login", replace: true });
+      return;
     }
+    let mounted = true;
+    checkIsStaff().then((staff) => {
+      if (mounted && staff) navigate({ to: "/admin", replace: true });
+    });
+    return () => {
+      mounted = false;
+    };
   }, [loading, session, navigate]);
 
   return { session, loading };

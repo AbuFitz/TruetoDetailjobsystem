@@ -8,7 +8,7 @@ import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
 import { useForm } from "react-hook-form";
-import { signIn } from "@/lib/auth";
+import { signIn, isStaff } from "@/lib/auth";
 import { useSession } from "@/hooks/use-session";
 import { ttdSiteLinks } from "@/lib/constants";
 
@@ -38,7 +38,10 @@ function AccountLogin() {
   });
 
   useEffect(() => {
-    if (session) navigate({ to: next || "/account", replace: true });
+    if (!session) return;
+    isStaff().then((staff) => {
+      navigate({ to: staff ? "/admin" : next || "/account", replace: true });
+    });
   }, [session, next, navigate]);
 
   async function onSubmit(values: FormValues) {
@@ -46,7 +49,12 @@ function AccountLogin() {
     setSubmitting(true);
     try {
       await signIn(values.email, values.password);
-      navigate({ to: next || "/account", replace: true });
+      // A staff account signing in here (or via the main site's popup, which
+      // shares this same auth) belongs on the admin console, not the
+      // customer dashboard — see useRequireCustomerSession for the same
+      // check on direct navigation.
+      const staff = await isStaff();
+      navigate({ to: staff ? "/admin" : next || "/account", replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
