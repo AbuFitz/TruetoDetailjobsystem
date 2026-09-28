@@ -24,8 +24,24 @@ export const Route = createFileRoute("/account/")({
   component: AccountDashboard,
 });
 
+/** How soon after account creation a sign-in still counts as "the first one" — Supabase sets last_sign_in_at to the same moment as created_at on that very first session. */
+const FIRST_SIGN_IN_WINDOW_MS = 2 * 60 * 1000;
+
 function AccountDashboard() {
   const { session, loading: authLoading } = useRequireCustomerSession();
+
+  // "Welcome back" should only say "back" once someone has actually been
+  // here before — comparing the auth account's creation time against its
+  // last sign-in time (both on the session already, no extra query) tells
+  // a genuine first-ever sign-in apart from every visit after it.
+  const isFirstSignIn = useMemo(() => {
+    const createdAt = session?.user.created_at;
+    const lastSignInAt = session?.user.last_sign_in_at;
+    if (!createdAt || !lastSignInAt) return false;
+    return (
+      new Date(lastSignInAt).getTime() - new Date(createdAt).getTime() < FIRST_SIGN_IN_WINDOW_MS
+    );
+  }, [session]);
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile"],
@@ -103,7 +119,7 @@ function AccountDashboard() {
         <div className="mx-auto w-full max-w-2xl">
           <p className="eyebrow text-ink-foreground/30">{format(new Date(), "EEEE, d MMMM")}</p>
           <h1 className="mt-1 font-display text-[40px] leading-[0.9] sm:text-[48px]">
-            WELCOME BACK
+            {isFirstSignIn ? "WELCOME" : "WELCOME BACK"}
             {profile?.first_name ? (
               <span className="text-ink-foreground/40">, {profile.first_name.toUpperCase()}</span>
             ) : null}

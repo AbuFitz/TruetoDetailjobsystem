@@ -9,6 +9,7 @@ import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
 import { isStaff, signIn, signOut } from "@/lib/auth";
 import { useSession } from "@/hooks/use-session";
+import { ttdSiteLinks } from "@/lib/constants";
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({
@@ -61,7 +62,9 @@ function AdminLogin() {
       <ThemeToggle className="absolute right-5 top-5 z-10 border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
 
       <div className="px-6 pb-14 pt-14 sm:px-10 sm:pt-16">
-        <TtdLogo size="md" tone="light" />
+        <a href={ttdSiteLinks.website} className="press inline-block">
+          <TtdLogo size="lg" tone="light" />
+        </a>
         <p className="eyebrow mt-10 text-ink-foreground/30">Internal</p>
         <h1 className="mt-2 font-display text-[56px] leading-[0.88] sm:text-[72px]">
           STAFF

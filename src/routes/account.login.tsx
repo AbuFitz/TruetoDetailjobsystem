@@ -73,7 +73,9 @@ function AccountLogin() {
         instead of a generic auth template dropped onto a blank page.
       */}
       <div className="px-6 pb-14 pt-14 sm:px-10 sm:pt-16">
-        <TtdLogo size="md" tone="light" />
+        <a href={ttdSiteLinks.website} className="press inline-block">
+          <TtdLogo size="lg" tone="light" />
+        </a>
         <p className="eyebrow mt-10 text-ink-foreground/30">Your account</p>
         <h1 className="mt-2 font-display text-[56px] leading-[0.88] sm:text-[72px]">
           WELCOME
