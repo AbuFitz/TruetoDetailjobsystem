@@ -120,8 +120,8 @@ function AccountDashboard() {
         }
       />
 
-      <div className="bg-ink px-5 py-7 text-ink-foreground sm:px-6">
-        <div className="mx-auto w-full max-w-2xl">
+      <div className="bg-ink py-7 text-ink-foreground">
+        <div className="mx-auto w-full max-w-2xl px-5 sm:px-6">
           <p className="eyebrow text-ink-foreground/30">{format(new Date(), "EEEE, d MMMM")}</p>
           <h1 className="mt-1 font-display text-[40px] leading-[0.9] sm:text-[48px]">
             {isFirstSignIn ? "WELCOME" : "WELCOME BACK"}
