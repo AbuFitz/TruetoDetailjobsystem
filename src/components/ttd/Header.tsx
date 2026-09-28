@@ -20,9 +20,14 @@ interface TtdLogoProps {
 export function TtdLogo({ size = "md", tone = "auto", className }: TtdLogoProps) {
   const textColor = tone === "light" ? "text-white" : "text-foreground";
   return (
+    // items-center (not items-baseline) to match the real Navbar's flex
+    // container exactly — the dot isn't text, so baseline alignment sat it
+    // at the wrong height; centering it against the cap-height, then
+    // nudging down very slightly (mirroring the real site's own
+    // marginBottom: -2px on the dot), is what actually matches.
     <span
       className={cn(
-        "inline-flex items-baseline font-display font-normal leading-none",
+        "inline-flex items-center font-display font-normal leading-none",
         size === "sm" && "text-lg gap-[6px]",
         size === "md" && "text-xl gap-[7px] lg:text-2xl",
         size === "lg" && "text-[26px] gap-2 sm:text-3xl",
@@ -33,7 +38,7 @@ export function TtdLogo({ size = "md", tone = "auto", className }: TtdLogoProps)
       <span className={cn("uppercase tracking-[0.06em]", textColor)}>True to</span>
       <span
         aria-hidden
-        className="mb-[1px] inline-block h-[0.42em] w-[0.22em] shrink-0 rounded-[50%/55%] bg-signal"
+        className="-mb-[0.05em] inline-block h-[0.5em] w-[0.32em] shrink-0 rounded-[50%_50%_45%_45%/55%_55%_45%_45%] bg-signal"
       />
       <span className={cn("uppercase tracking-[0.06em]", textColor)}>Detail</span>
     </span>
