@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 interface TtdLogoProps {
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   /** "auto" (default) follows the surrounding text colour; "light" forces white text for dark surfaces. */
   tone?: "auto" | "light";
   className?: string;
@@ -10,10 +10,12 @@ interface TtdLogoProps {
 
 /**
  * The real truetodetail.co.uk wordmark: "TRUE TO" + a small orange pill/dot
- * + "DETAIL", set in the display font (Bebas Neue) with slight letter-
- * spacing — reproduced from components/Navbar.tsx on the marketing site, not
+ * + "DETAIL", set in the display font (Bebas Neue) with slight letter
+ * spacing, reproduced from components/Navbar.tsx on the marketing site, not
  * a "True / To / Detail" text split. Keep this in sync if the marketing
- * site's Navbar ever changes its logo markup.
+ * site's Navbar ever changes its logo markup. "xl" matches that Navbar's own
+ * unscrolled size (clamp(26px, 4vw, 46px)) for pages like /account/login and
+ * /admin/login that should feel like the real site's front door.
  */
 export function TtdLogo({ size = "md", tone = "auto", className }: TtdLogoProps) {
   const textColor = tone === "light" ? "text-white" : "text-foreground";
@@ -24,6 +26,7 @@ export function TtdLogo({ size = "md", tone = "auto", className }: TtdLogoProps)
         size === "sm" && "text-lg gap-[6px]",
         size === "md" && "text-xl gap-[7px] lg:text-2xl",
         size === "lg" && "text-[26px] gap-2 sm:text-3xl",
+        size === "xl" && "text-[32px] gap-2.5 sm:text-[46px]",
         className,
       )}
     >

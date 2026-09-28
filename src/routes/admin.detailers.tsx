@@ -39,7 +39,7 @@ function DetailersList() {
           <h1 className="font-display text-[28px] leading-none">Detailers</h1>
           <Link
             to="/admin/detailers/new"
-            className="press inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-signal px-3.5 font-display text-xs font-bold uppercase tracking-[0.08em] text-signal-foreground"
+            className="press inline-flex min-h-10 items-center gap-1.5 bg-signal px-3.5 font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-signal-foreground"
           >
             <Plus className="h-3.5 w-3.5" />
             Add
@@ -55,7 +55,7 @@ function DetailersList() {
                 key={d.id}
                 to="/admin/detailers/$id"
                 params={{ id: d.id }}
-                className="press flex items-center gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+                className="press flex items-center gap-3 border border-hairline bg-surface p-3.5 hover:bg-surface-2"
               >
                 <Avatar name={d.name} photoUrl={d.photo_url} size="sm" />
                 <div className="min-w-0 flex-1">

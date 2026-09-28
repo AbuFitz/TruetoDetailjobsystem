@@ -58,13 +58,13 @@ function AdminLogin() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-ink px-5 py-12 text-ink-foreground">
       <div className="w-full max-w-sm">
         <div className="text-center">
-          <TtdLogo size="lg" tone="light" />
+          <TtdLogo size="xl" tone="light" />
           <p className="eyebrow mt-2 text-ink-foreground/60">Staff console</p>
         </div>
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="mt-8 flex flex-col gap-4 rounded-2xl border border-white/10 bg-surface p-6 text-foreground shadow-lift"
+          className="mt-8 flex flex-col gap-4 border border-white/10 bg-surface p-6 text-foreground "
         >
           <Field
             id="email"
@@ -79,7 +79,7 @@ function AdminLogin() {
             inputProps={register("password", { required: true })}
           />
           {error ? (
-            <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
+            <p className="flex items-start gap-2 border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
               {error}
             </p>

@@ -24,7 +24,7 @@ export function ContactActions({
       <a
         href={`tel:${number}`}
         aria-label={`Call ${label}`}
-        className="press inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-2 text-[13px] font-semibold hover:bg-surface"
+        className="press inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 border border-hairline bg-surface-2 text-[13px] font-semibold hover:bg-surface"
       >
         <Phone className="h-3.5 w-3.5" strokeWidth={2.2} />
         Call
@@ -32,7 +32,7 @@ export function ContactActions({
       <a
         href={`sms:${number}`}
         aria-label={`Text ${label}`}
-        className="press inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-2 text-[13px] font-semibold hover:bg-surface"
+        className="press inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 border border-hairline bg-surface-2 text-[13px] font-semibold hover:bg-surface"
       >
         <MessageCircle className="h-3.5 w-3.5" strokeWidth={2.2} />
         Text

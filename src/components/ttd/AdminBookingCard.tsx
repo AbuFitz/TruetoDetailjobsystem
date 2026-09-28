@@ -19,10 +19,7 @@ export function AdminBookingCard({
 
   return (
     <article
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card",
-        className,
-      )}
+      className={cn("relative overflow-hidden border border-hairline bg-surface ", className)}
     >
       {live || booking.status === "arrived" || booking.status === "in_progress" ? (
         <span className="absolute inset-y-0 left-0 w-1 bg-signal" aria-hidden />
@@ -76,7 +73,7 @@ export function AdminBookingCard({
           <Link
             to="/admin/bookings/$id"
             params={{ id: booking.id }}
-            className="press inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-ink px-4 font-display text-sm font-bold uppercase tracking-[0.08em] text-ink-foreground hover:bg-ink-soft"
+            className="press inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 bg-ink px-4 font-sans text-[12px] font-bold uppercase tracking-[0.1em] text-ink-foreground hover:bg-ink-soft"
           >
             Open
             <ChevronRight className="h-4 w-4" />

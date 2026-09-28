@@ -58,7 +58,7 @@ function detailerMarkerElement(photoUrl: string | null | undefined): DetailerMar
   el.innerHTML = `
     ${directionWedgeSvg()}
     <span class="absolute inset-0 m-auto h-9 w-9 rounded-full bg-signal pulse-ring"></span>
-    <span class="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 border-signal bg-ink shadow-lift" data-role="avatar"></span>
+    <span class="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full border-2 border-signal bg-ink " data-role="avatar"></span>
   `;
   const wedge = el.querySelector<SVGSVGElement>('[data-role="direction-wedge"]');
   const avatar = el.querySelector<HTMLSpanElement>('[data-role="avatar"]');
@@ -89,8 +89,7 @@ interface BearingAnchor {
 function destinationMarkerElement(): HTMLDivElement {
   const el = document.createElement("div");
   el.setAttribute("aria-hidden", "true");
-  el.className =
-    "grid h-8 w-8 place-items-center rounded-full border border-black/15 bg-white shadow-lift";
+  el.className = "grid h-8 w-8 place-items-center rounded-full border border-black/15 bg-white ";
   el.innerHTML = renderToStaticMarkup(
     <MapPin className="h-4 w-4 text-neutral-900" strokeWidth={2.4} />,
   );
@@ -241,15 +240,12 @@ export function TrackingMap({
 
   return (
     <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-hairline shadow-card",
-        className,
-      )}
+      className={cn("relative overflow-hidden border border-hairline ", className)}
       role="img"
       aria-label="Map showing your detailer's current location and your address"
     >
       <div ref={containerRef} className="h-full w-full" />
-      <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2 rounded-full border border-black/10 bg-white/92 px-2.5 py-1.5 shadow-card backdrop-blur-sm">
+      <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2 rounded-full border border-black/10 bg-white/92 px-2.5 py-1.5 backdrop-blur-sm">
         <Radio className="h-3.5 w-3.5 text-signal-deep" strokeWidth={2.4} />
         <span className="eyebrow text-neutral-900">Live</span>
         {lastUpdate ? (

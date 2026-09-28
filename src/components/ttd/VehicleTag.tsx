@@ -20,12 +20,12 @@ export function VehicleCard({
     <div
       className={cn(
         "flex items-center gap-3",
-        !compact && "rounded-xl border border-hairline bg-surface p-3.5",
+        !compact && "border border-hairline bg-surface p-3.5",
         className,
       )}
     >
       {!compact ? (
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-2 text-foreground">
+        <span className="grid h-10 w-10 shrink-0 place-items-center bg-surface-2 text-foreground">
           <Car className="h-5 w-5" strokeWidth={2} />
         </span>
       ) : null}

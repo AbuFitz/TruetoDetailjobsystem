@@ -130,9 +130,9 @@ function AccountDashboard() {
               {vehicles.map((v) => (
                 <div
                   key={v.id}
-                  className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-3.5"
+                  className="flex items-center gap-3 border border-hairline bg-surface p-3.5"
                 >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-2 text-foreground">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center bg-surface-2 text-foreground">
                     <Car className="h-5 w-5" strokeWidth={2} />
                   </span>
                   <div className="min-w-0">
@@ -160,9 +160,9 @@ function AccountDashboard() {
         </Section>
 
         <Section title="TTD Rewards">
-          <div className="rounded-xl border border-hairline bg-surface p-4">
+          <div className="border border-hairline bg-surface p-4">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-signal/12 text-signal-deep">
+              <span className="grid h-10 w-10 shrink-0 place-items-center bg-signal/12 text-signal-deep">
                 <Trophy className="h-5 w-5" strokeWidth={2} />
               </span>
               <div>
@@ -191,7 +191,7 @@ function AccountDashboard() {
                     key={b.id}
                     to="/account/bookings/$id"
                     params={{ id: b.id }}
-                    className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+                    className="press flex items-center justify-between gap-3 border border-hairline bg-surface p-3.5 hover:bg-surface-2"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-[14px] font-semibold">{b.package_name}</p>
@@ -214,14 +214,14 @@ function AccountDashboard() {
 
         {recommendedDate ? (
           <Section title="Recommended">
-            <div className="rounded-xl border border-signal/25 bg-signal/8 p-4">
+            <div className="border border-signal/25 bg-signal/8 p-4">
               <p className="text-[14px] font-semibold">
                 Maintenance detail due around {format(recommendedDate, "d MMMM")}
               </p>
               <p className="mt-1 text-[13px] text-muted-foreground">
                 {isFuture(recommendedDate)
                   ? "Keeps your finish looking its best between full details."
-                  : "You're due — book whenever suits."}
+                  : "You're due, book whenever suits."}
               </p>
               <Link to="/book" className="mt-3 inline-block">
                 <PrimaryActionButton size="sm" variant="outline" className="w-auto px-4">
@@ -261,7 +261,7 @@ function NextBookingCard({
       <Link
         to="/account/bookings/$id"
         params={{ id: booking.id }}
-        className={`press block rounded-2xl border border-signal/30 bg-ink p-5 text-ink-foreground shadow-lift ${className ?? ""}`}
+        className={`press block border border-signal/30 bg-ink p-5 text-ink-foreground ${className ?? ""}`}
       >
         <StatusBadge status={booking.status} size="sm" />
         <p className="mt-3 font-display text-2xl leading-tight">
@@ -270,7 +270,7 @@ function NextBookingCard({
         <p className="mt-1 text-[14px] text-ink-foreground/70">
           {booking.package_name} · {booking.vehicle_registration}
         </p>
-        <span className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-signal px-5 font-display text-sm font-bold uppercase tracking-[0.08em] text-signal-foreground">
+        <span className="mt-4 inline-flex min-h-11 items-center gap-2 bg-signal px-5 font-sans text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground">
           View live job
         </span>
       </Link>
@@ -281,7 +281,7 @@ function NextBookingCard({
     <Link
       to="/account/bookings/$id"
       params={{ id: booking.id }}
-      className={`press block rounded-2xl border border-hairline bg-surface p-5 shadow-card hover:bg-surface-2 ${className ?? ""}`}
+      className={`press block border border-hairline bg-surface p-5 hover:bg-surface-2 ${className ?? ""}`}
     >
       <p className="eyebrow text-muted-foreground">Next mobile detail</p>
       <p className="mt-2 font-display text-2xl leading-tight">{booking.package_name}</p>

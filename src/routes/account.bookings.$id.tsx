@@ -100,7 +100,7 @@ function BookingDetail() {
           Your account
         </Link>
 
-        <section className="mt-5 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+        <section className="mt-5 border border-hairline bg-surface p-5 ">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
@@ -156,13 +156,13 @@ function BookingDetail() {
         ) : null}
 
         {booking.status === "in_progress" ? (
-          <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <section className="mt-4 border border-hairline bg-surface p-5 ">
             <p className="eyebrow text-muted-foreground">Detail in progress</p>
             <BookingStages bookingId={booking.id} />
           </section>
         ) : null}
 
-        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+        <section className="mt-4 border border-hairline bg-surface p-5 ">
           <p className="eyebrow text-muted-foreground">Progress</p>
           <BookingTimeline className="mt-4" steps={timelineForStatus(booking.status)} />
         </section>
@@ -216,7 +216,7 @@ function Tile({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0 rounded-xl border border-hairline bg-surface-2 p-3.5">
+    <div className="min-w-0 border border-hairline bg-surface-2 p-3.5">
       <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
         <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
         <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-[0.04em]">

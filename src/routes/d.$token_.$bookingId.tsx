@@ -183,7 +183,7 @@ function DetailerJob() {
           Your jobs
         </Link>
 
-        <section className="mt-5 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+        <section className="mt-5 border border-hairline bg-surface p-5 ">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <p className="mono-ref text-muted-foreground">{job.booking_reference}</p>
@@ -215,7 +215,7 @@ function DetailerJob() {
             href={navigationUrlFor(job)}
             target="_blank"
             rel="noopener noreferrer"
-            className="press mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-2 font-display text-sm font-bold uppercase tracking-[0.08em] hover:bg-surface"
+            className="press mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 border border-hairline bg-surface-2 font-sans text-[13px] font-bold uppercase tracking-[0.1em] hover:bg-surface"
           >
             <Navigation className="h-4 w-4" strokeWidth={2.4} />
             Start navigation
@@ -224,7 +224,7 @@ function DetailerJob() {
           <ContactActions className="mt-2.5" phone={job.customer_phone} label="the customer" />
 
           {job.internal_notes ? (
-            <div className="mt-3 rounded-xl border border-signal/30 bg-signal/10 p-3.5">
+            <div className="mt-3 border border-signal/30 bg-signal/10 p-3.5">
               <p className="eyebrow flex items-center gap-1.5 text-signal-deep">
                 <NotebookPen className="h-3 w-3" strokeWidth={2.4} />
                 Job notes
@@ -233,7 +233,7 @@ function DetailerJob() {
             </div>
           ) : null}
           {job.customer_notes ? (
-            <div className="mt-2 rounded-xl border border-hairline bg-surface-2 p-3.5">
+            <div className="mt-2 border border-hairline bg-surface-2 p-3.5">
               <p className="eyebrow text-muted-foreground">Customer requested</p>
               <p className="mt-1.5 text-[13px] leading-relaxed">{job.customer_notes}</p>
             </div>
@@ -241,7 +241,7 @@ function DetailerJob() {
         </section>
 
         {actionError ? (
-          <p className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
+          <p className="mt-4 flex items-start gap-2 border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
             {actionError}
           </p>
@@ -252,7 +252,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "assigned" ? (
-          <section className="rise-in mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
             <PrimaryActionButton loading={tracking.starting} onClick={tracking.startJourney}>
               <Navigation className="h-5 w-5 rotate-45" strokeWidth={2.6} />
               Start journey
@@ -264,7 +264,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "en_route" ? (
-          <section className="rise-in mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
             <p
               className={`text-[13px] font-medium ${schedule.tone === "on-track" ? "text-success" : "text-muted-foreground"}`}
             >
@@ -272,7 +272,7 @@ function DetailerJob() {
             </p>
 
             {tracking.isWatching ? (
-              <div className="mt-3 flex items-center gap-3 rounded-xl border border-signal/40 bg-signal/12 px-3.5 py-3">
+              <div className="mt-3 flex items-center gap-3 border border-signal/40 bg-signal/12 px-3.5 py-3">
                 <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-signal">
                   <span className="absolute h-9 w-9 rounded-full bg-signal/50 pulse-ring" />
                   <Radio className="relative h-4 w-4" strokeWidth={2.4} />
@@ -288,7 +288,7 @@ function DetailerJob() {
                 </div>
               </div>
             ) : (
-              <div className="mt-3 flex items-center gap-3 rounded-xl border border-hairline bg-surface-2 px-3.5 py-3">
+              <div className="mt-3 flex items-center gap-3 border border-hairline bg-surface-2 px-3.5 py-3">
                 <ShieldOff className="h-5 w-5 shrink-0 text-muted-foreground" strokeWidth={2.2} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold">Location sharing isn't active here</p>
@@ -323,7 +323,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "arrived" ? (
-          <section className="rise-in mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
             <PrimaryActionButton
               loading={transitioning}
               onClick={async () => {
@@ -345,14 +345,14 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "check_in" ? (
-          <section className="rise-in mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
             <p className="eyebrow mb-3 text-muted-foreground">Vehicle check-in</p>
             <CheckInForm token={token} bookingId={job.id} onSubmitted={() => refetch()} />
           </section>
         ) : null}
 
         {job.status === "in_progress" || job.status === "qc" ? (
-          <section className="rise-in mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
             <p className="eyebrow mb-3 text-muted-foreground">Detail in progress</p>
             <StageChecklist
               stages={stages ?? []}
@@ -365,7 +365,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "qc" ? (
-          <section className="rise-in mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
             <PrimaryActionButton loading={transitioning} onClick={handleStartHandover}>
               Start handover
             </PrimaryActionButton>
@@ -373,7 +373,7 @@ function DetailerJob() {
         ) : null}
 
         {job.status === "handover" ? (
-          <section className="rise-in mt-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <section className="rise-in mt-4 border border-hairline bg-surface p-5 ">
             <PrimaryActionButton variant="success" loading={transitioning} onClick={handleComplete}>
               Complete job
             </PrimaryActionButton>
@@ -392,7 +392,7 @@ function CustomerAckSection({ token, bookingId }: { token: string; bookingId: st
 
   if (done) {
     return (
-      <p className="mt-4 flex items-center gap-2 rounded-xl border border-success/30 bg-success/10 px-3.5 py-3 text-[13px] font-medium text-success">
+      <p className="mt-4 flex items-center gap-2 border border-success/30 bg-success/10 px-3.5 py-3 text-[13px] font-medium text-success">
         <CheckCircle2 className="h-4 w-4" strokeWidth={2.4} />
         Customer confirmed the recorded condition and requested work.
       </p>
@@ -400,7 +400,7 @@ function CustomerAckSection({ token, bookingId }: { token: string; bookingId: st
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-hairline bg-surface-2 p-3.5">
+    <div className="mt-4 border border-hairline bg-surface-2 p-3.5">
       <p className="eyebrow text-muted-foreground">Customer acknowledgement</p>
       <p className="mt-1 text-[13px] text-muted-foreground">
         Ask the customer to confirm the recorded condition and requested work.
@@ -410,7 +410,7 @@ function CustomerAckSection({ token, bookingId }: { token: string; bookingId: st
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Customer's name"
-          className="min-h-10 flex-1 rounded-lg border border-input bg-surface px-3 text-sm outline-none focus:border-signal"
+          className="min-h-10 flex-1 border border-input bg-surface px-3 text-sm outline-none focus:border-signal"
         />
         <PrimaryActionButton
           size="sm"
@@ -448,7 +448,7 @@ function Tile({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0 rounded-xl border border-hairline bg-surface-2 p-3.5">
+    <div className="min-w-0 border border-hairline bg-surface-2 p-3.5">
       <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
         <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
         <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-[0.04em]">

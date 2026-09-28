@@ -84,7 +84,7 @@ export function StageChecklist({
                 type="button"
                 disabled={Boolean(pendingStage)}
                 onClick={() => onToggle(key, !done)}
-                className="press flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left hover:bg-surface-2 disabled:opacity-60"
+                className="press flex w-full items-center gap-2.5 px-1.5 py-1.5 text-left hover:bg-surface-2 disabled:opacity-60"
               >
                 {row}
               </button>

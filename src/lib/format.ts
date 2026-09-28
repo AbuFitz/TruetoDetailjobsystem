@@ -61,12 +61,12 @@ export function getEtaStatus(
   if (lateBy <= ETA_SIGNIFICANT_DELAY_MS) {
     return {
       tone: "behind",
-      label: `${arrivalLabel} — a little later than your ${appointmentTimeLabel} slot`,
+      label: `${arrivalLabel}, a little later than your ${appointmentTimeLabel} slot`,
     };
   }
   return {
     tone: "behind",
-    label: `${arrivalLabel} — well behind your ${appointmentTimeLabel} appointment`,
+    label: `${arrivalLabel}, well behind your ${appointmentTimeLabel} appointment`,
   };
 }
 

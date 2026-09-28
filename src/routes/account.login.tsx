@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
 import { z } from "zod";
 import { TtdLogo } from "@/components/ttd/Header";
@@ -8,6 +8,7 @@ import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { useForm } from "react-hook-form";
 import { signIn, signUpCustomer } from "@/lib/auth";
 import { useSession } from "@/hooks/use-session";
+import { ttdSiteLinks } from "@/lib/constants";
 
 const searchSchema = z.object({ next: z.string().optional() });
 
@@ -65,22 +66,22 @@ function AccountLogin() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-5 py-12">
       <div className="w-full max-w-sm">
         <div className="text-center">
-          <TtdLogo size="lg" />
+          <TtdLogo size="xl" />
         </div>
 
-        <div className="mt-8 rounded-2xl border border-hairline bg-surface p-6 shadow-card">
-          <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1">
+        <div className="mt-8 border border-hairline bg-surface p-6 ">
+          <div className="mb-5 grid grid-cols-2 gap-1 bg-surface-2 p-1">
             <button
               type="button"
               onClick={() => setMode("sign-in")}
-              className={`min-h-9 rounded-lg text-sm font-semibold transition-colors ${mode === "sign-in" ? "bg-surface shadow-card" : "text-muted-foreground"}`}
+              className={`min-h-9 text-sm font-semibold transition-colors ${mode === "sign-in" ? "bg-surface " : "text-muted-foreground"}`}
             >
               Sign in
             </button>
             <button
               type="button"
               onClick={() => setMode("sign-up")}
-              className={`min-h-9 rounded-lg text-sm font-semibold transition-colors ${mode === "sign-up" ? "bg-surface shadow-card" : "text-muted-foreground"}`}
+              className={`min-h-9 text-sm font-semibold transition-colors ${mode === "sign-up" ? "bg-surface " : "text-muted-foreground"}`}
             >
               Create account
             </button>
@@ -108,7 +109,7 @@ function AccountLogin() {
             />
 
             {error ? (
-              <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
+              <p className="flex items-start gap-2 border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
                 <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
                 {error}
               </p>
@@ -121,9 +122,9 @@ function AccountLogin() {
         </div>
 
         <p className="mt-6 text-center text-[13px] text-muted-foreground">
-          <Link to="/" className="underline underline-offset-2">
+          <a href={ttdSiteLinks.website} className="underline underline-offset-2">
             Back to True To Detail
-          </Link>
+          </a>
         </p>
       </div>
     </main>

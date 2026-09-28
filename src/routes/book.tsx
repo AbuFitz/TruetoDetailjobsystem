@@ -218,7 +218,7 @@ function BookingFlow() {
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value)}
                 placeholder="e.g. HP2 6EL"
-                className="min-h-12 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+                className="min-h-12 flex-1 border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
               />
               <PrimaryActionButton
                 className="w-auto px-6"
@@ -270,14 +270,14 @@ function BookingFlow() {
             </div>
 
             {addressChoice === "new" ? (
-              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-4">
+              <div className="mt-4 flex flex-col gap-3 border border-hairline bg-surface p-4">
                 <div className="grid grid-cols-3 gap-2">
                   {(["Home", "Work", "Other"] as const).map((l) => (
                     <button
                       key={l}
                       type="button"
                       onClick={() => setNewAddress((s) => ({ ...s, label: l }))}
-                      className={`min-h-9 rounded-lg border text-[13px] font-semibold ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                      className={`min-h-9 border text-[13px] font-semibold ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
                     >
                       {l}
                     </button>
@@ -287,13 +287,13 @@ function BookingFlow() {
                   value={newAddress.line1}
                   onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
                   placeholder="Address line 1"
-                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  className="min-h-11 border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
                 />
                 <input
                   value={newAddress.city}
                   onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
                   placeholder="Town / city"
-                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  className="min-h-11 border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
                 />
               </div>
             ) : null}
@@ -343,19 +343,19 @@ function BookingFlow() {
                   value={newVehicle.make}
                   onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
                   placeholder="Make"
-                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  className="min-h-11 border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
                 />
                 <input
                   value={newVehicle.model}
                   onChange={(e) => setNewVehicle((s) => ({ ...s, model: e.target.value }))}
                   placeholder="Model"
-                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  className="min-h-11 border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
                 />
                 <input
                   value={newVehicle.registration}
                   onChange={(e) => setNewVehicle((s) => ({ ...s, registration: e.target.value }))}
                   placeholder="Registration"
-                  className="col-span-2 min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
+                  className="col-span-2 min-h-11 border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
                 />
               </div>
             ) : null}
@@ -368,7 +368,7 @@ function BookingFlow() {
                     key={size}
                     type="button"
                     onClick={() => setVehicleSize(size)}
-                    className={`min-h-11 rounded-xl border text-[12px] font-semibold ${vehicleSize === size ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                    className={`min-h-11 border text-[12px] font-semibold ${vehicleSize === size ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
                   >
                     {VEHICLE_SIZE_LABELS[size]}
                   </button>
@@ -415,7 +415,7 @@ function BookingFlow() {
                 {DETAIL_ADDONS.map((a) => (
                   <label
                     key={a.id}
-                    className="press flex items-center justify-between rounded-xl border border-hairline bg-surface p-3.5"
+                    className="press flex items-center justify-between border border-hairline bg-surface p-3.5"
                   >
                     <span className="flex items-center gap-2.5 text-[14px] font-medium">
                       <input
@@ -452,7 +452,7 @@ function BookingFlow() {
                 value={date}
                 min={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => setDate(e.target.value)}
-                className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
+                className="mt-2 min-h-12 w-full border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
               />
             </div>
             <div className="mt-4">
@@ -463,7 +463,7 @@ function BookingFlow() {
                     key={t}
                     type="button"
                     onClick={() => setTime(t)}
-                    className={`min-h-11 rounded-xl border text-[13px] font-semibold ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                    className={`min-h-11 border text-[13px] font-semibold ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
                   >
                     {t}
                   </button>
@@ -478,7 +478,7 @@ function BookingFlow() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
+                className="mt-2 w-full resize-none border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
               />
             </div>
             <PrimaryActionButton
@@ -494,7 +494,7 @@ function BookingFlow() {
         {step === "review" ? (
           <section>
             <h1 className="font-display text-[28px] leading-none">Confirm your booking</h1>
-            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-hairline bg-surface p-5">
+            <div className="mt-5 flex flex-col gap-3 border border-hairline bg-surface p-5">
               <SummaryRow label="Package">{selectedPackage.name}</SummaryRow>
               <SummaryRow label="Vehicle">
                 {vehicleChoice === "new"
@@ -549,8 +549,8 @@ function BookingFlow() {
             </span>
             <h1 className="mt-5 font-display text-[28px] leading-tight">Booking confirmed</h1>
             <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">
-              We'll see you on {date}. Your detailer will come to you — track it all from your
-              account.
+              We'll see you on {date}. Your detailer will come to you, and you can track it all from
+              your account.
             </p>
             <Link to="/account/bookings/$id" params={{ id: bookingId }} className="mt-6">
               <PrimaryActionButton className="w-auto px-8">View booking</PrimaryActionButton>
@@ -575,7 +575,7 @@ function ChoiceCard({
     <button
       type="button"
       onClick={onClick}
-      className={`press rounded-xl border p-3.5 text-left transition-colors ${selected ? "border-signal bg-signal/8" : "border-hairline bg-surface hover:bg-surface-2"}`}
+      className={`press border p-3.5 text-left transition-colors ${selected ? "border-signal bg-signal/8" : "border-hairline bg-surface hover:bg-surface-2"}`}
     >
       {children}
     </button>
