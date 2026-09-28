@@ -225,6 +225,10 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 The anon key is safe to ship to the browser — it only works through RLS and the security-definer
 RPCs in the migrations. **Never** put a `service_role` key in a `VITE_*` variable.
 
+`VITE_AUTH_COOKIE_DOMAIN` is optional locally — see
+[Cross-site login (SSO)](#cross-site-login-sso) below; leave it unset until both this app and the
+marketing site are deployed under the same domain.
+
 `ORS_API_KEY` (see [Real ETA & schedule travel-times](#real-eta--schedule-travel-times-via-openrouteservice))
 is optional — the app runs fine without it, just without real routing-based ETAs/travel-times.
 
@@ -241,7 +245,8 @@ Open `http://localhost:8080`. Sign up a customer at `/account/login`, or sign in
 ### 6. Environment variables — Vercel (or wherever you deploy)
 
 Project → **Settings → Environment Variables** → add `VITE_SUPABASE_URL`,
-`VITE_SUPABASE_ANON_KEY` for the environments you use.
+`VITE_SUPABASE_ANON_KEY`, and `VITE_AUTH_COOKIE_DOMAIN` (see
+[Cross-site login (SSO)](#cross-site-login-sso)) for the environments you use.
 
 ### 7. Deploy
 
@@ -251,8 +256,56 @@ Push to GitHub and import the repo in Vercel, or:
 npx vercel
 ```
 
+Deploy this app to a **subdomain of the marketing site's own domain** — e.g.
+`app.truetodetail.co.uk` — not an unrelated domain, or SSO (below) can't work: browsers will never
+share a cookie between two domains that aren't both under the same registrable parent.
+
 Detailer links are built from `window.location.origin` at runtime, so they're automatically
 correct locally, on previews, and in production.
+
+## Cross-site login (SSO)
+
+Customers can sign in from **either** this app or the truetodetail.co.uk marketing site's "My
+Account" nav link, and be recognised on both — one Supabase session, shared via a cookie scoped to
+the parent domain, not two separate logins.
+
+**How it works:**
+
+- Both apps point at the **same Supabase project** (same URL/anon key) — a session issued by one
+  is a valid session for the other; there's nothing project-specific to reconcile.
+- Both use [`@supabase/ssr`](https://www.npmjs.com/package/@supabase/ssr)'s `createBrowserClient`
+  instead of plain `@supabase/supabase-js`, which stores the session in a **cookie** rather than
+  `localStorage`. `localStorage` is strictly per-origin with no opt-out — cookies are the only
+  browser storage that can be shared across subdomains, via the `Domain` attribute.
+- Both set that cookie's `Domain` to the same value — `VITE_AUTH_COOKIE_DOMAIN` here,
+  `NEXT_PUBLIC_AUTH_COOKIE_DOMAIN` on the marketing site — a **leading-dot** parent domain like
+  `.truetodetail.co.uk`. A cookie set with that domain by `app.truetodetail.co.uk` is sent on every
+  request to `truetodetail.co.uk` too (and any other subdomain), which is what makes the session
+  visible on both.
+- This app owns the **only sign-in form** (`/account/login`) — the marketing site never signs
+  anyone in itself. Its `lib/supabaseBrowser.ts` only _reads_ the shared session (to switch its
+  nav's "My Account" into "Hi, `<name>` / Sign out") and can call `.auth.signOut()`, which clears
+  the cookie for both apps at once.
+
+**Setup, once both apps are deployed under the same domain:**
+
+1. Confirm this app is reachable at a subdomain of the marketing site's domain (e.g.
+   `app.truetodetail.co.uk` alongside `truetodetail.co.uk`) — required, not optional; see the
+   note in [Deploy](#7-deploy) above.
+2. Set `VITE_AUTH_COOKIE_DOMAIN=.truetodetail.co.uk` here **and**
+   `NEXT_PUBLIC_AUTH_COOKIE_DOMAIN=.truetodetail.co.uk` on the marketing site — exact same value,
+   leading dot included.
+3. Point the marketing site's `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` at this
+   _same_ Supabase project (see its own `.env.example`).
+4. Redeploy both. Sign in on either one; the other should show it within a page load (the
+   marketing site's Navbar checks the session on mount and via
+   `supabase.auth.onAuthStateChange`).
+
+**Left unset** (the default), each app's cookie scopes to whatever single host is actually serving
+it — correct, isolated behaviour for local dev and for preview deploys, just not shared. Nothing
+breaks; sign-in on the job system app still works exactly as before, the marketing site's nav just
+always shows "My Account" (never "Hi, `<name>`") until both env vars are set to a real shared
+domain.
 
 ## Local development (optional)
 
