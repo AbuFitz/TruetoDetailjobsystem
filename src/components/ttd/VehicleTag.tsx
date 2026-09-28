@@ -20,7 +20,7 @@ export function VehicleCard({
     <div
       className={cn(
         "flex items-center gap-3",
-        !compact && "border border-hairline bg-surface p-3.5",
+        !compact && "rounded-xl border border-hairline bg-surface p-3.5",
         className,
       )}
     >

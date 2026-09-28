@@ -89,6 +89,11 @@ function AdminDashboard() {
     ["en_route", "arrived", "check_in", "in_progress", "qc", "handover"].includes(b.status),
   );
   const unassigned = filtered.filter((b) => b.status === "confirmed");
+  // Assigned but not started yet. Without its own section, a job assigned
+  // for any day other than today appeared nowhere on this page.
+  const assigned = filtered
+    .filter((b) => b.status === "assigned")
+    .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
   const done = filtered.filter((b) => b.status === "completed" || b.status === "cancelled");
   const completedToday = all.filter(
     (b) => b.status === "completed" && b.completed_at && isToday(new Date(b.completed_at)),
@@ -193,7 +198,7 @@ function AdminDashboard() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by reference, plate, postcode or detailer"
+              placeholder="Search jobs"
               className="min-h-11 w-full rounded-xl border border-hairline bg-surface-2 pl-10 pr-9 text-base outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
             />
             {query ? (
@@ -255,6 +260,11 @@ function AdminDashboard() {
                 ) : (
                   <EmptyState icon={CalendarClock} title="Nothing unassigned" />
                 )}
+              </Section>
+            ) : null}
+            {assigned.length ? (
+              <Section title="Assigned, not started">
+                <BookingList bookings={assigned} />
               </Section>
             ) : null}
             {done.length || !isFiltering ? (

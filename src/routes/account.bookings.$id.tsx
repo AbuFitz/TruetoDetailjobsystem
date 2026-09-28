@@ -135,6 +135,35 @@ function BookingDetail() {
           ) : null}
         </section>
 
+        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
+          <p className="eyebrow text-muted-foreground">What&rsquo;s booked</p>
+          <dl className="mt-3 flex flex-col gap-2 text-[14px]">
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Package</dt>
+              <dd className="text-right font-medium">{booking.package_name}</dd>
+            </div>
+            {booking.addon_labels.length > 0 ? (
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">Add-ons</dt>
+                <dd className="text-right font-medium">{booking.addon_labels.join(", ")}</dd>
+              </div>
+            ) : null}
+            <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-hairline pt-3">
+              <dt className="eyebrow text-foreground">Total</dt>
+              <dd className="font-display text-[28px] leading-none">£{booking.price}</dd>
+            </div>
+          </dl>
+          {booking.customer_notes ? (
+            <p className="mt-3 rounded-xl bg-surface-2 px-3.5 py-3 text-[13px] leading-relaxed text-muted-foreground">
+              <span className="font-semibold text-foreground">Your notes: </span>
+              {booking.customer_notes}
+            </p>
+          ) : null}
+          <p className="mt-3 text-[12px] text-muted-foreground">
+            Paid on the day by card, bank transfer or cash. The price is fixed.
+          </p>
+        </section>
+
         {isLive && (detailerPosition || destination) ? (
           <TrackingMap
             className="mt-4 h-[280px] sm:h-[340px]"
@@ -162,7 +191,7 @@ function BookingDetail() {
           </section>
         ) : null}
 
-        <section className="mt-4 border border-hairline bg-surface p-5">
+        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
           <p className="eyebrow text-muted-foreground">Progress</p>
           <BookingTimeline className="mt-4" steps={timelineForStatus(booking.status)} />
         </section>

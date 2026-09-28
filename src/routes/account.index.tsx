@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addWeeks, format, isFuture } from "date-fns";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Car, LogOut, MapPin, Sparkles } from "lucide-react";
+import { CalendarPlus, Car, ChevronRight, LogOut, MapPin, Sparkles } from "lucide-react";
 import { TtdHeader } from "@/components/ttd/Header";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -62,7 +62,7 @@ function AccountDashboard() {
     enabled: Boolean(session),
   });
 
-  const { liveBooking, nextBooking, previousBookings, qualifyingVisits, recommendedDate } =
+  const { liveBooking, nextBooking, otherUpcoming, previousBookings, qualifyingVisits, recommendedDate } =
     useMemo(() => {
       const all = bookings ?? [];
       const live = all.find((b) => LIVE_JOB_STATUSES.includes(b.status)) ?? null;
@@ -81,12 +81,17 @@ function AccountDashboard() {
       const recommended = lastCompleted
         ? addWeeks(new Date(lastCompleted.scheduled_start), MAINTENANCE_DETAIL_INTERVAL_WEEKS)
         : null;
+      const next = live ?? upcoming[0] ?? null;
       return {
         liveBooking: live,
-        nextBooking: live ?? upcoming[0] ?? null,
+        nextBooking: next,
+        // Every other future booking. Only one gets the big card, so without
+        // this list a second upcoming detail was invisible on the dashboard.
+        otherUpcoming: upcoming.filter((b) => b.id !== next?.id),
         previousBookings: previous.slice(0, 5),
         qualifyingVisits: visits,
-        recommendedDate: recommended,
+        // No "you're due" nudge when a detail is already booked.
+        recommendedDate: live || upcoming.length > 0 ? null : recommended,
       };
     }, [bookings]);
 
@@ -148,6 +153,54 @@ function AccountDashboard() {
             }
           />
         )}
+
+        {otherUpcoming.length > 0 ? (
+          <Section title="Also Booked">
+            <div className="flex flex-col gap-2">
+              {otherUpcoming.map((b) => {
+                const { dayLabel, timeLabel } = formatAppointment(b.scheduled_start);
+                return (
+                  <Link
+                    key={b.id}
+                    to="/account/bookings/$id"
+                    params={{ id: b.id }}
+                    className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[14px] font-semibold">{b.package_name}</p>
+                      <p className="text-[12px] text-muted-foreground">
+                        {dayLabel}, {timeLabel} · {b.vehicle_registration}
+                      </p>
+                    </div>
+                    <StatusBadge status={b.status} size="sm" />
+                  </Link>
+                );
+              })}
+            </div>
+          </Section>
+        ) : null}
+
+        <nav aria-label="Account" className="mt-6 grid grid-cols-3 gap-2">
+          {(
+            [
+              { to: "/book", label: "Book a detail", icon: CalendarPlus },
+              { to: "/account/vehicles", label: "Your garage", icon: Car },
+              { to: "/account/addresses", label: "Addresses", icon: MapPin },
+            ] as const
+          ).map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="press flex flex-col items-start gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+            >
+              <Icon className="h-5 w-5 text-signal" strokeWidth={2.2} />
+              <span className="flex w-full items-center justify-between gap-1 text-[13px] font-semibold leading-tight">
+                {label}
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={2.4} />
+              </span>
+            </Link>
+          ))}
+        </nav>
 
         <Section title="Your Garage">
           {vehicles && vehicles.length > 0 ? (
@@ -250,14 +303,6 @@ function AccountDashboard() {
           </Section>
         ) : null}
 
-        <p className="mt-8 flex items-center gap-1.5 text-[12px] text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5" strokeWidth={2.2} />
-          Manage your saved addresses under{" "}
-          <Link to="/account/addresses" className="ml-1 underline underline-offset-2">
-            Addresses
-          </Link>
-          .
-        </p>
       </div>
     </main>
   );

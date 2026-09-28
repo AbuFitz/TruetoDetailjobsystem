@@ -16,7 +16,7 @@ import { getCustomerAddresses } from "@/lib/addresses";
 import { getCustomerBookings } from "@/lib/bookings";
 import { formatAppointment } from "@/lib/format";
 
-export const Route = createFileRoute("/admin/customers/$id")({
+export const Route = createFileRoute("/admin/customers_/$id")({
   head: () => ({
     meta: [{ title: "Customer | True To Detail" }, { name: "robots", content: "noindex" }],
   }),
@@ -54,7 +54,7 @@ function EditField({
 
 function CustomerDetail() {
   useRequireStaffSession();
-  const { id } = useParams({ from: "/admin/customers/$id" });
+  const { id } = useParams({ from: "/admin/customers_/$id" });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -239,7 +239,7 @@ function CustomerDetail() {
         </div>
 
         {/* Vehicles */}
-        <h2 className="mt-7 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">
           Vehicles
         </h2>
         {vehicles && vehicles.length > 0 ? (
@@ -261,7 +261,7 @@ function CustomerDetail() {
         )}
 
         {/* Addresses */}
-        <h2 className="mt-7 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">
           Addresses
         </h2>
         {addresses && addresses.length > 0 ? (
@@ -280,7 +280,7 @@ function CustomerDetail() {
         )}
 
         {/* Booking history */}
-        <h2 className="mt-7 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">
           Booking history
         </h2>
         {bookings && bookings.length > 0 ? (

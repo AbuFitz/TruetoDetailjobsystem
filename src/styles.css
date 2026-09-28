@@ -182,6 +182,15 @@
     letter-spacing: 0.01em;
     text-transform: uppercase;
   }
+
+  /* Bebas Neue ships a single weight. Without this, any bold class on a
+     display-font heading makes the browser fake a bold and smear it. */
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-synthesis-weight: none;
+  }
 }
 
 /* --- True To Detail utilities ------------------------------------------- */
