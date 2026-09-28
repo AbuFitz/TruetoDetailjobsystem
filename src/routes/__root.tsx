@@ -117,9 +117,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 const THEME_INIT_SCRIPT = `
 (function () {
   try {
+    // Light by default, whatever the device's OS theme is — matches the
+    // main site's own always-light branding. Only a stored choice (someone
+    // has actually used the toggle before) turns this dark.
     var stored = localStorage.getItem("ttd-theme");
-    var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.classList.toggle("dark", stored === "dark");
   } catch (e) {}
 })();
 `;

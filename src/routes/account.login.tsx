@@ -3,15 +3,44 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { TriangleAlert } from "lucide-react";
 import { z } from "zod";
 import { TtdLogo } from "@/components/ttd/Header";
-import { Field } from "@/components/ttd/FormField";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
 import { QuickBookingModal } from "@/components/ttd/QuickBookingModal";
-import { useForm } from "react-hook-form";
-import { signIn, isStaff } from "@/lib/auth";
+import { useForm, type UseFormRegisterReturn } from "react-hook-form";
+import { signIn, isStaff, hasSignedInBefore } from "@/lib/auth";
 import { useSession } from "@/hooks/use-session";
 import { ttdSiteLinks } from "@/lib/constants";
+
+// Matches the main site's own booking-form field treatment exactly (see
+// BookingModal.tsx's fieldLabel/textInput) instead of this app's usual
+// pill-shaped inputs — the front door should look like it was cut from the
+// same sheet as the site the customer just came from.
+function LoginField({
+  id,
+  label,
+  type = "text",
+  inputProps,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  inputProps: UseFormRegisterReturn;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/40">
+        {label}
+      </label>
+      <input
+        id={id}
+        type={type}
+        className="mt-2.5 w-full border border-black/12 bg-white px-4 py-3.5 text-base text-ink outline-none transition-colors focus:border-signal"
+        {...inputProps}
+      />
+    </div>
+  );
+}
 
 const searchSchema = z.object({ next: z.string().optional() });
 
@@ -35,6 +64,14 @@ function AccountLogin() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
+  // Starts false to match the server-rendered/first-paint state (localStorage
+  // doesn't exist during SSR), then flips true right after hydration for a
+  // browser that really has signed in before — avoids a hydration mismatch
+  // between the server's guess and the client's actual history.
+  const [returning, setReturning] = useState(false);
+  useEffect(() => {
+    setReturning(hasSignedInBefore());
+  }, []);
   const { register, handleSubmit } = useForm<FormValues>({
     defaultValues: { email: "", password: "" },
   });
@@ -80,24 +117,32 @@ function AccountLogin() {
         </a>
         <p className="eyebrow mt-10 text-ink-foreground/30">Your account</p>
         <h1 className="mt-2 font-display text-[56px] leading-[0.88] sm:text-[72px]">
-          WELCOME
-          <br />
-          <span className="text-ink-foreground/35">
-            BACK<span className="text-signal">.</span>
-          </span>
+          {returning ? (
+            <>
+              WELCOME
+              <br />
+              <span className="text-ink-foreground/35">
+                BACK<span className="text-signal">.</span>
+              </span>
+            </>
+          ) : (
+            <>
+              WELCOME<span className="text-signal">.</span>
+            </>
+          )}
         </h1>
       </div>
 
       <div className="flex-1 rounded-t-3xl bg-background px-6 pb-10 pt-8 text-foreground sm:px-10">
         <div className="mx-auto w-full max-w-sm">
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            <Field
+            <LoginField
               id="email"
               label="Email"
               type="email"
               inputProps={register("email", { required: true })}
             />
-            <Field
+            <LoginField
               id="password"
               label="Password"
               type="password"

@@ -394,7 +394,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
             <div className="flex flex-col gap-7">
               <div>
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-signal">
-                  When
+                  Date &amp; Time
                 </p>
                 <div className="flex flex-col gap-5">
                   <div>
@@ -434,7 +434,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
 
               <div className="border-t border-hairline pt-6">
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-signal">
-                  Where &amp; What
+                  Location &amp; Vehicle
                 </p>
                 <div className="flex flex-col gap-5">
                   <div>

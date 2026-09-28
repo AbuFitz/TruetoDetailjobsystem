@@ -15,6 +15,30 @@ export interface SignUpInput {
   phone?: string;
 }
 
+/**
+ * Set once a sign-in on this browser has ever succeeded, so the login page's
+ * hero can tell a genuine first-time visitor apart from someone who has
+ * been here before ("welcome back" only means something once it's true).
+ */
+export const HAS_SIGNED_IN_KEY = "ttd-has-signed-in";
+
+export function hasSignedInBefore(): boolean {
+  try {
+    return localStorage.getItem(HAS_SIGNED_IN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markSignedIn() {
+  try {
+    localStorage.setItem(HAS_SIGNED_IN_KEY, "1");
+  } catch {
+    // Private browsing / storage disabled — just means this device will
+    // always see the first-time greeting, which is a harmless fallback.
+  }
+}
+
 export async function signUpCustomer(input: SignUpInput): Promise<void> {
   const { error } = await supabase.auth.signUp({
     email: input.email,
@@ -28,11 +52,13 @@ export async function signUpCustomer(input: SignUpInput): Promise<void> {
     },
   });
   if (error) throw new Error(error.message, { cause: error });
+  markSignedIn();
 }
 
 export async function signIn(email: string, password: string): Promise<void> {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw new Error(error.message, { cause: error });
+  markSignedIn();
 }
 
 export async function signOut(): Promise<void> {
