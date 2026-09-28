@@ -10,6 +10,7 @@ import {
   Radio,
   Search,
   UserRound,
+  Users,
   Wrench,
   X,
 } from "lucide-react";
@@ -117,6 +118,14 @@ function AdminDashboard() {
         eyebrow="Staff console"
         right={
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <Link
+              to="/admin/customers"
+              aria-label="Customers"
+              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-hairline bg-surface-2 px-2.5 text-[12px] font-medium text-muted-foreground hover:text-foreground sm:px-3"
+            >
+              <Users className="h-3.5 w-3.5" strokeWidth={2.2} />
+              <span className="hidden sm:inline">Customers</span>
+            </Link>
             <Link
               to="/admin/detailers"
               aria-label="Detailers"

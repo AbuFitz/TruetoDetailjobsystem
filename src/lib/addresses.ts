@@ -1,5 +1,6 @@
 import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { getMyCustomerId } from "./customers";
 
 export type AddressLabel = "Home" | "Work" | "Other";
 
@@ -24,10 +25,8 @@ function dbError(error: PostgrestError, fallback: string): Error {
 }
 
 export async function listMyAddresses(): Promise<CustomerAddress[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
+  const customerId = await getMyCustomerId();
+  if (!customerId) return [];
   // Explicit customer_id filter, not just RLS: a staff caller's RLS grant is
   // "any row", so without this a staff account would get every customer's
   // addresses back instead of their own (staff don't normally call this —
@@ -36,7 +35,7 @@ export async function listMyAddresses(): Promise<CustomerAddress[]> {
   const { data, error } = await supabase
     .from(TABLE)
     .select("*")
-    .eq("customer_id", user.id)
+    .eq("customer_id", customerId)
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: true });
   if (error) throw dbError(error, "Couldn't load your addresses.");
@@ -66,13 +65,25 @@ export interface AddressInput {
 }
 
 export async function createAddress(input: AddressInput): Promise<CustomerAddress> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in.");
+  const customerId = await getMyCustomerId();
+  if (!customerId) throw new Error("Not signed in.");
   const { data, error } = await supabase
     .from(TABLE)
-    .insert({ ...input, customer_id: user.id })
+    .insert({ ...input, customer_id: customerId })
+    .select("*")
+    .single();
+  if (error) throw dbError(error, "Couldn't save this address.");
+  return data as CustomerAddress;
+}
+
+/** Staff-only: adds a saved address directly onto a given customer (e.g. the "New booking" flow). */
+export async function createAddressForCustomer(
+  customerId: string,
+  input: AddressInput,
+): Promise<CustomerAddress> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert({ ...input, customer_id: customerId })
     .select("*")
     .single();
   if (error) throw dbError(error, "Couldn't save this address.");

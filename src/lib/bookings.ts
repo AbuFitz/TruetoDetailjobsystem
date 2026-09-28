@@ -9,6 +9,7 @@
  */
 import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { getMyCustomerId } from "./customers";
 import type { AddonId, VehicleSize } from "./constants";
 
 export type BookingStatus =
@@ -124,17 +125,15 @@ function dbError(error: PostgrestError, fallback: string): Error {
 // ---------------------------------------------------------------------------
 
 export async function listMyBookings(): Promise<BookingWithDetailer[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
+  const customerId = await getMyCustomerId();
+  if (!customerId) return [];
   // Explicit filter, not just RLS — see the same note on listMyAddresses:
   // a staff caller's RLS grant is "any row", so without this a staff
   // account would get every customer's bookings back instead of their own.
   const { data, error } = await supabase
     .from(TABLE)
     .select(WITH_DETAILER_SELECT)
-    .eq("customer_id", user.id)
+    .eq("customer_id", customerId)
     .order("scheduled_start", { ascending: false });
   if (error) throw dbError(error, "Couldn't load your bookings.");
   return (data ?? []) as unknown as BookingWithDetailer[];
@@ -177,14 +176,12 @@ export interface CreateBookingInput {
 }
 
 export async function createBooking(input: CreateBookingInput): Promise<Booking> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in.");
+  const customerId = await getMyCustomerId();
+  if (!customerId) throw new Error("Not signed in.");
 
   const { data, error } = await supabase
     .from(TABLE)
-    .insert({ ...input, customer_id: user.id, status: "confirmed" })
+    .insert({ ...input, customer_id: customerId, status: "confirmed" })
     .select("*")
     .single();
   if (error) throw dbError(error, "Couldn't create this booking.");

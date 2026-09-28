@@ -1,5 +1,6 @@
 import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { getMyCustomerId } from "./customers";
 
 export interface Vehicle {
   id: string;
@@ -25,16 +26,14 @@ export function vehicleDescription(v: Pick<Vehicle, "make" | "model">): string |
 }
 
 export async function listMyVehicles(): Promise<Vehicle[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
+  const customerId = await getMyCustomerId();
+  if (!customerId) return [];
   // See listMyAddresses's comment: a staff caller's RLS grant is "any row",
   // so this filter is what actually makes "mine" mean mine.
   const { data, error } = await supabase
     .from(TABLE)
     .select("*")
-    .eq("customer_id", user.id)
+    .eq("customer_id", customerId)
     .order("created_at", { ascending: true });
   if (error) throw dbError(error, "Couldn't load your garage.");
   return (data ?? []) as Vehicle[];
@@ -61,13 +60,25 @@ export interface VehicleInput {
 }
 
 export async function createVehicle(input: VehicleInput): Promise<Vehicle> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in.");
+  const customerId = await getMyCustomerId();
+  if (!customerId) throw new Error("Not signed in.");
   const { data, error } = await supabase
     .from(TABLE)
-    .insert({ ...input, customer_id: user.id })
+    .insert({ ...input, customer_id: customerId })
+    .select("*")
+    .single();
+  if (error) throw dbError(error, "Couldn't save this vehicle.");
+  return data as Vehicle;
+}
+
+/** Staff-only: adds a saved vehicle directly onto a given customer (e.g. the "New booking" flow). */
+export async function createVehicleForCustomer(
+  customerId: string,
+  input: VehicleInput,
+): Promise<Vehicle> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert({ ...input, customer_id: customerId })
     .select("*")
     .single();
   if (error) throw dbError(error, "Couldn't save this vehicle.");

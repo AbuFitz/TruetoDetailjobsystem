@@ -16,6 +16,7 @@ import { Route as AccountAddressesRouteImport } from './routes/account.addresses
 import { Route as AccountLoginRouteImport } from './routes/account.login'
 import { Route as AccountVehiclesRouteImport } from './routes/account.vehicles'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminDetailersRouteImport } from './routes/admin.detailers'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as DTokenRouteImport } from './routes/d.$token'
@@ -59,6 +60,11 @@ const AccountVehiclesRoute = AccountVehiclesRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCustomersRoute = AdminCustomersRouteImport.update({
+  id: '/admin/customers',
+  path: '/admin/customers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminDetailersRoute = AdminDetailersRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
   '/d/$token': typeof DTokenRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
   '/d/$token': typeof DTokenRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/account/addresses': typeof AccountAddressesRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
   '/d/$token': typeof DTokenRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/account/addresses'
     | '/account/login'
     | '/account/vehicles'
+    | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
     | '/d/$token'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/account/addresses'
     | '/account/login'
     | '/account/vehicles'
+    | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
     | '/d/$token'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/account/addresses'
     | '/account/login'
     | '/account/vehicles'
+    | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
     | '/d/$token'
@@ -225,6 +237,7 @@ export interface RootRouteChildren {
   AccountAddressesRoute: typeof AccountAddressesRoute
   AccountLoginRoute: typeof AccountLoginRoute
   AccountVehiclesRoute: typeof AccountVehiclesRoute
+  AdminCustomersRoute: typeof AdminCustomersRoute
   AdminDetailersRoute: typeof AdminDetailersRoute
   AdminLoginRoute: typeof AdminLoginRoute
   DTokenRoute: typeof DTokenRoute
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/customers': {
+      id: '/admin/customers'
+      path: '/admin/customers'
+      fullPath: '/admin/customers'
+      preLoaderRoute: typeof AdminCustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/detailers': {
@@ -361,6 +381,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountAddressesRoute: AccountAddressesRoute,
   AccountLoginRoute: AccountLoginRoute,
   AccountVehiclesRoute: AccountVehiclesRoute,
+  AdminCustomersRoute: AdminCustomersRoute,
   AdminDetailersRoute: AdminDetailersRoute,
   AdminLoginRoute: AdminLoginRoute,
   DTokenRoute: DTokenRoute,
