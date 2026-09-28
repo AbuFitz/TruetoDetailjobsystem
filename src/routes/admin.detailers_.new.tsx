@@ -64,12 +64,12 @@ function NewDetailer() {
         <h1 className="mt-4 font-display text-[28px] leading-none">Add a detailer</h1>
 
         {link ? (
-          <div className="mt-5 border border-success/30 bg-success/8 p-5 text-center">
+          <div className="mt-5 rounded-2xl border border-success/30 bg-success/8 p-5 text-center">
             <p className="font-display text-lg">Detailer created</p>
             <p className="mt-1 text-[13px] text-muted-foreground">
               Send them their persistent job link — no login needed.
             </p>
-            <div className="mt-3 flex items-center gap-2 border border-hairline bg-surface p-2.5">
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-hairline bg-surface p-2.5">
               <p className="min-w-0 flex-1 truncate text-[13px]">{link}</p>
               <button
                 type="button"

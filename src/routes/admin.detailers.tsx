@@ -55,7 +55,7 @@ function DetailersList() {
                 key={d.id}
                 to="/admin/detailers/$id"
                 params={{ id: d.id }}
-                className="press flex items-center gap-3 border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+                className="press flex items-center gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
               >
                 <Avatar name={d.name} photoUrl={d.photo_url} size="sm" />
                 <div className="min-w-0 flex-1">

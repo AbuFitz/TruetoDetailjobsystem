@@ -153,7 +153,7 @@ function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="mt-5 grid grid-cols-3 divide-x divide-hairline overflow-hidden border border-hairline bg-surface">
+        <div className="mt-5 grid grid-cols-3 divide-x divide-hairline overflow-hidden rounded-xl border border-hairline bg-surface">
           <Stat icon={Radio} label="Active" value={active.length} highlight />
           <Stat icon={CalendarClock} label="Unassigned" value={unassigned.length} />
           <Stat icon={CheckCheck} label="Completed today" value={completedToday} />
@@ -185,7 +185,7 @@ function AdminDashboard() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by reference, plate, postcode or detailer"
-              className="min-h-11 w-full border border-hairline bg-surface-2 pl-10 pr-9 text-base outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+              className="min-h-11 w-full rounded-xl border border-hairline bg-surface-2 pl-10 pr-9 text-base outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
             />
             {query ? (
               <button
@@ -202,7 +202,7 @@ function AdminDashboard() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as BookingStatus | "all")}
             aria-label="Filter by status"
-            className="min-h-11 shrink-0 border border-hairline bg-surface-2 pl-3 pr-8 text-[13px] font-medium outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+            className="min-h-11 shrink-0 rounded-xl border border-hairline bg-surface-2 pl-3 pr-8 text-[13px] font-medium outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
           >
             {STATUS_FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>

@@ -16,11 +16,11 @@ export function ErrorState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center border border-destructive/25 bg-destructive/5 px-6 py-10 text-center",
+        "flex flex-col items-center rounded-xl border border-destructive/25 bg-destructive/5 px-6 py-10 text-center",
         className,
       )}
     >
-      <span className="grid h-11 w-11 place-items-center bg-destructive/10 text-destructive">
+      <span className="grid h-11 w-11 place-items-center rounded-full bg-destructive/10 text-destructive">
         <TriangleAlert className="h-5 w-5" strokeWidth={2} />
       </span>
       <p className="mt-3 font-display text-lg font-semibold">{title}</p>

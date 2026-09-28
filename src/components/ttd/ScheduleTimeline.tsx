@@ -36,7 +36,7 @@ export function ScheduleTimeline({
             <Link
               to="/admin/bookings/$id"
               params={{ id: booking.id }}
-              className="press flex items-start gap-3 border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+              className="press flex items-start gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
             >
               <div className="w-[74px] shrink-0 pt-0.5 text-right">
                 <p className="font-display text-base font-bold leading-none">

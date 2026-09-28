@@ -88,7 +88,7 @@ function DetailerQueue() {
                   key={job.id}
                   to="/d/$token/$bookingId"
                   params={{ token, bookingId: job.id }}
-                  className="press relative overflow-hidden border border-hairline bg-surface p-4"
+                  className="press relative overflow-hidden rounded-xl border border-hairline bg-surface p-4"
                 >
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">
@@ -137,7 +137,7 @@ function DetailerQueue() {
 function InvalidDetailerLink() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-12">
-      <div className="rise-in border border-hairline bg-surface p-7 text-center">
+      <div className="rise-in rounded-2xl border border-hairline bg-surface p-7 text-center">
         <TtdLogo size="lg" />
         <span className="mt-7 inline-grid h-14 w-14 place-items-center bg-surface-2 text-muted-foreground">
           <Clock3 className="h-6 w-6" strokeWidth={2} />
@@ -151,14 +151,14 @@ function InvalidDetailerLink() {
           <div className="mt-3 flex flex-col gap-2">
             <a
               href={`mailto:${supportContact.email}`}
-              className="press flex items-center gap-3 border border-hairline bg-surface-2 px-3.5 py-3 text-sm font-medium hover:bg-accent"
+              className="press flex items-center gap-3 rounded-xl border border-hairline bg-surface-2 px-3.5 py-3 text-sm font-medium hover:bg-accent"
             >
               <Mail className="h-4 w-4 shrink-0 text-signal-deep" strokeWidth={2.2} />
               <span className="truncate">{supportContact.email}</span>
             </a>
             <a
               href={`tel:${supportContact.phone.replace(/\s/g, "")}`}
-              className="press flex items-center gap-3 border border-hairline bg-surface-2 px-3.5 py-3 text-sm font-medium hover:bg-accent"
+              className="press flex items-center gap-3 rounded-xl border border-hairline bg-surface-2 px-3.5 py-3 text-sm font-medium hover:bg-accent"
             >
               <Phone className="h-4 w-4 shrink-0 text-signal-deep" strokeWidth={2.2} />
               {supportContact.phone}

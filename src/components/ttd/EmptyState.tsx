@@ -16,11 +16,11 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center border border-dashed border-border bg-surface px-6 py-10 text-center",
+        "flex flex-col items-center rounded-xl border border-dashed border-border bg-surface px-6 py-10 text-center",
         className,
       )}
     >
-      <span className="grid h-11 w-11 place-items-center bg-surface-2 text-muted-foreground">
+      <span className="grid h-11 w-11 place-items-center rounded-full bg-surface-2 text-muted-foreground">
         <Icon className="h-5 w-5" strokeWidth={2} />
       </span>
       <p className="mt-3 font-display text-lg font-semibold normal-case">{title}</p>

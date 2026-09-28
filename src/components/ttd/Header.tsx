@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ttd/ThemeToggle";
 
 interface TtdLogoProps {
   size?: "sm" | "md" | "lg" | "xl";
@@ -88,7 +89,10 @@ export function TtdHeader({
         ) : (
           inner
         )}
-        {right ? <div className="shrink-0">{right}</div> : <span />}
+        <div className="flex shrink-0 items-center gap-2">
+          <ThemeToggle />
+          {right}
+        </div>
       </div>
     </header>
   );

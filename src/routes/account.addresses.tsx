@@ -115,7 +115,7 @@ function AddressesPage() {
             {addresses.map((a) => (
               <div
                 key={a.id}
-                className="flex items-start gap-3 border border-hairline bg-surface p-4"
+                className="flex items-start gap-3 rounded-xl border border-hairline bg-surface p-4"
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center bg-surface-2 text-foreground">
                   <MapPin className="h-5 w-5" strokeWidth={2} />
@@ -164,7 +164,7 @@ function AddressesPage() {
         {showForm ? (
           <form
             onSubmit={handleSubmit((v) => createMutation.mutate(v))}
-            className="mt-5 flex flex-col gap-4 border border-hairline bg-surface p-5"
+            className="mt-5 flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-5"
           >
             <div>
               <span className="eyebrow block text-muted-foreground">Label</span>
@@ -178,7 +178,7 @@ function AddressesPage() {
                       {...register("label")}
                       defaultChecked={l === "Home"}
                     />
-                    <span className="flex min-h-10 items-center justify-center border border-input bg-surface-2 text-sm font-semibold peer-checked:border-signal peer-checked:bg-signal peer-checked:text-signal-foreground">
+                    <span className="flex min-h-10 items-center justify-center rounded-xl border border-input bg-surface-2 text-sm font-semibold peer-checked:border-signal peer-checked:bg-signal peer-checked:text-signal-foreground">
                       {l}
                     </span>
                   </label>

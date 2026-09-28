@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addWeeks, format, isFuture } from "date-fns";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Car, LogOut, MapPin, Sparkles, Trophy } from "lucide-react";
+import { Car, LogOut, MapPin, Sparkles } from "lucide-react";
 import { TtdHeader } from "@/components/ttd/Header";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -130,11 +130,8 @@ function AccountDashboard() {
               {vehicles.map((v) => (
                 <div
                   key={v.id}
-                  className="flex items-center gap-3 border border-hairline bg-surface p-3.5"
+                  className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-3.5"
                 >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center bg-surface-2 text-foreground">
-                    <Car className="h-5 w-5" strokeWidth={2} />
-                  </span>
                   <div className="min-w-0">
                     {vehicleDescription(v) ? (
                       <p className="truncate text-[15px] font-semibold">{vehicleDescription(v)}</p>
@@ -160,18 +157,11 @@ function AccountDashboard() {
         </Section>
 
         <Section title="TTD Rewards">
-          <div className="border border-hairline bg-surface p-4">
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center bg-signal/12 text-signal-deep">
-                <Trophy className="h-5 w-5" strokeWidth={2} />
-              </span>
-              <div>
-                <p className="font-display text-xl leading-none">{qualifyingVisits} / 7</p>
-                <p className="mt-1 text-[13px] text-muted-foreground">
-                  qualifying visits toward your next reward
-                </p>
-              </div>
-            </div>
+          <div className="rounded-xl border border-hairline bg-surface p-4">
+            <p className="font-display text-2xl leading-none">{qualifyingVisits} / 7</p>
+            <p className="mt-1.5 text-[13px] text-muted-foreground">
+              qualifying visits toward your next reward
+            </p>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
               <div
                 className="h-full rounded-full bg-signal"
@@ -191,7 +181,7 @@ function AccountDashboard() {
                     key={b.id}
                     to="/account/bookings/$id"
                     params={{ id: b.id }}
-                    className="press flex items-center justify-between gap-3 border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+                    className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-[14px] font-semibold">{b.package_name}</p>
@@ -214,7 +204,7 @@ function AccountDashboard() {
 
         {recommendedDate ? (
           <Section title="Recommended">
-            <div className="border border-signal/25 bg-signal/8 p-4">
+            <div className="rounded-xl border border-signal/25 bg-signal/8 p-4">
               <p className="text-[14px] font-semibold">
                 Maintenance detail due around {format(recommendedDate, "d MMMM")}
               </p>
@@ -261,7 +251,7 @@ function NextBookingCard({
       <Link
         to="/account/bookings/$id"
         params={{ id: booking.id }}
-        className={`press block border border-signal/30 bg-ink p-5 text-ink-foreground ${className ?? ""}`}
+        className={`press block rounded-2xl border border-signal/30 bg-ink p-5 text-ink-foreground ${className ?? ""}`}
       >
         <StatusBadge status={booking.status} size="sm" />
         <p className="mt-3 font-display text-2xl leading-tight">
@@ -281,7 +271,7 @@ function NextBookingCard({
     <Link
       to="/account/bookings/$id"
       params={{ id: booking.id }}
-      className={`press block border border-hairline bg-surface p-5 hover:bg-surface-2 ${className ?? ""}`}
+      className={`press block rounded-2xl border border-hairline bg-surface p-5 hover:bg-surface-2 ${className ?? ""}`}
     >
       <p className="eyebrow text-muted-foreground">Next mobile detail</p>
       <p className="mt-2 font-display text-2xl leading-tight">{booking.package_name}</p>

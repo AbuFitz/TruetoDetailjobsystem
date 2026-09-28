@@ -118,7 +118,7 @@ function NewBooking() {
         <section className="mt-5">
           <span className="eyebrow block text-muted-foreground">Customer</span>
           {customer ? (
-            <div className="mt-2 flex items-center justify-between border border-signal/30 bg-signal/8 p-3.5">
+            <div className="mt-2 flex items-center justify-between rounded-xl border border-signal/30 bg-signal/8 p-3.5">
               <p className="text-[14px] font-semibold">
                 {customer.first_name} {customer.last_name} · {customer.email}
               </p>
@@ -136,7 +136,7 @@ function NewBooking() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name, email or phone"
-                className="mt-2 min-h-11 w-full border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
               />
               {results && results.length > 0 ? (
                 <div className="mt-2 flex flex-col gap-1.5">
@@ -145,7 +145,7 @@ function NewBooking() {
                       key={c.id}
                       type="button"
                       onClick={() => setCustomer(c)}
-                      className="press border border-hairline bg-surface p-3 text-left text-sm hover:bg-surface-2"
+                      className="press rounded-xl border border-hairline bg-surface p-3 text-left text-sm hover:bg-surface-2"
                     >
                       {c.first_name} {c.last_name} · {c.email}
                     </button>
@@ -255,7 +255,7 @@ function NewBooking() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="mt-2 min-h-11 w-full border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                  className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
                 />
               </div>
               <div>
@@ -264,7 +264,7 @@ function NewBooking() {
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="mt-2 min-h-11 w-full border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                  className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
                 />
               </div>
             </section>
@@ -277,7 +277,7 @@ function NewBooking() {
                 value={internalNotes}
                 onChange={(e) => setInternalNotes(e.target.value)}
                 rows={2}
-                className="mt-2 w-full resize-none border border-input bg-surface-2 px-3.5 py-2.5 text-sm outline-none focus:border-signal"
+                className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-2.5 text-sm outline-none focus:border-signal"
               />
             </section>
 
@@ -286,7 +286,7 @@ function NewBooking() {
             ) : null}
 
             {submit.isError ? (
-              <p className="mt-4 flex items-start gap-2 border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] text-destructive">
+              <p className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] text-destructive">
                 <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
                 {submit.error instanceof Error
                   ? submit.error.message

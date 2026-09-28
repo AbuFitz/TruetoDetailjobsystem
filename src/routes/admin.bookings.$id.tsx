@@ -112,7 +112,7 @@ function AdminBookingDetail() {
           Dashboard
         </Link>
 
-        <section className="mt-5 border border-hairline bg-surface p-5">
+        <section className="mt-5 rounded-2xl border border-hairline bg-surface p-5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
@@ -122,7 +122,7 @@ function AdminBookingDetail() {
           </div>
 
           <VehicleCard
-            className="mt-4 border-0 bg-surface-2 p-3"
+            className="mt-4 rounded-xl border-0 bg-surface-2 p-3"
             vehicle={{
               description: booking.vehicle_description,
               registration: booking.vehicle_registration,
@@ -146,12 +146,12 @@ function AdminBookingDetail() {
           ) : null}
         </section>
 
-        <section className="mt-4 border border-hairline bg-surface p-5">
+        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
           <p className="eyebrow text-muted-foreground">Detailer</p>
           <select
             value={booking.assigned_detailer_id ?? ""}
             onChange={(e) => e.target.value && assignMutation.mutate(e.target.value)}
-            className="mt-2 min-h-11 w-full border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+            className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
           >
             <option value="">Unassigned</option>
             {(detailers ?? [])
@@ -177,7 +177,7 @@ function AdminBookingDetail() {
               placeholder="Travel time before this job (min)"
               defaultValue={booking.travel_time_minutes ?? ""}
               onChange={(e) => setTravelInput(e.target.value)}
-              className="min-h-10 flex-1 border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+              className="min-h-10 flex-1 rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
             />
             <PrimaryActionButton
               size="sm"
@@ -191,14 +191,14 @@ function AdminBookingDetail() {
         </section>
 
         {stages && stages.length > 0 ? (
-          <section className="mt-4 border border-hairline bg-surface p-5">
+          <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
             <p className="eyebrow mb-3 text-muted-foreground">Detail checklist</p>
             <StageChecklist stages={stages} />
           </section>
         ) : null}
 
         {checkIn ? (
-          <section className="mt-4 border border-hairline bg-surface p-5">
+          <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
             <p className="eyebrow mb-3 text-muted-foreground">Check-in record</p>
             <dl className="flex flex-col gap-2 text-[13px]">
               {checkIn.mileage != null ? (
@@ -268,18 +268,18 @@ function AdminBookingDetail() {
           </section>
         ) : null}
 
-        <section className="mt-4 border border-hairline bg-surface p-5">
+        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
           <p className="eyebrow text-muted-foreground">Progress</p>
           <BookingTimeline className="mt-4" steps={timelineForStatus(booking.status)} />
         </section>
 
         {booking.status !== "completed" && booking.status !== "cancelled" ? (
-          <section className="mt-4 border border-destructive/25 bg-destructive/5 p-5">
+          <section className="mt-4 rounded-2xl border border-destructive/25 bg-destructive/5 p-5">
             <p className="eyebrow text-destructive">Cancel booking</p>
             <select
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value as CancellationReason)}
-              className="mt-2 min-h-10 w-full border border-destructive/25 bg-surface px-3 text-sm outline-none"
+              className="mt-2 min-h-10 w-full rounded-xl border border-destructive/25 bg-surface px-3 text-sm outline-none"
             >
               {CANCELLATION_REASONS.map((r) => (
                 <option key={r} value={r}>
@@ -321,7 +321,7 @@ function Tile({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0 border border-hairline bg-surface-2 p-3.5">
+    <div className="min-w-0 rounded-xl border border-hairline bg-surface-2 p-3.5">
       <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
         <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
         <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-[0.04em]">

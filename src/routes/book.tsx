@@ -218,7 +218,7 @@ function BookingFlow() {
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value)}
                 placeholder="e.g. HP2 6EL"
-                className="min-h-12 flex-1 border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+                className="min-h-12 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
               />
               <PrimaryActionButton
                 className="w-auto px-6"
@@ -270,7 +270,7 @@ function BookingFlow() {
             </div>
 
             {addressChoice === "new" ? (
-              <div className="mt-4 flex flex-col gap-3 border border-hairline bg-surface p-4">
+              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-4">
                 <div className="grid grid-cols-3 gap-2">
                   {(["Home", "Work", "Other"] as const).map((l) => (
                     <button
@@ -287,13 +287,13 @@ function BookingFlow() {
                   value={newAddress.line1}
                   onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
                   placeholder="Address line 1"
-                  className="min-h-11 border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
                 />
                 <input
                   value={newAddress.city}
                   onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
                   placeholder="Town / city"
-                  className="min-h-11 border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
                 />
               </div>
             ) : null}
@@ -343,19 +343,19 @@ function BookingFlow() {
                   value={newVehicle.make}
                   onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
                   placeholder="Make"
-                  className="min-h-11 border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
                 />
                 <input
                   value={newVehicle.model}
                   onChange={(e) => setNewVehicle((s) => ({ ...s, model: e.target.value }))}
                   placeholder="Model"
-                  className="min-h-11 border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
                 />
                 <input
                   value={newVehicle.registration}
                   onChange={(e) => setNewVehicle((s) => ({ ...s, registration: e.target.value }))}
                   placeholder="Registration"
-                  className="col-span-2 min-h-11 border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
+                  className="col-span-2 min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
                 />
               </div>
             ) : null}
@@ -415,7 +415,7 @@ function BookingFlow() {
                 {DETAIL_ADDONS.map((a) => (
                   <label
                     key={a.id}
-                    className="press flex items-center justify-between border border-hairline bg-surface p-3.5"
+                    className="press flex items-center justify-between rounded-xl border border-hairline bg-surface p-3.5"
                   >
                     <span className="flex items-center gap-2.5 text-[14px] font-medium">
                       <input
@@ -452,7 +452,7 @@ function BookingFlow() {
                 value={date}
                 min={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => setDate(e.target.value)}
-                className="mt-2 min-h-12 w-full border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
+                className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
               />
             </div>
             <div className="mt-4">
@@ -478,7 +478,7 @@ function BookingFlow() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                className="mt-2 w-full resize-none border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
+                className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
               />
             </div>
             <PrimaryActionButton
@@ -494,7 +494,7 @@ function BookingFlow() {
         {step === "review" ? (
           <section>
             <h1 className="font-display text-[28px] leading-none">Confirm your booking</h1>
-            <div className="mt-5 flex flex-col gap-3 border border-hairline bg-surface p-5">
+            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-hairline bg-surface p-5">
               <SummaryRow label="Package">{selectedPackage.name}</SummaryRow>
               <SummaryRow label="Vehicle">
                 {vehicleChoice === "new"

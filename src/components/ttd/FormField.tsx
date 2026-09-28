@@ -32,7 +32,7 @@ export function Field({
         type={type}
         placeholder={placeholder}
         aria-invalid={Boolean(error)}
-        className={`mt-2 min-h-12 w-full border bg-surface-2 px-3.5 text-base font-medium outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/60 focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30 ${
+        className={`mt-2 min-h-12 w-full rounded-xl border bg-surface-2 px-3.5 text-base font-medium outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/60 focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30 ${
           error ? "border-destructive/50" : "border-input"
         } ${mono ? "font-mono" : ""} ${upper ? "uppercase tracking-wide" : ""}`}
         {...inputProps}
@@ -70,7 +70,7 @@ export function TextareaField({
         rows={rows}
         placeholder={placeholder}
         aria-invalid={Boolean(error)}
-        className={`mt-2 w-full resize-none border bg-surface-2 px-3.5 py-3 text-base font-medium outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/60 focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30 ${
+        className={`mt-2 w-full resize-none rounded-xl border bg-surface-2 px-3.5 py-3 text-base font-medium outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/60 focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30 ${
           error ? "border-destructive/50" : "border-input"
         }`}
         {...inputProps}
@@ -97,7 +97,7 @@ export function YesNoField({
         <button
           type="button"
           onClick={() => onChange(value === true ? null : true)}
-          className={`press min-h-11 border text-sm font-semibold transition-colors ${
+          className={`press min-h-11 rounded-xl border text-sm font-semibold transition-colors ${
             value === true
               ? "border-success/40 bg-success/12 text-success"
               : "border-input bg-surface-2 text-muted-foreground hover:bg-surface"
@@ -108,7 +108,7 @@ export function YesNoField({
         <button
           type="button"
           onClick={() => onChange(value === false ? null : false)}
-          className={`press min-h-11 border text-sm font-semibold transition-colors ${
+          className={`press min-h-11 rounded-xl border text-sm font-semibold transition-colors ${
             value === false
               ? "border-destructive/40 bg-destructive/10 text-destructive"
               : "border-input bg-surface-2 text-muted-foreground hover:bg-surface"

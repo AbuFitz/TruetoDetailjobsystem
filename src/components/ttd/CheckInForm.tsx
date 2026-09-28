@@ -177,7 +177,7 @@ export function CheckInForm({
       <PhotoGrid photos={photos} onChange={setPhotos} />
 
       {submitError ? (
-        <p className="flex items-start gap-2 border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
+        <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
           {submitError}
         </p>
@@ -202,7 +202,7 @@ function PhotoGrid({ photos, onChange }: { photos: File[]; onChange: (files: Fil
             onRemove={() => onChange(photos.filter((_, j) => j !== i))}
           />
         ))}
-        <label className="press flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 border border-dashed border-hairline bg-surface-2 text-muted-foreground hover:bg-surface">
+        <label className="press flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-hairline bg-surface-2 text-muted-foreground hover:bg-surface">
           <Camera className="h-5 w-5" strokeWidth={1.8} />
           <span className="text-[10px] font-semibold uppercase tracking-wide">Add</span>
           <input
@@ -226,7 +226,7 @@ function PhotoGrid({ photos, onChange }: { photos: File[]; onChange: (files: Fil
 function PhotoThumb({ file, onRemove }: { file: File; onRemove: () => void }) {
   const url = URL.createObjectURL(file);
   return (
-    <div className="relative aspect-square overflow-hidden border border-hairline">
+    <div className="relative aspect-square overflow-hidden rounded-xl border border-hairline">
       <img
         src={url}
         alt=""
