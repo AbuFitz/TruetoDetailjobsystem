@@ -10,6 +10,7 @@
 import type { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { getMyCustomerId } from "./customers";
+import { geocodePostcode } from "./postcode";
 import type { AddonId, VehicleSize } from "./constants";
 
 export type BookingStatus =
@@ -334,10 +335,20 @@ export async function updateBookingDetails(
 // ---------------------------------------------------------------------------
 
 /** Staff confirm a website request: it becomes a normal confirmed booking. */
-export async function confirmRequest(id: string): Promise<void> {
+export async function confirmRequest(id: string, postcode?: string): Promise<void> {
+  // Plot the address for the map and ETA when we can; never block confirming on it.
+  let coords: { destination_lat: number; destination_lng: number } | null = null;
+  if (postcode) {
+    try {
+      const g = await geocodePostcode(postcode);
+      coords = { destination_lat: g.lat, destination_lng: g.lng };
+    } catch {
+      coords = null;
+    }
+  }
   const { error } = await supabase
     .from(TABLE)
-    .update({ status: "confirmed" })
+    .update({ status: "confirmed", ...(coords ?? {}) })
     .eq("id", id)
     .eq("status", "requested");
   if (error) throw dbError(error, "Couldn't confirm this request.");

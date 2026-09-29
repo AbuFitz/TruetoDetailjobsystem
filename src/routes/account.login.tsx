@@ -116,7 +116,11 @@ function AccountLogin() {
         instead of a generic auth template dropped onto a blank page.
       */}
       <div className="px-6 pb-14 pt-14 sm:px-10 sm:pt-16">
-        <a href={ttdSiteLinks.website} className="press inline-block">
+        <a
+          href={ttdSiteLinks.website}
+          aria-label="True To Detail, home"
+          className="press inline-block"
+        >
           <TtdLogo size="lg" tone="light" />
         </a>
         <p className="eyebrow mt-10 text-ink-foreground/55">Your account</p>

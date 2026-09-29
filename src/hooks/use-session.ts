@@ -42,6 +42,9 @@ export function useSession(): SessionState {
 export function useRequireCustomerSession(): SessionState {
   const { session, loading } = useSession();
   const navigate = useNavigate();
+  // Stay in the loading state until the staff and temporary-password checks
+  // have finished, so the dashboard never flashes before a redirect.
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -67,14 +70,16 @@ export function useRequireCustomerSession(): SessionState {
       // the choose-your-password step until it has been changed.
       if (await mustChangePassword().catch(() => false)) {
         if (mounted) navigate({ to: "/account/welcome", replace: true });
+        return;
       }
+      if (mounted) setChecked(true);
     });
     return () => {
       mounted = false;
     };
   }, [loading, session, navigate]);
 
-  return { session, loading };
+  return { session, loading: loading || !checked };
 }
 
 interface StaffSessionState extends SessionState {

@@ -16,6 +16,7 @@ import {
   confirmRequest,
   getBookingById,
   setTravelTimeMinutes,
+  updateBookingDetails,
   CANCELLATION_REASONS,
   type CancellationReason,
 } from "@/lib/bookings";
@@ -26,6 +27,7 @@ import { formatAppointment, formatRelativeUpdate } from "@/lib/format";
 import { sendBookingEmail, type BookingEmailKind } from "@/lib/portal-email";
 import { formatDuration } from "@/lib/progress";
 import { ttdSiteLinks } from "@/lib/constants";
+import { geocodePostcode } from "@/lib/postcode";
 import { supabase } from "@/lib/supabase";
 import type { StageProgress } from "@/lib/detailers";
 
@@ -95,6 +97,8 @@ function AdminBookingDetail() {
     refetchInterval: 15_000,
   });
 
+  const [addr, setAddr] = useState({ line1: "", line2: "", city: "", postcode: "" });
+  const [addrOpen, setAddrOpen] = useState(false);
   const [emailNote, setEmailNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -109,7 +113,7 @@ function AdminBookingDetail() {
 
   const confirmMutation = useMutation({
     mutationFn: async () => {
-      await confirmRequest(id);
+      await confirmRequest(id, booking?.service_postcode);
       return sendBookingEmail(id, "booked_in");
     },
     onSuccess: (res) => {
@@ -120,6 +124,30 @@ function AdminBookingDetail() {
       );
       void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
       void queryClient.invalidateQueries({ queryKey: ["booking-notifications", id] });
+    },
+  });
+
+  const addressMutation = useMutation({
+    mutationFn: async () => {
+      const postcode = addr.postcode.trim() || booking?.service_postcode || "";
+      let coords: { destination_lat: number; destination_lng: number } | Record<string, never> = {};
+      try {
+        const g = await geocodePostcode(postcode);
+        coords = { destination_lat: g.lat, destination_lng: g.lng };
+      } catch {
+        coords = {};
+      }
+      await updateBookingDetails(id, {
+        service_address_line1: addr.line1.trim(),
+        service_address_line2: addr.line2.trim() || null,
+        service_address_city: addr.city.trim() || null,
+        service_postcode: postcode.toUpperCase(),
+        ...coords,
+      });
+    },
+    onSuccess: () => {
+      setAddrOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
     },
   });
 
@@ -164,6 +192,7 @@ function AdminBookingDetail() {
     ? `${window.location.origin}/d/${booking.detailer.link_token}`
     : null;
 
+  const needsAddress = booking.service_address_line1 === "Address to be confirmed";
   const trackUrl = `${ttdSiteLinks.website}/account/track/${booking.tracking_token}`;
   async function copyTrackLink() {
     try {
@@ -237,6 +266,23 @@ function AdminBookingDetail() {
             </Tile>
             <Tile icon={MapPin} label="Address">
               {booking.service_address_line1}, {booking.service_postcode}
+              {!needsAddress ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddr({
+                      line1: booking.service_address_line1,
+                      line2: booking.service_address_line2 ?? "",
+                      city: booking.service_address_city ?? "",
+                      postcode: booking.service_postcode,
+                    });
+                    setAddrOpen(true);
+                  }}
+                  className="mt-1 block text-[12px] font-medium text-muted-foreground underline underline-offset-2"
+                >
+                  Edit
+                </button>
+              ) : null}
             </Tile>
           </div>
 
@@ -313,6 +359,61 @@ function AdminBookingDetail() {
             ) : (
               <p className="mt-2 text-[13px] text-muted-foreground">No contact details saved.</p>
             )}
+          </section>
+        ) : null}
+
+        {needsAddress || addrOpen ? (
+          <section className="mb-4 break-inside-avoid rounded-2xl border border-warning/40 bg-warning/8 p-5">
+            <p className="eyebrow text-warning-text">
+              {needsAddress ? "Full address needed" : "Edit address"}
+            </p>
+            {needsAddress ? (
+              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                The website only asks for a postcode. Get the full address from the customer, then
+                save it here so the detailer and the customer&rsquo;s map know where to go.
+              </p>
+            ) : null}
+            <div className="mt-3 grid gap-2.5">
+              {(
+                [
+                  ["line1", "House number and street"],
+                  ["line2", "Flat or building (optional)"],
+                  ["city", "Town or city"],
+                  ["postcode", "Postcode"],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key}>
+                  <label htmlFor={`addr-${key}`} className="eyebrow block text-muted-foreground">
+                    {label}
+                  </label>
+                  <input
+                    id={`addr-${key}`}
+                    value={
+                      addr[key] ||
+                      (key === "postcode" && !addr.postcode ? booking.service_postcode : "")
+                    }
+                    onChange={(e) => setAddr((a) => ({ ...a, [key]: e.target.value }))}
+                    className="mt-1.5 min-h-11 w-full rounded-xl border border-input bg-surface px-3.5 text-sm outline-none focus:border-signal"
+                  />
+                </div>
+              ))}
+            </div>
+            {addressMutation.isError ? (
+              <p role="alert" className="mt-2 text-[13px] text-destructive">
+                {addressMutation.error instanceof Error
+                  ? addressMutation.error.message
+                  : "Couldn't save the address."}
+              </p>
+            ) : null}
+            <PrimaryActionButton
+              className="mt-3"
+              size="md"
+              loading={addressMutation.isPending}
+              disabled={!addr.line1.trim()}
+              onClick={() => addressMutation.mutate()}
+            >
+              Save address
+            </PrimaryActionButton>
           </section>
         ) : null}
 

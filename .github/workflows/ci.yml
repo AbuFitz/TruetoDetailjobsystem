@@ -28,7 +28,16 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
       - name: Build
+        # Dummy public values so the browser checks know which project the
+        # app is pointed at; the tests answer every request themselves.
+        env:
+          VITE_SUPABASE_URL: https://e2e.supabase.co
+          VITE_SUPABASE_ANON_KEY: e2e-public-key
         run: bun run build
+      - name: Browser checks
+        run: |
+          bunx playwright install --with-deps chromium
+          VITE_SUPABASE_URL=https://e2e.supabase.co bun run test:e2e
       - name: Database tests
         # ubuntu-latest ships the PostgreSQL server binaries; the script
         # starts its own temporary cluster and removes it afterwards.

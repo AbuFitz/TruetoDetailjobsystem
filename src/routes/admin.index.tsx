@@ -302,7 +302,7 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
 
   const confirm = useMutation({
     mutationFn: async () => {
-      await confirmRequest(booking.id);
+      await confirmRequest(booking.id, booking.service_postcode);
       return sendBookingEmail(booking.id, "booked_in");
     },
     onSuccess: (res) => {

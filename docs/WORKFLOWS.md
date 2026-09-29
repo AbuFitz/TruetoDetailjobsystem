@@ -28,8 +28,9 @@ flowchart TD
   B --> Q[Staff queue in the admin console]
 ```
 
-Today: the website and the quick-book popup email but store nothing, so
-staff cannot see them in the portal. Portal and staff bookings send no email.
+Website requests are stored in the portal as `requested` bookings and appear
+under "Needs confirming" in the admin console. Portal and staff bookings send
+the "you are booked in" email as soon as they are saved.
 
 ## 2. Staff handle a request
 
@@ -53,13 +54,12 @@ flowchart TD
   L[Detailer opens their personal link /d/token] --> J[Sees today's jobs and history]
   J --> SJ[Start journey: shares location]
   SJ --> EN[status: en_route, live map for the customer]
+  EN --> ETA[Phone works out the drive time, customer sees the ETA on the map]
   EN --> E1[Email: on the way + live tracking link]
   EN --> AR[Mark arrived]
-  AR --> CI[Check-in form: photos, condition, access notes]
-  CI --> IP[status: in_progress, six-stage checklist]
-  IP --> QC[Final quality check]
-  QC --> HO[Handover: customer name confirmed]
-  HO --> CO[Complete]
+  AR --> CI[Check-in from arrived: photos, existing damage, valuables]
+  CI --> IP[status: in_progress, four item checklist]
+  IP --> CO[Finish: all four ticked, optional name the car was handed to]
   CO --> E2[Email: all done, thank you + create account / rewards]
 ```
 
@@ -67,7 +67,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  M[Email link] --> T[/t/token: public tracking page/]
+  M[Email link] --> T[/account/track/token: public tracking page/]
   T --> V[Status, detailer, live map, what is included]
   T --> N{Has an account?}
   N -->|No| CA[Create your account card]
@@ -101,6 +101,26 @@ Access rules (enforced in the database, not the browser):
 - The tracking link shows one booking and nothing else.
 - Customers cannot set a price, package, status or detailer on a booking they create.
 
+## 5b. Accounts staff create (temporary password)
+
+```mermaid
+flowchart TD
+  A[Staff open the customer page] --> B{Has an account?}
+  B -->|No| C[Create account]
+  B -->|Yes| D[Reset password]
+  C --> E[Temporary password shown once, with a message to copy]
+  D --> E
+  E --> F[Customer signs in with the temporary password]
+  F --> G[Held on the choose-your-password screen]
+  G --> H[Saves their own password]
+  H --> I[Temporary password stops working, dashboard opens]
+  D -->|also| J[Customer signed out everywhere]
+```
+
+The hold is enforced by the database: the flag can only be cleared once the
+stored password differs from the temporary one, and customers cannot clear
+it themselves.
+
 ## 6. Cancel and change
 
 ```mermaid
@@ -130,7 +150,7 @@ refresh can never send it twice.
 ## Owner settings these flows depend on
 
 - Supabase Auth: Site URL `https://app.truetodetail.co.uk`, redirect URLs for
-  `/account`, `/account/reset` and `/t/*`, and a custom SMTP sender. The
+  `/account`, `/account/reset` and `/account/track/*`, and a custom SMTP sender. The
   built-in sender only delivers to your own team's addresses, so confirmation
   and reset emails to customers will not arrive without one.
 - Website (Vercel): `RESEND_API_KEY`, `BOOKING_FROM_EMAIL`,

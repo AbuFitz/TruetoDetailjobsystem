@@ -233,7 +233,7 @@ function BookingFlow() {
               value={postcode}
               onChange={(e) => setPostcode(e.target.value)}
               placeholder="e.g. HP2 6EL"
-              className="min-h-12 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+              className="min-h-12 min-w-0 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
             />
             <PrimaryActionButton
               className="w-auto px-6"
