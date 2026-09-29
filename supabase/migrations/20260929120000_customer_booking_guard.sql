@@ -225,3 +225,26 @@ update storage.buckets
 set allowed_mime_types = array['image/jpeg'],
     file_size_limit = 5 * 1024 * 1024
 where id = 'check-in-photos';
+
+-- Same function as before; only the customer-facing message changes, to
+-- drop the em dash and give the number to call.
+create or replace function public.cancel_own_booking(p_booking_id uuid, p_reason text default 'Customer cancelled')
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.bookings
+  set status = 'cancelled',
+      cancelled_at = now(),
+      cancellation_reason = left(coalesce(p_reason, 'Customer cancelled'), 500)
+  where id = p_booking_id
+    and customer_id = public.my_customer_id()
+    and status = 'confirmed';
+
+  if not found then
+    raise exception 'This booking can''t be cancelled online any more. Please call or WhatsApp us on 07359 591800.';
+  end if;
+end;
+$$;

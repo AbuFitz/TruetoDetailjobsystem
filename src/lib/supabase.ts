@@ -20,7 +20,7 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 if (!isSupabaseConfigured && typeof window !== "undefined") {
   console.warn(
     "[True To Detail] Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY. Copy .env.example to " +
-      ".env.local and fill them in — see the README for setup steps.",
+      ".env.local and fill them in. See the README for setup steps.",
   );
 }
 

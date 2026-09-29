@@ -73,6 +73,21 @@ begin
   end loop;
 end $$;
 
+-- Cancelling: own confirmed booking works; anything else gets a friendly message.
+do $$
+declare v_id uuid;
+begin
+  select id into v_id from public.bookings where price = 345;
+  perform public.cancel_own_booking(v_id, 'Change of plans');
+  insert into results select 'a customer can cancel their own confirmed booking', status = 'cancelled', status from public.bookings where id = v_id;
+  begin
+    perform public.cancel_own_booking(v_id);
+    insert into results values ('cancelling twice is refused', false, 'allowed');
+  exception when others then
+    insert into results values ('cancelling twice is refused with a friendly message', sqlerrm not like '%—%' and sqlerrm like '%07359 591800%', sqlerrm);
+  end;
+end $$;
+
 -- Staff keep full control, including custom prices and assigning up front.
 reset role;
 set local role authenticated;
