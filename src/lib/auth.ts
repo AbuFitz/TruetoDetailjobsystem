@@ -61,6 +61,11 @@ export async function signIn(email: string, password: string): Promise<void> {
   markSignedIn();
 }
 
+export async function updateMyPassword(password: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw new Error(error.message, { cause: error });
+}
+
 export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
 }

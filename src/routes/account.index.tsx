@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addWeeks, format, isFuture } from "date-fns";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarPlus, Car, ChevronRight, LogOut, MapPin, Sparkles } from "lucide-react";
+import { CalendarPlus, Car, ChevronRight, LogOut, MapPin, Sparkles, UserRound } from "lucide-react";
 import { TtdHeader } from "@/components/ttd/Header";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -180,12 +180,13 @@ function AccountDashboard() {
           </Section>
         ) : null}
 
-        <nav aria-label="Account" className="mt-6 grid grid-cols-3 gap-2">
+        <nav aria-label="Account" className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {(
             [
               { to: "/book", label: "Book a detail", icon: CalendarPlus },
               { to: "/account/vehicles", label: "Your garage", icon: Car },
               { to: "/account/addresses", label: "Addresses", icon: MapPin },
+              { to: "/account/details", label: "Your details", icon: UserRound },
             ] as const
           ).map(({ to, label, icon: Icon }) => (
             <Link

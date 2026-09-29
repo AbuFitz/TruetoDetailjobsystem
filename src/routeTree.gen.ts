@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as AccountAddressesRouteImport } from './routes/account.addresses'
+import { Route as AccountDetailsRouteImport } from './routes/account.details'
 import { Route as AccountLoginRouteImport } from './routes/account.login'
 import { Route as AccountVehiclesRouteImport } from './routes/account.vehicles'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -46,6 +47,11 @@ const AccountIndexRoute = AccountIndexRouteImport.update({
 const AccountAddressesRoute = AccountAddressesRouteImport.update({
   id: '/account/addresses',
   path: '/account/addresses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountDetailsRoute = AccountDetailsRouteImport.update({
+  id: '/account/details',
+  path: '/account/details',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountLoginRoute = AccountLoginRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
   '/account/addresses': typeof AccountAddressesRoute
+  '/account/details': typeof AccountDetailsRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
   '/admin/customers': typeof AdminCustomersRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
   '/account/addresses': typeof AccountAddressesRoute
+  '/account/details': typeof AccountDetailsRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
   '/admin/customers': typeof AdminCustomersRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
   '/account/addresses': typeof AccountAddressesRoute
+  '/account/details': typeof AccountDetailsRoute
   '/account/login': typeof AccountLoginRoute
   '/account/vehicles': typeof AccountVehiclesRoute
   '/admin/customers': typeof AdminCustomersRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/'
     | '/book'
     | '/account/addresses'
+    | '/account/details'
     | '/account/login'
     | '/account/vehicles'
     | '/admin/customers'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/book'
     | '/account/addresses'
+    | '/account/details'
     | '/account/login'
     | '/account/vehicles'
     | '/admin/customers'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/'
     | '/book'
     | '/account/addresses'
+    | '/account/details'
     | '/account/login'
     | '/account/vehicles'
     | '/admin/customers'
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BookRoute: typeof BookRoute
   AccountAddressesRoute: typeof AccountAddressesRoute
+  AccountDetailsRoute: typeof AccountDetailsRoute
   AccountLoginRoute: typeof AccountLoginRoute
   AccountVehiclesRoute: typeof AccountVehiclesRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       path: '/account/addresses'
       fullPath: '/account/addresses'
       preLoaderRoute: typeof AccountAddressesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/details': {
+      id: '/account/details'
+      path: '/account/details'
+      fullPath: '/account/details'
+      preLoaderRoute: typeof AccountDetailsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/login': {
@@ -399,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookRoute: BookRoute,
   AccountAddressesRoute: AccountAddressesRoute,
+  AccountDetailsRoute: AccountDetailsRoute,
   AccountLoginRoute: AccountLoginRoute,
   AccountVehiclesRoute: AccountVehiclesRoute,
   AdminCustomersRoute: AdminCustomersRoute,

@@ -7,7 +7,7 @@ import { PlateTag } from "@/components/ttd/VehicleTag";
 import { EmptyState } from "@/components/ttd/EmptyState";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { formatAppointment, formatCountdownToAppointment } from "@/lib/format";
-import { getDetailerJobs, getDetailerProfile } from "@/lib/detailers";
+import { getDetailerJobHistory, getDetailerJobs, getDetailerProfile } from "@/lib/detailers";
 import { supportContact } from "@/lib/constants";
 
 export const Route = createFileRoute("/d/$token")({
@@ -42,6 +42,12 @@ function DetailerQueue() {
     enabled: Boolean(profile),
   });
 
+  const { data: history } = useQuery({
+    queryKey: ["detailer-history", token],
+    queryFn: () => getDetailerJobHistory(token),
+    enabled: Boolean(profile),
+  });
+
   if (profileLoading) {
     return (
       <main className="min-h-screen bg-background">
@@ -60,13 +66,14 @@ function DetailerQueue() {
 
   return (
     <main className="min-h-screen bg-background pb-10">
-      <header className="border-b border-hairline bg-background/85 px-5 py-5 backdrop-blur-xl sm:px-6">
+      <header className="border-b border-white/10 bg-ink px-5 py-5 text-ink-foreground sm:px-6">
         <div className="mx-auto w-full max-w-md sm:max-w-lg">
-          <TtdLogo />
-          <h1 className="mt-3 font-display text-[28px] leading-none">
-            Hi {profile.name.split(" ")[0]},
+          <TtdLogo tone="light" />
+          <h1 className="mt-5 font-display text-[34px] leading-none">
+            HI {profile.name.split(" ")[0]?.toUpperCase()}
+            <span className="text-signal">.</span>
           </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">Your assigned jobs</p>
+          <p className="mt-1.5 text-sm text-ink-foreground/50">Your assigned jobs</p>
         </div>
       </header>
 
@@ -129,6 +136,33 @@ function DetailerQueue() {
             description="Jobs assigned to you will show up here as soon as they're created."
           />
         )}
+
+        {history && history.length > 0 ? (
+          <section className="mt-8">
+            <p className="eyebrow text-muted-foreground">Recent jobs</p>
+            <div className="mt-3 flex flex-col gap-2">
+              {history.map((h) => {
+                const { dayLabel } = formatAppointment(h.scheduled_start);
+                return (
+                  <div
+                    key={h.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="mono-ref text-muted-foreground">{h.booking_reference}</p>
+                      <p className="mt-0.5 truncate text-[13px] font-medium">
+                        {h.vehicle_description ? `${h.vehicle_description} · ` : ""}
+                        {h.vehicle_registration}
+                      </p>
+                      <p className="text-[12px] text-muted-foreground">{dayLabel}</p>
+                    </div>
+                    <StatusBadge status={h.status} size="sm" />
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
       </div>
     </main>
   );

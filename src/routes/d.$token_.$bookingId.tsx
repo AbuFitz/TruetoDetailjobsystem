@@ -160,9 +160,9 @@ function DetailerJob() {
 
   return (
     <main className="min-h-screen bg-background pb-10">
-      <header className="border-b border-hairline bg-background/85 px-5 py-5 backdrop-blur-xl sm:px-6">
+      <header className="border-b border-white/10 bg-ink px-5 py-5 text-ink-foreground sm:px-6">
         <div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 sm:max-w-lg">
-          <TtdLogo />
+          <TtdLogo tone="light" />
           {profile?.photo_url ? (
             <img
               src={profile.photo_url}
@@ -215,7 +215,7 @@ function DetailerJob() {
             href={navigationUrlFor(job)}
             target="_blank"
             rel="noopener noreferrer"
-            className="press mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 border border-hairline bg-surface-2 font-sans text-[13px] font-bold uppercase tracking-[0.1em] hover:bg-surface"
+            className="press mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-2 font-sans text-[13px] font-bold uppercase tracking-[0.1em] hover:bg-surface"
           >
             <Navigation className="h-4 w-4" strokeWidth={2.4} />
             Start navigation
