@@ -15,13 +15,11 @@ function applyTheme(theme: Theme) {
  * the user flip it.
  */
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() =>
-    typeof document === "undefined"
-      ? "light"
-      : document.documentElement.classList.contains("dark")
-        ? "dark"
-        : "light",
-  );
+  // Always start as "light", which is what the server rendered; reading the
+  // class here made the first client render disagree with the server HTML
+  // for anyone who'd chosen dark mode (React hydration error #418). The
+  // effect below picks up the real theme straight after mount.
+  const [theme, setThemeState] = useState<Theme>("light");
 
   useEffect(() => {
     setThemeState(document.documentElement.classList.contains("dark") ? "dark" : "light");

@@ -65,7 +65,7 @@ export function TtdHeader({
   const inner = (
     <div className="flex min-w-0 flex-col gap-1">
       <TtdLogo tone="light" />
-      {eyebrow ? <span className="eyebrow pl-0 text-ink-foreground/40">{eyebrow}</span> : null}
+      {eyebrow ? <span className="eyebrow pl-0 text-ink-foreground/55">{eyebrow}</span> : null}
     </div>
   );
 

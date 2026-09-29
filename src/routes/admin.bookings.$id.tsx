@@ -221,8 +221,11 @@ function AdminBookingDetail() {
         ) : null}
 
         <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
-          <p className="eyebrow text-muted-foreground">Detailer</p>
+          <label htmlFor="assign-detailer" className="eyebrow block text-muted-foreground">
+            Detailer
+          </label>
           <select
+            id="assign-detailer"
             value={booking.assigned_detailer_id ?? ""}
             onChange={(e) => e.target.value && assignMutation.mutate(e.target.value)}
             className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
@@ -353,8 +356,11 @@ function AdminBookingDetail() {
 
         {booking.status !== "completed" && booking.status !== "cancelled" ? (
           <section className="mt-4 rounded-2xl border border-destructive/25 bg-destructive/5 p-5">
-            <p className="eyebrow text-destructive">Cancel booking</p>
+            <label htmlFor="cancel-reason" className="eyebrow block text-destructive">
+              Cancel booking
+            </label>
             <select
+              id="cancel-reason"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value as CancellationReason)}
               className="mt-2 min-h-10 w-full rounded-xl border border-destructive/25 bg-surface px-3 text-sm outline-none"

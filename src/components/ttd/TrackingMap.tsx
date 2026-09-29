@@ -241,7 +241,7 @@ export function TrackingMap({
   return (
     <div
       className={cn("relative overflow-hidden rounded-2xl border border-hairline", className)}
-      role="img"
+      role="region"
       aria-label="Map showing your detailer's current location and your address"
     >
       <div ref={containerRef} className="h-full w-full" />

@@ -211,7 +211,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
         <div className="flex-shrink-0 bg-ink px-8 pb-5 pt-6 text-ink-foreground">
           <div className="mb-5 flex items-start justify-between">
             <div>
-              <p className="eyebrow text-ink-foreground/30">
+              <p className="eyebrow text-ink-foreground/55">
                 {view === "success" || view === "account" || view === "account-done"
                   ? "Booking Requested"
                   : "Mobile Detailing · Hertfordshire"}
@@ -403,7 +403,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
 
               <div className="flex items-center justify-between rounded-xl bg-ink px-6 py-5 text-ink-foreground">
                 <div>
-                  <p className="eyebrow mb-1 text-ink-foreground/30">
+                  <p className="eyebrow mb-1 text-ink-foreground/55">
                     {totalPrice !== null ? "Your Price" : "Price Range"}
                   </p>
                   <span className="font-display text-[36px] leading-none">

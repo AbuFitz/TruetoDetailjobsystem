@@ -128,7 +128,7 @@ function BookingDetail() {
 
           {booking.status === "en_route" ? (
             <p
-              className={`mt-3 text-[14px] font-medium ${etaStatus ? (etaStatus.tone === "on-track" ? "text-success" : "text-warning-foreground") : schedule.tone === "on-track" ? "text-success" : "text-muted-foreground"}`}
+              className={`mt-3 text-[14px] font-medium ${etaStatus ? (etaStatus.tone === "on-track" ? "text-success" : "text-warning-text") : schedule.tone === "on-track" ? "text-success" : "text-muted-foreground"}`}
             >
               {etaStatus ? etaStatus.label : schedule.label}
             </p>

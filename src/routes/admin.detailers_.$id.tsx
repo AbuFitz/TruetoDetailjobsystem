@@ -108,6 +108,7 @@ function EditDetailer() {
           <button
             type="button"
             onClick={() => copy(link)}
+            aria-label={copied ? "Link copied" : "Copy detailer link"}
             className="press grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-hairline"
           >
             {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}

@@ -66,7 +66,7 @@ export function AdminBookingCard({
             </span>
           </div>
         ) : (
-          <p className="mt-3 text-[13px] font-medium text-warning-foreground">Unassigned</p>
+          <p className="mt-3 text-[13px] font-medium text-warning-text">Unassigned</p>
         )}
 
         <div className="mt-4 flex gap-2">
