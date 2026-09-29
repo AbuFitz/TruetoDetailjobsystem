@@ -530,3 +530,27 @@ test("phone: the signed-in booking page guides from vehicle to size to package",
   // In the upper part of the screen, not left at the bottom edge.
   expect((await topOf(page, addons))!).toBeLessThan(490);
 });
+
+test("phone: the staff tab bar stays on one row and booking titles are not cut off", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await fakeSupabase(page.context(), { staff: true });
+  await page.context().addCookies([sessionCookie]);
+  await page.goto("/admin", { waitUntil: "networkidle" });
+  const tops = await page
+    .locator("nav[aria-label='Quick links'] a")
+    .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+  expect(tops).toHaveLength(5);
+  expect(new Set(tops).size, "all five tabs share one row").toBe(1);
+  const cut = await page
+    .locator("article p.font-display")
+    .evaluateAll(
+      (els) =>
+        els.filter(
+          (e) =>
+            e.scrollWidth > e.clientWidth + 1 || getComputedStyle(e).textOverflow === "ellipsis",
+        ).length,
+    );
+  expect(cut, "no booking title is truncated").toBe(0);
+});

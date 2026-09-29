@@ -28,15 +28,13 @@ export function AdminBookingCard({
       )}
 
       <div className="p-4 pl-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-          <div className="min-w-0">
-            <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
-            <p className="mt-1 truncate font-display text-[26px] leading-none">
-              {booking.package_name}
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="mono-ref min-w-0 truncate text-muted-foreground">
+            {booking.booking_reference}
+          </p>
           <StatusBadge status={booking.status} size="sm" />
         </div>
+        <p className="mt-2 font-display text-[26px] leading-[1.02]">{booking.package_name}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
           {booking.vehicle_description ? (

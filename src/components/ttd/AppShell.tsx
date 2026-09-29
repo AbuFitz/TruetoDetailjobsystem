@@ -244,10 +244,7 @@ export function AppShell({
         className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
         <ul
-          className={cn(
-            "mx-auto grid max-w-lg",
-            area === "admin" ? " grid-cols-4" : " grid-cols-4",
-          )}
+          className={cn("mx-auto grid max-w-lg", area === "admin" ? "grid-cols-5" : "grid-cols-4")}
         >
           {tabs.map((item) => {
             const active = isActive(path, item);

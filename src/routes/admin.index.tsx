@@ -178,7 +178,8 @@ function AdminDashboard() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by reference, reg, postcode or detailer"
+            placeholder="Search bookings"
+            aria-label="Search by reference, reg, postcode or detailer"
             className="min-h-11 w-full rounded-xl border border-hairline bg-surface-2 pl-10 pr-9 text-base outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
           />
           {query ? (
