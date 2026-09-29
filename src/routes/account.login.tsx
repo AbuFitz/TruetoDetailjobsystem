@@ -30,7 +30,10 @@ function LoginField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/60">
+      <label
+        htmlFor={id}
+        className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/60"
+      >
         {label}
       </label>
       <input

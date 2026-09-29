@@ -224,24 +224,18 @@ function CustomerDetail() {
             <div className="flex flex-col gap-2 text-[13px]">
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">Phone</span>
-                <span className="font-medium text-foreground">
-                  {customer.phone || "Not given"}
-                </span>
+                <span className="font-medium text-foreground">{customer.phone || "Not given"}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">Email</span>
-                <span className="font-medium text-foreground">
-                  {customer.email || "Not given"}
-                </span>
+                <span className="font-medium text-foreground">{customer.email || "Not given"}</span>
               </div>
             </div>
           )}
         </div>
 
         {/* Vehicles */}
-        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">
-          Vehicles
-        </h2>
+        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">Vehicles</h2>
         {vehicles && vehicles.length > 0 ? (
           <div className="mt-2.5 flex flex-col gap-2">
             {vehicles.map((v) => (
@@ -261,9 +255,7 @@ function CustomerDetail() {
         )}
 
         {/* Addresses */}
-        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">
-          Addresses
-        </h2>
+        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">Addresses</h2>
         {addresses && addresses.length > 0 ? (
           <div className="mt-2.5 flex flex-col gap-2">
             {addresses.map((a) => (
@@ -280,9 +272,7 @@ function CustomerDetail() {
         )}
 
         {/* Booking history */}
-        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">
-          Booking history
-        </h2>
+        <h2 className="eyebrow mt-7 font-sans text-muted-foreground">Booking history</h2>
         {bookings && bookings.length > 0 ? (
           <div className="mt-2.5 flex flex-col gap-2">
             {bookings.map((b) => {

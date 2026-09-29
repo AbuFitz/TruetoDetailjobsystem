@@ -73,9 +73,7 @@ export function TtdHeader({
     // Solid ink black, matching the main site's own navbar exactly — not a
     // translucent/blurred bar over the page background, which is what this
     // used to be before the portals switched to the same dark nav treatment.
-    <header
-      className={cn("sticky top-0 z-30 border-b border-white/10 bg-ink", className)}
-    >
+    <header className={cn("sticky top-0 z-30 border-b border-white/10 bg-ink", className)}>
       <div
         className={cn(
           "mx-auto grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 sm:px-6",

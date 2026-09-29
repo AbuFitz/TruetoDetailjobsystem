@@ -27,7 +27,12 @@ export function DetailerCard({
   const subtitleLine = [detailer.role, subtitle].filter(Boolean).join(" · ");
 
   return (
-    <div className={cn("flex flex-col gap-3.5 rounded-2xl border border-hairline bg-surface p-3.5", className)}>
+    <div
+      className={cn(
+        "flex flex-col gap-3.5 rounded-2xl border border-hairline bg-surface p-3.5",
+        className,
+      )}
+    >
       <div className="flex items-start gap-3.5">
         <div className="relative shrink-0">
           <Avatar name={detailer.name} photoUrl={photoUrl} />

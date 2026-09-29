@@ -62,38 +62,44 @@ function AccountDashboard() {
     enabled: Boolean(session),
   });
 
-  const { liveBooking, nextBooking, otherUpcoming, previousBookings, qualifyingVisits, recommendedDate } =
-    useMemo(() => {
-      const all = bookings ?? [];
-      const live = all.find((b) => LIVE_JOB_STATUSES.includes(b.status)) ?? null;
-      const upcoming = all
-        .filter((b) => b.status === "confirmed" || b.status === "assigned")
-        .sort(
-          (a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime(),
-        );
-      const previous = all
-        .filter((b) => b.status === "completed")
-        .sort(
-          (a, b) => new Date(b.scheduled_start).getTime() - new Date(a.scheduled_start).getTime(),
-        );
-      const visits = previous.length;
-      const lastCompleted = previous[0];
-      const recommended = lastCompleted
-        ? addWeeks(new Date(lastCompleted.scheduled_start), MAINTENANCE_DETAIL_INTERVAL_WEEKS)
-        : null;
-      const next = live ?? upcoming[0] ?? null;
-      return {
-        liveBooking: live,
-        nextBooking: next,
-        // Every other future booking. Only one gets the big card, so without
-        // this list a second upcoming detail was invisible on the dashboard.
-        otherUpcoming: upcoming.filter((b) => b.id !== next?.id),
-        previousBookings: previous.slice(0, 5),
-        qualifyingVisits: visits,
-        // No "you're due" nudge when a detail is already booked.
-        recommendedDate: live || upcoming.length > 0 ? null : recommended,
-      };
-    }, [bookings]);
+  const {
+    liveBooking,
+    nextBooking,
+    otherUpcoming,
+    previousBookings,
+    qualifyingVisits,
+    recommendedDate,
+  } = useMemo(() => {
+    const all = bookings ?? [];
+    const live = all.find((b) => LIVE_JOB_STATUSES.includes(b.status)) ?? null;
+    const upcoming = all
+      .filter((b) => b.status === "confirmed" || b.status === "assigned")
+      .sort(
+        (a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime(),
+      );
+    const previous = all
+      .filter((b) => b.status === "completed")
+      .sort(
+        (a, b) => new Date(b.scheduled_start).getTime() - new Date(a.scheduled_start).getTime(),
+      );
+    const visits = previous.length;
+    const lastCompleted = previous[0];
+    const recommended = lastCompleted
+      ? addWeeks(new Date(lastCompleted.scheduled_start), MAINTENANCE_DETAIL_INTERVAL_WEEKS)
+      : null;
+    const next = live ?? upcoming[0] ?? null;
+    return {
+      liveBooking: live,
+      nextBooking: next,
+      // Every other future booking. Only one gets the big card, so without
+      // this list a second upcoming detail was invisible on the dashboard.
+      otherUpcoming: upcoming.filter((b) => b.id !== next?.id),
+      previousBookings: previous.slice(0, 5),
+      qualifyingVisits: visits,
+      // No "you're due" nudge when a detail is already booked.
+      recommendedDate: live || upcoming.length > 0 ? null : recommended,
+    };
+  }, [bookings]);
 
   if (authLoading || !session) {
     return (
@@ -197,7 +203,10 @@ function AccountDashboard() {
               <Icon className="h-5 w-5 text-signal" strokeWidth={2.2} />
               <span className="flex w-full items-center justify-between gap-1 text-[13px] font-semibold leading-tight">
                 {label}
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={2.4} />
+                <ChevronRight
+                  className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                  strokeWidth={2.4}
+                />
               </span>
             </Link>
           ))}
@@ -303,7 +312,6 @@ function AccountDashboard() {
             </div>
           </Section>
         ) : null}
-
       </div>
     </main>
   );

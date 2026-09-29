@@ -42,7 +42,9 @@ describe("arrival and schedule status", () => {
   test("schedule status escalates only after the grace window", () => {
     const at = (min: number) => new Date(appt).getTime() + min * 60 * 1000;
     expect(getScheduleStatus(appt, "9:30 AM", at(5)).tone).toBe("on-track");
-    expect(getScheduleStatus(appt, "9:30 AM", at(20)).label).toBe("Running a little behind schedule");
+    expect(getScheduleStatus(appt, "9:30 AM", at(20)).label).toBe(
+      "Running a little behind schedule",
+    );
     expect(getScheduleStatus(appt, "9:30 AM", at(60)).label).toBe(
       "Running well behind schedule. Thanks for your patience.",
     );
@@ -57,7 +59,16 @@ describe("arrival and schedule status", () => {
 
   test("ordinals", () => {
     expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23].map(ordinal)).toEqual([
-      "1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "23rd",
+      "1st",
+      "2nd",
+      "3rd",
+      "4th",
+      "11th",
+      "12th",
+      "13th",
+      "21st",
+      "22nd",
+      "23rd",
     ]);
   });
 });

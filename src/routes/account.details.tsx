@@ -122,7 +122,11 @@ function DetailsPage() {
                 validate: (v) => v.trim().length > 0 || "Enter your first name.",
               })}
             />
-            <Field id="last_name" label="Last name" inputProps={profileForm.register("last_name")} />
+            <Field
+              id="last_name"
+              label="Last name"
+              inputProps={profileForm.register("last_name")}
+            />
           </div>
           <Field
             id="phone"
@@ -130,7 +134,8 @@ function DetailsPage() {
             type="tel"
             error={pErrors.phone?.message}
             inputProps={profileForm.register("phone", {
-              validate: (v) => !v.trim() || PHONE_RE.test(v.trim()) || "Enter a valid phone number.",
+              validate: (v) =>
+                !v.trim() || PHONE_RE.test(v.trim()) || "Enter a valid phone number.",
             })}
           />
           <div>
