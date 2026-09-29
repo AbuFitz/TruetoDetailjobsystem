@@ -9,7 +9,13 @@ import {
   VEHICLE_SIZE_LABELS,
   type VehicleSize,
 } from "@/lib/constants";
-import { TIME_SLOTS, formatBookingDate, isSlotAvailable, ukNow } from "@/lib/slots";
+import {
+  TIME_SLOTS,
+  formatBookingDate,
+  formatShortDate,
+  isSlotAvailable,
+  ukNow,
+} from "@/lib/slots";
 
 // Same lead-capture endpoint the main site's own booking popup posts to —
 // this app has no separate booking backend for an anonymous, not-yet-signed-in
@@ -576,7 +582,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                       ["Reg", carReg || "Not set"],
                       [
                         "Date & Time",
-                        date && time ? `${formatBookingDate(date)} · ${time}` : "Not set",
+                        date && time ? `${formatShortDate(date)} · ${time}` : "Not set",
                       ],
                       ["Postcode", postcode || "Not set"],
                     ] as [string, string][]

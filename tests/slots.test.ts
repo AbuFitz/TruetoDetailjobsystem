@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   firstAvailableSlot,
   formatBookingDate,
+  formatShortDate,
   isSlotAvailable,
   slotMinutes,
   ukNow,
@@ -73,4 +74,5 @@ describe("ukSlotToIso", () => {
 test("dates read naturally", () => {
   expect(formatBookingDate("2026-10-10")).toBe("Saturday 10 October 2026");
   expect(formatBookingDate("bad")).toBe("bad");
+  expect(formatShortDate("2026-10-10")).toBe("Sat 10 Oct");
 });

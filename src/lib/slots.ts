@@ -99,3 +99,16 @@ export function formatBookingDate(date: string): string {
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   return `${get("weekday")} ${get("day")} ${get("month")} ${get("year")}`;
 }
+
+/** "2026-10-10" -> "Sat 10 Oct", for tight summary rows. */
+export function formatShortDate(date: string): string {
+  if (!DATE_RE.test(date)) return date;
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).formatToParts(new Date(`${date}T00:00:00Z`));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("weekday")} ${get("day")} ${get("month")}`;
+}
