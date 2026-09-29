@@ -1,0 +1,35 @@
+# Runs the same checks a contributor runs locally on every push and pull
+# request. Checks only: nothing here deploys or touches the Supabase
+# project. The database tests use a throwaway local Postgres on the runner.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+      - run: bun install --frozen-lockfile
+      - name: Tests
+        run: bun run test
+      - name: Lint
+        run: bun run lint
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Build
+        run: bun run build
+      - name: Database tests
+        # ubuntu-latest ships the PostgreSQL server binaries; the script
+        # starts its own temporary cluster and removes it afterwards.
+        run: bun run test:db
