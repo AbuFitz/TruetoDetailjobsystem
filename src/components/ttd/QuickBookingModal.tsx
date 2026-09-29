@@ -616,14 +616,15 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
               <p className="mx-auto mb-7 max-w-[340px] text-[15px] leading-relaxed text-muted-foreground">
                 We&rsquo;ll be in touch as soon as possible to confirm your slot on{" "}
                 <strong className="text-foreground">{formatBookingDate(date)}</strong> at{" "}
-                <strong className="text-foreground">{time}</strong>.
+                <strong className="text-foreground">{time}</strong>. A confirmation with a link to
+                follow your booking is on its way to your inbox.
               </p>
 
               <div className="rounded-xl border border-hairline bg-surface-2 p-6 text-left">
                 <p className="eyebrow mb-1 text-muted-foreground">Want to track this booking?</p>
                 <p className="mb-4 text-[13px] leading-relaxed text-muted-foreground">
-                  Set up an account with the details you just gave us and you&rsquo;ll be able to
-                  see your booking status, message us, and earn TTD Rewards on future details.
+                  Set up an account with the details you just gave us to keep your cars and address
+                  saved, rebook in two taps and earn TTD Rewards on future details.
                 </p>
                 <PrimaryActionButton type="button" onClick={() => setView("account")}>
                   Set up my account

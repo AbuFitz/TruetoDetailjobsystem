@@ -23,7 +23,7 @@ interface Props {
  */
 export function PortalAccessCard({ customer }: Props) {
   const queryClient = useQueryClient();
-  const [creds, setCreds] = useState<TempCredentials | null>(null);
+  const [creds, setCreds] = useState<(TempCredentials & { wasReset: boolean }) | null>(null);
   const [custom, setCustom] = useState("");
   const [showCustom, setShowCustom] = useState(false);
   const [copied, setCopied] = useState<"pw" | "msg" | null>(null);
@@ -37,7 +37,7 @@ export function PortalAccessCard({ customer }: Props) {
         : createCustomerAccount(customer.id, pw);
     },
     onSuccess: (data) => {
-      setCreds(data);
+      setCreds({ ...data, wasReset: hasAccount });
       setCustom("");
       void queryClient.invalidateQueries({ queryKey: ["admin-customer", customer.id] });
       void queryClient.invalidateQueries({ queryKey: ["customer", customer.id] });
@@ -45,7 +45,7 @@ export function PortalAccessCard({ customer }: Props) {
   });
 
   const message = creds
-    ? `Hi ${customer.first_name}, your True To Detail account is ready.\n\nSign in: ${ttdSiteLinks.website}/account\nEmail: ${creds.email}\nTemporary password: ${creds.temp_password}\n\nYou will be asked to choose your own password when you first sign in.`
+    ? `Hi ${customer.first_name}, ${creds.wasReset ? "your True To Detail password has been reset" : "your True To Detail account is ready"}.\n\nSign in: ${ttdSiteLinks.website}/account\nEmail: ${creds.email}\nTemporary password: ${creds.temp_password}\n\nYou will be asked to choose your own password when you first sign in.`
     : "";
 
   async function copy(text: string, which: "pw" | "msg") {
@@ -150,7 +150,7 @@ export function PortalAccessCard({ customer }: Props) {
       ) : (
         <div className="mt-4 rounded-xl border border-signal/30 bg-signal/8 p-4">
           <p className="text-[13px] font-semibold">
-            {hasAccount ? "Password reset." : "Account created."} Give them these details. The
+            {creds.wasReset ? "Password reset." : "Account created."} Give them these details. The
             password is shown only now.
           </p>
           <dl className="mt-3 grid gap-2 text-[14px]">
