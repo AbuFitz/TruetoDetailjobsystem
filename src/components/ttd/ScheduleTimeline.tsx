@@ -40,7 +40,7 @@ export function ScheduleTimeline({
               className="press flex items-start gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
             >
               <div className="w-[74px] shrink-0 pt-0.5 text-right">
-                <p className="font-display text-base font-bold leading-none">
+                <p className="font-display text-base leading-none">
                   {format(start, "HH:mm", { in: UK_TIME })}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
@@ -49,7 +49,7 @@ export function ScheduleTimeline({
               </div>
               <div className="min-w-0 flex-1 border-l border-hairline pl-3.5">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="truncate font-display text-[15px] font-bold leading-tight">
+                  <p className="truncate font-display text-[15px] leading-tight">
                     {booking.package_name}
                   </p>
                   <StatusBadge status={booking.status} size="sm" />

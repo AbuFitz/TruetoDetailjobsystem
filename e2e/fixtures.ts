@@ -210,6 +210,22 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
         },
       });
     }
+    if (p.endsWith("/auth/v1/signup")) {
+      const body = JSON.parse(req.postData() ?? "{}") as { email?: string };
+      // Like Supabase: an email that already has an account gets a success with no identities.
+      const exists = (body.email ?? "").startsWith("exists");
+      return json({
+        id: "33333333-3333-4333-8333-333333333333",
+        aud: "authenticated",
+        role: "",
+        email: body.email,
+        identities: exists ? [] : [{ identity_id: "i1", provider: "email" }],
+        created_at: iso(now),
+        app_metadata: {},
+        user_metadata: {},
+      });
+    }
+    if (p.endsWith("/auth/v1/resend")) return json({});
     if (p.endsWith("/auth/v1/user")) return json(user);
     if (p.endsWith("/rpc/is_staff")) return json(Boolean(opts.staff));
     if (p.endsWith("/rpc/get_tracked_booking"))

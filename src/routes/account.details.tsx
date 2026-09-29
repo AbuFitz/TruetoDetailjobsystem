@@ -101,7 +101,7 @@ function DetailsPage() {
           YOUR DETAILS<span className="text-signal">.</span>
         </>
       }
-      back={{ to: "/account", label: "Your account" }}
+      back={{ to: "/account/settings", label: "Settings" }}
     >
       <form
         onSubmit={profileForm.handleSubmit((v) => {
@@ -154,50 +154,6 @@ function DetailsPage() {
           ) : (
             "Save details"
           )}
-        </PrimaryActionButton>
-      </form>
-
-      <form
-        onSubmit={passwordForm.handleSubmit((v) => {
-          setPasswordSaved(false);
-          passwordMutation.mutate(v);
-        })}
-        className="mt-4 flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-5"
-      >
-        <p className="eyebrow text-muted-foreground">Change password</p>
-        <Field
-          id="password"
-          label="New password"
-          type="password"
-          error={pwErrors.password?.message}
-          inputProps={passwordForm.register("password", {
-            minLength: { value: 6, message: "Use at least 6 characters." },
-            required: "Enter a new password.",
-          })}
-        />
-        <Field
-          id="confirm"
-          label="Confirm new password"
-          type="password"
-          error={pwErrors.confirm?.message}
-          inputProps={passwordForm.register("confirm", {
-            validate: (v) => v === passwordForm.getValues("password") || "Passwords don't match.",
-          })}
-        />
-        {passwordMutation.isError ? (
-          <p className="text-[13px] text-destructive">
-            {passwordMutation.error instanceof Error
-              ? passwordMutation.error.message
-              : "Couldn't change your password."}
-          </p>
-        ) : null}
-        {passwordSaved ? (
-          <p className="flex items-center gap-1.5 text-[13px] font-medium text-success">
-            <Check className="h-4 w-4" strokeWidth={2.6} /> Password updated
-          </p>
-        ) : null}
-        <PrimaryActionButton type="submit" variant="ink" loading={passwordMutation.isPending}>
-          Update password
         </PrimaryActionButton>
       </form>
     </AppShell>

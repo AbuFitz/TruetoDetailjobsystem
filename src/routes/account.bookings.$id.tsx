@@ -13,6 +13,7 @@ import { getMyBookingById, cancelOwnBooking, LIVE_JOB_STATUSES } from "@/lib/boo
 import { formatAppointment } from "@/lib/format";
 import { customerHeadline } from "@/lib/progress";
 import { sendBookingEmail } from "@/lib/portal-email";
+import { copyText } from "@/lib/clipboard";
 import { supabase } from "@/lib/supabase";
 import { ttdSiteLinks, supportContact } from "@/lib/constants";
 import type { StageProgress } from "@/lib/detailers";
@@ -75,14 +76,9 @@ function BookingDetail() {
 
   async function copyLink() {
     if (!booking) return;
-    const url = `${ttdSiteLinks.website}/account/track/${booking.tracking_token}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      window.prompt("Copy this link", url);
-    }
+    const ok = await copyText(`${ttdSiteLinks.website}/account/track/${booking.tracking_token}`);
+    setCopied(ok);
+    if (ok) setTimeout(() => setCopied(false), 2500);
   }
 
   if (authLoading || isLoading || !booking) {
@@ -195,9 +191,13 @@ function BookingDetail() {
               className="press flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-4 text-left hover:bg-surface-2"
             >
               <span>
-                <span className="block text-[14px] font-semibold">Share a live link</span>
+                <span className="block text-[14px] font-semibold">
+                  {copied ? "Link copied" : "Share a live link"}
+                </span>
                 <span className="block text-[12px] text-muted-foreground">
-                  Let someone else follow this booking without signing in.
+                  {copied
+                    ? "Paste it into a message. They do not need to sign in."
+                    : "Let someone else follow this booking without signing in."}
                 </span>
               </span>
               {copied ? (

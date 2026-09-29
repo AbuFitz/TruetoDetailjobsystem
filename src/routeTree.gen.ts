@@ -18,12 +18,15 @@ import { Route as AccountDetailsRouteImport } from './routes/account.details'
 import { Route as AccountForgotRouteImport } from './routes/account.forgot'
 import { Route as AccountLoginRouteImport } from './routes/account.login'
 import { Route as AccountResetRouteImport } from './routes/account.reset'
+import { Route as AccountSettingsRouteImport } from './routes/account.settings'
 import { Route as AccountVehiclesRouteImport } from './routes/account.vehicles'
+import { Route as AccountVerifiedRouteImport } from './routes/account.verified'
 import { Route as AccountWelcomeRouteImport } from './routes/account.welcome'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminDetailersRouteImport } from './routes/admin.detailers'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as DTokenRouteImport } from './routes/d.$token'
 import { Route as AccountBookingsIdRouteImport } from './routes/account.bookings.$id'
 import { Route as AccountTrackTokenRouteImport } from './routes/account.track.$token'
@@ -79,9 +82,19 @@ const AccountResetRoute = AccountResetRouteImport.update({
   path: '/account/reset',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountSettingsRoute = AccountSettingsRouteImport.update({
+  id: '/account/settings',
+  path: '/account/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountVehiclesRoute = AccountVehiclesRouteImport.update({
   id: '/account/vehicles',
   path: '/account/vehicles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountVerifiedRoute = AccountVerifiedRouteImport.update({
+  id: '/account/verified',
+  path: '/account/verified',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountWelcomeRoute = AccountWelcomeRouteImport.update({
@@ -107,6 +120,11 @@ const AdminDetailersRoute = AdminDetailersRouteImport.update({
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DTokenRoute = DTokenRouteImport.update({
@@ -164,11 +182,14 @@ export interface FileRoutesByFullPath {
   '/account/forgot': typeof AccountForgotRoute
   '/account/login': typeof AccountLoginRoute
   '/account/reset': typeof AccountResetRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/account/verified': typeof AccountVerifiedRoute
   '/account/welcome': typeof AccountWelcomeRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/d/$token': typeof DTokenRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -190,11 +211,14 @@ export interface FileRoutesByTo {
   '/account/forgot': typeof AccountForgotRoute
   '/account/login': typeof AccountLoginRoute
   '/account/reset': typeof AccountResetRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/account/verified': typeof AccountVerifiedRoute
   '/account/welcome': typeof AccountWelcomeRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/d/$token': typeof DTokenRoute
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -217,11 +241,14 @@ export interface FileRoutesById {
   '/account/forgot': typeof AccountForgotRoute
   '/account/login': typeof AccountLoginRoute
   '/account/reset': typeof AccountResetRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/account/verified': typeof AccountVerifiedRoute
   '/account/welcome': typeof AccountWelcomeRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/d/$token': typeof DTokenRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -245,11 +272,14 @@ export interface FileRouteTypes {
     | '/account/forgot'
     | '/account/login'
     | '/account/reset'
+    | '/account/settings'
     | '/account/vehicles'
+    | '/account/verified'
     | '/account/welcome'
     | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
+    | '/admin/settings'
     | '/d/$token'
     | '/account/'
     | '/admin/'
@@ -271,11 +301,14 @@ export interface FileRouteTypes {
     | '/account/forgot'
     | '/account/login'
     | '/account/reset'
+    | '/account/settings'
     | '/account/vehicles'
+    | '/account/verified'
     | '/account/welcome'
     | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
+    | '/admin/settings'
     | '/d/$token'
     | '/account'
     | '/admin'
@@ -297,11 +330,14 @@ export interface FileRouteTypes {
     | '/account/forgot'
     | '/account/login'
     | '/account/reset'
+    | '/account/settings'
     | '/account/vehicles'
+    | '/account/verified'
     | '/account/welcome'
     | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
+    | '/admin/settings'
     | '/d/$token'
     | '/account/'
     | '/admin/'
@@ -324,11 +360,14 @@ export interface RootRouteChildren {
   AccountForgotRoute: typeof AccountForgotRoute
   AccountLoginRoute: typeof AccountLoginRoute
   AccountResetRoute: typeof AccountResetRoute
+  AccountSettingsRoute: typeof AccountSettingsRoute
   AccountVehiclesRoute: typeof AccountVehiclesRoute
+  AccountVerifiedRoute: typeof AccountVerifiedRoute
   AccountWelcomeRoute: typeof AccountWelcomeRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminDetailersRoute: typeof AdminDetailersRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   DTokenRoute: typeof DTokenRoute
   AccountIndexRoute: typeof AccountIndexRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -407,11 +446,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountResetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/settings': {
+      id: '/account/settings'
+      path: '/account/settings'
+      fullPath: '/account/settings'
+      preLoaderRoute: typeof AccountSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/vehicles': {
       id: '/account/vehicles'
       path: '/account/vehicles'
       fullPath: '/account/vehicles'
       preLoaderRoute: typeof AccountVehiclesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/verified': {
+      id: '/account/verified'
+      path: '/account/verified'
+      fullPath: '/account/verified'
+      preLoaderRoute: typeof AccountVerifiedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/welcome': {
@@ -447,6 +500,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/d/$token': {
@@ -524,11 +584,14 @@ const rootRouteChildren: RootRouteChildren = {
   AccountForgotRoute: AccountForgotRoute,
   AccountLoginRoute: AccountLoginRoute,
   AccountResetRoute: AccountResetRoute,
+  AccountSettingsRoute: AccountSettingsRoute,
   AccountVehiclesRoute: AccountVehiclesRoute,
+  AccountVerifiedRoute: AccountVerifiedRoute,
   AccountWelcomeRoute: AccountWelcomeRoute,
   AdminCustomersRoute: AdminCustomersRoute,
   AdminDetailersRoute: AdminDetailersRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   DTokenRoute: DTokenRoute,
   AccountIndexRoute: AccountIndexRoute,
   AdminIndexRoute: AdminIndexRoute,

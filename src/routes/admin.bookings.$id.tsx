@@ -28,6 +28,7 @@ import { sendBookingEmail, type BookingEmailKind } from "@/lib/portal-email";
 import { formatDuration } from "@/lib/progress";
 import { ttdSiteLinks } from "@/lib/constants";
 import { geocodePostcode } from "@/lib/postcode";
+import { copyText } from "@/lib/clipboard";
 import { supabase } from "@/lib/supabase";
 import type { StageProgress } from "@/lib/detailers";
 
@@ -99,6 +100,7 @@ function AdminBookingDetail() {
 
   const [addr, setAddr] = useState({ line1: "", line2: "", city: "", postcode: "" });
   const [addrOpen, setAddrOpen] = useState(false);
+  const [pickDetailer, setPickDetailer] = useState("");
   const [emailNote, setEmailNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -127,27 +129,55 @@ function AdminBookingDetail() {
     },
   });
 
+  async function saveAddress() {
+    const postcode = addr.postcode.trim() || booking?.service_postcode || "";
+    let coords: { destination_lat: number; destination_lng: number } | Record<string, never> = {};
+    try {
+      const g = await geocodePostcode(postcode);
+      coords = { destination_lat: g.lat, destination_lng: g.lng };
+    } catch {
+      coords = {};
+    }
+    await updateBookingDetails(id, {
+      service_address_line1: addr.line1.trim(),
+      service_address_line2: addr.line2.trim() || null,
+      service_address_city: addr.city.trim() || null,
+      service_postcode: postcode.toUpperCase(),
+      ...coords,
+    });
+  }
+
   const addressMutation = useMutation({
-    mutationFn: async () => {
-      const postcode = addr.postcode.trim() || booking?.service_postcode || "";
-      let coords: { destination_lat: number; destination_lng: number } | Record<string, never> = {};
-      try {
-        const g = await geocodePostcode(postcode);
-        coords = { destination_lat: g.lat, destination_lng: g.lng };
-      } catch {
-        coords = {};
-      }
-      await updateBookingDetails(id, {
-        service_address_line1: addr.line1.trim(),
-        service_address_line2: addr.line2.trim() || null,
-        service_address_city: addr.city.trim() || null,
-        service_postcode: postcode.toUpperCase(),
-        ...coords,
-      });
-    },
+    mutationFn: saveAddress,
     onSuccess: () => {
       setAddrOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
+    },
+  });
+
+  // One button for a website request: address, confirm, detailer and both emails.
+  const confirmAssignMutation = useMutation({
+    mutationFn: async () => {
+      if (needsAddressNow && addr.line1.trim()) await saveAddress();
+      await confirmRequest(id, addr.postcode.trim() || booking?.service_postcode);
+      const notes: string[] = [];
+      const booked = await sendBookingEmail(id, "booked_in");
+      notes.push(
+        booked.sent
+          ? "Customer emailed their booking."
+          : `Booking email not sent: ${booked.reason ?? "unknown reason"}`,
+      );
+      if (pickDetailer) {
+        await assignDetailer(id, pickDetailer);
+        const assigned = await sendBookingEmail(id, "assigned");
+        if (assigned.sent) notes.push("Customer told who their detailer is.");
+      }
+      return notes.join(" ");
+    },
+    onSuccess: (note) => {
+      setEmailNote(note);
+      void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
+      void queryClient.invalidateQueries({ queryKey: ["booking-notifications", id] });
     },
   });
 
@@ -193,15 +223,12 @@ function AdminBookingDetail() {
     : null;
 
   const needsAddress = booking.service_address_line1 === "Address to be confirmed";
+  const needsAddressNow = needsAddress;
   const trackUrl = `${ttdSiteLinks.website}/account/track/${booking.tracking_token}`;
   async function copyTrackLink() {
-    try {
-      await navigator.clipboard.writeText(trackUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      window.prompt("Copy this link", trackUrl);
-    }
+    const ok = await copyText(trackUrl);
+    setCopied(ok);
+    if (ok) setTimeout(() => setCopied(false), 2500);
   }
   const EMAIL_LABELS: Record<BookingEmailKind, string> = {
     booked_in: "Booked in",
@@ -221,20 +248,73 @@ function AdminBookingDetail() {
       actions={<StatusBadge status={booking.status} />}
     >
       {booking.status === "requested" ? (
-        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-warning/40 bg-warning/8 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-display text-[26px] leading-none">NEEDS CONFIRMING</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              This came in from the website. Confirming books it in and emails the customer with
-              their tracking link.
-            </p>
+        <div className="mb-5 rounded-2xl border border-warning/40 bg-warning/8 p-5">
+          <p className="font-display text-[26px] leading-none">NEEDS CONFIRMING</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            This came in from the website. One button books it in, plots the address, assigns a
+            detailer and emails the customer their booking and tracking link.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {needsAddressNow ? (
+              <>
+                <div>
+                  <label htmlFor="req-line1" className="eyebrow block text-muted-foreground">
+                    House number and street
+                  </label>
+                  <input
+                    id="req-line1"
+                    value={addr.line1}
+                    onChange={(e) => setAddr((a) => ({ ...a, line1: e.target.value }))}
+                    className="mt-1.5 min-h-11 w-full rounded-xl border border-input bg-surface px-3.5 text-sm outline-none focus:border-signal"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="req-city" className="eyebrow block text-muted-foreground">
+                    Town or city
+                  </label>
+                  <input
+                    id="req-city"
+                    value={addr.city}
+                    onChange={(e) => setAddr((a) => ({ ...a, city: e.target.value }))}
+                    className="mt-1.5 min-h-11 w-full rounded-xl border border-input bg-surface px-3.5 text-sm outline-none focus:border-signal"
+                  />
+                </div>
+              </>
+            ) : null}
+            <div className={needsAddressNow ? "sm:col-span-2" : ""}>
+              <label htmlFor="req-detailer" className="eyebrow block text-muted-foreground">
+                Detailer (optional, you can assign later)
+              </label>
+              <select
+                id="req-detailer"
+                value={pickDetailer}
+                onChange={(e) => setPickDetailer(e.target.value)}
+                className="select-field mt-1.5 min-h-11 w-full rounded-xl border border-input bg-surface px-3.5 text-sm outline-none focus:border-signal"
+              >
+                <option value="">Decide later</option>
+                {(detailers ?? [])
+                  .filter((d) => d.active)
+                  .map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
           </div>
+          {confirmAssignMutation.isError ? (
+            <p role="alert" className="mt-3 text-[13px] text-destructive">
+              {confirmAssignMutation.error instanceof Error
+                ? confirmAssignMutation.error.message
+                : "Couldn't confirm this booking."}
+            </p>
+          ) : null}
           <PrimaryActionButton
-            className="w-auto shrink-0 px-6"
-            loading={confirmMutation.isPending}
-            onClick={() => confirmMutation.mutate()}
+            className="mt-4"
+            loading={confirmAssignMutation.isPending}
+            onClick={() => confirmAssignMutation.mutate()}
           >
-            Confirm booking
+            {pickDetailer ? "Confirm and assign" : "Confirm booking"}
           </PrimaryActionButton>
         </div>
       ) : null}
@@ -362,7 +442,7 @@ function AdminBookingDetail() {
           </section>
         ) : null}
 
-        {needsAddress || addrOpen ? (
+        {(needsAddress && booking.status !== "requested") || addrOpen ? (
           <section className="mb-4 break-inside-avoid rounded-2xl border border-warning/40 bg-warning/8 p-5">
             <p className="eyebrow text-warning-text">
               {needsAddress ? "Full address needed" : "Edit address"}
@@ -425,7 +505,7 @@ function AdminBookingDetail() {
             id="assign-detailer"
             value={booking.assigned_detailer_id ?? ""}
             onChange={(e) => e.target.value && assignMutation.mutate(e.target.value)}
-            className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+            className="select-field mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
           >
             <option value="">Unassigned</option>
             {(detailers ?? [])
@@ -569,7 +649,9 @@ function AdminBookingDetail() {
             onClick={copyTrackLink}
             className="press mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-hairline bg-surface-2 px-3.5 py-3 text-left text-[13px] font-semibold hover:bg-surface"
           >
-            <span className="min-w-0 truncate">Copy the customer&rsquo;s tracking link</span>
+            <span className="min-w-0 truncate">
+              {copied ? "Tracking link copied" : "Copy the customer's tracking link"}
+            </span>
             {copied ? (
               <Check className="h-4 w-4 shrink-0 text-success" />
             ) : (
@@ -620,7 +702,7 @@ function AdminBookingDetail() {
               id="cancel-reason"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value as CancellationReason)}
-              className="mt-2 min-h-10 w-full rounded-xl border border-destructive/25 bg-surface px-3 text-sm outline-none"
+              className="select-field mt-2 min-h-10 w-full rounded-xl border border-destructive/25 bg-surface px-3 text-sm outline-none"
             >
               {CANCELLATION_REASONS.map((r) => (
                 <option key={r} value={r}>

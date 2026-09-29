@@ -23,7 +23,7 @@ export function ErrorState({
       <span className="grid h-11 w-11 place-items-center rounded-full bg-destructive/10 text-destructive">
         <TriangleAlert className="h-5 w-5" strokeWidth={2} />
       </span>
-      <p className="mt-3 font-display text-lg font-semibold">{title}</p>
+      <p className="mt-3 font-display text-lg">{title}</p>
       {description ? (
         <p className="mt-1 max-w-xs text-sm text-muted-foreground">{description}</p>
       ) : null}

@@ -41,9 +41,7 @@ export function DetailerCard({
           </span>
         </div>
         <div className="min-w-0 pt-0.5">
-          <p className="truncate font-display text-lg font-semibold leading-tight">
-            {detailer.name}
-          </p>
+          <p className="truncate font-display text-[24px] leading-none">{detailer.name}</p>
           {subtitleLine ? (
             <p className="truncate text-[13px] text-muted-foreground">{subtitleLine}</p>
           ) : null}

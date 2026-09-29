@@ -46,7 +46,7 @@ function LoginField({
   );
 }
 
-const searchSchema = z.object({ next: z.string().optional() });
+const searchSchema = z.object({ next: z.string().optional(), email: z.string().optional() });
 
 export const Route = createFileRoute("/account/login")({
   head: () => ({
@@ -63,7 +63,8 @@ interface FormValues {
 
 function AccountLogin() {
   const navigate = useNavigate();
-  const next = safeNext(useSearch({ from: "/account/login" }).next);
+  const search = useSearch({ from: "/account/login" });
+  const next = safeNext(search.next);
   const { session } = useSession();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +78,7 @@ function AccountLogin() {
     setReturning(hasSignedInBefore());
   }, []);
   const { register, handleSubmit } = useForm<FormValues>({
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: search.email ?? "", password: "" },
   });
 
   useEffect(() => {

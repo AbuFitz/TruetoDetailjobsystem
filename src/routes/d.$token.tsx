@@ -107,7 +107,7 @@ function DetailerQueue() {
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">
                       <p className="mono-ref text-muted-foreground">{job.booking_reference}</p>
-                      <p className="mt-1 truncate font-display text-lg font-bold leading-tight">
+                      <p className="mt-1 truncate font-display text-[26px] leading-none">
                         {job.customer_first_name}
                       </p>
                     </div>

@@ -4,6 +4,7 @@ import { Check, Copy, KeyRound, ShieldCheck, UserPlus } from "lucide-react";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { createCustomerAccount, resetCustomerPassword, type TempCredentials } from "@/lib/accounts";
 import { ttdSiteLinks } from "@/lib/constants";
+import { copyText } from "@/lib/clipboard";
 
 interface Props {
   customer: {
@@ -49,12 +50,9 @@ export function PortalAccessCard({ customer }: Props) {
     : "";
 
   async function copy(text: string, which: "pw" | "msg") {
-    try {
-      await navigator.clipboard.writeText(text);
+    if (await copyText(text)) {
       setCopied(which);
       setTimeout(() => setCopied(null), 2500);
-    } catch {
-      window.prompt("Copy this", text);
     }
   }
 
@@ -189,7 +187,7 @@ export function PortalAccessCard({ customer }: Props) {
             ) : (
               <Copy className="h-4 w-4" />
             )}
-            Copy a message to send them
+            {copied === "msg" ? "Message copied" : "Copy a message to send them"}
           </button>
           <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
             When they sign in they are asked to choose their own password before anything else

@@ -9,7 +9,8 @@ import {
 /**
  * The one vehicle size control, used by the booking popup, /book and the admin
  * booking form, so every form asks the same question the same way, with the
- * same UK examples as the website.
+ * same UK wording as the website. Three compact tiles side by side; the example
+ * cars for the chosen size sit underneath so the form stays short.
  */
 export function VehicleSizePicker({
   value,
@@ -22,10 +23,11 @@ export function VehicleSizePicker({
   tone?: "signal" | "ink";
   className?: string;
 }) {
+  const sizes = Object.keys(VEHICLE_SIZE_LABELS) as VehicleSize[];
   return (
     <div className={className}>
-      <div role="radiogroup" aria-label="Vehicle size" className="flex flex-col gap-1.5">
-        {(Object.keys(VEHICLE_SIZE_LABELS) as VehicleSize[]).map((size) => {
+      <div role="radiogroup" aria-label="Vehicle size" className="grid grid-cols-3 gap-1.5">
+        {sizes.map((size) => {
           const selected = value === size;
           return (
             <button
@@ -35,7 +37,7 @@ export function VehicleSizePicker({
               aria-checked={selected}
               onClick={() => onChange(size)}
               className={cn(
-                "press flex w-full flex-col gap-0.5 rounded-xl border px-3.5 py-3 text-left transition-colors",
+                "press flex min-h-[72px] flex-col items-start justify-between gap-1 rounded-xl border px-2.5 py-2.5 text-left transition-colors",
                 selected
                   ? tone === "ink"
                     ? "border-ink bg-ink text-ink-foreground"
@@ -43,24 +45,26 @@ export function VehicleSizePicker({
                   : "border-input bg-surface-2 hover:bg-surface",
               )}
             >
-              <span className="text-[13px] font-semibold">
-                {VEHICLE_SIZE_LABELS[size]}{" "}
-                <span
-                  className={cn("font-normal", selected ? "opacity-80" : "text-muted-foreground")}
-                >
-                  · {VEHICLE_SIZE_GUIDE[size].body}
-                </span>
+              <span className="text-[12px] font-semibold leading-tight">
+                {VEHICLE_SIZE_LABELS[size]}
               </span>
               <span
-                className={cn("text-[12px]", selected ? "opacity-75" : "text-muted-foreground")}
+                className={cn(
+                  "text-[10.5px] leading-tight",
+                  selected ? "opacity-85" : "text-muted-foreground",
+                )}
               >
-                e.g. {VEHICLE_SIZE_GUIDE[size].examples}
+                {VEHICLE_SIZE_GUIDE[size].body}
               </span>
             </button>
           );
         })}
       </div>
-      <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{VEHICLE_SIZE_NOTE}</p>
+      <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+        {value && value in VEHICLE_SIZE_GUIDE
+          ? `e.g. ${VEHICLE_SIZE_GUIDE[value as VehicleSize].examples}. ${VEHICLE_SIZE_NOTE}`
+          : VEHICLE_SIZE_NOTE}
+      </p>
     </div>
   );
 }

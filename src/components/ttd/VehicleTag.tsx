@@ -31,7 +31,7 @@ export function VehicleCard({
       ) : null}
       <div className="min-w-0">
         {vehicle.description ? (
-          <p className="truncate text-[15px] font-semibold leading-tight">{vehicle.description}</p>
+          <p className="truncate text-[15px] font-medium leading-tight">{vehicle.description}</p>
         ) : null}
         <p className={vehicle.description ? "mt-1" : undefined}>
           <PlateTag registration={vehicle.registration} />
@@ -41,6 +41,11 @@ export function VehicleCard({
   );
 }
 
+/**
+ * A UK number plate: yellow rear plate, the blue GB band, and the display
+ * font with a little tracking so it reads like the real thing and like the
+ * rest of the website's type.
+ */
 export function PlateTag({
   registration,
   className,
@@ -51,12 +56,17 @@ export function PlateTag({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-[5px] border border-ink/15 bg-[#f4d000]/90 px-2 py-0.5",
+        "inline-flex items-stretch overflow-hidden rounded-[5px] border border-ink/25 bg-[#F5CF00] align-middle shadow-[0_1px_0_rgba(12,12,12,0.12)]",
         className,
       )}
     >
-      <span className="h-3.5 w-[7px] rounded-[2px] bg-[#0b3ea8]" aria-hidden />
-      <span className="font-display text-sm font-bold uppercase tracking-[0.08em] text-ink">
+      <span
+        className="grid w-[15px] place-items-center bg-[#0B3EA8] text-[6px] font-semibold leading-none tracking-wide text-white"
+        aria-hidden
+      >
+        GB
+      </span>
+      <span className="px-2 py-[3px] font-display text-[19px] uppercase leading-[1.05] tracking-[0.1em] text-ink">
         {registration}
       </span>
     </span>

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { z } from "zod";
 import { MailCheck } from "lucide-react";
 import { PublicShell, AuthField } from "@/components/ttd/PublicShell";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -13,11 +14,13 @@ export const Route = createFileRoute("/account/forgot")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  validateSearch: z.object({ email: z.string().optional() }),
   component: Forgot,
 });
 
 function Forgot() {
-  const [email, setEmail] = useState("");
+  const search = useSearch({ from: "/account/forgot" });
+  const [email, setEmail] = useState(search.email ?? "");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
 

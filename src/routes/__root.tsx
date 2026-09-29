@@ -128,6 +128,12 @@ const THEME_INIT_SCRIPT = `
     var stored = localStorage.getItem("ttd-theme");
     document.documentElement.classList.toggle("dark", stored === "dark");
   } catch (e) {}
+  // Email links that fail put the reason in the address; the auth library
+  // clears it a moment later, so keep a copy for the "link expired" page.
+  try {
+    var q = new URLSearchParams(location.hash.replace(/^#/, "") + "&" + location.search.replace(/^[?]/, ""));
+    window.__ttdLinkProblem = q.get("error_code") || q.get("error") || null;
+  } catch (e) {}
 })();
 `;
 

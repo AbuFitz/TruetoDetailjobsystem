@@ -191,6 +191,9 @@ create function public._t_count(p_table text, p_id uuid) returns int language pl
 $f$ declare n int; begin execute format('select count(*) from public.%I where booking_id = $1', p_table) into n using p_id; return n; end $f$;
 create function public._t_ack(p_id uuid) returns text language sql security definer set search_path = public as
 $f$ select customer_ack_name from public.check_ins where booking_id = p_id $f$;
+create function public._t_open_stages(p_id uuid) returns int language sql security definer set search_path = public as
+$f$ select count(*)::int from public.booking_stage_progress where booking_id = p_id and completed_at is null $f$;
+grant execute on function public._t_open_stages(uuid) to anon;
 grant execute on function public._t_booking(uuid), public._t_count(text, uuid), public._t_ack(uuid) to anon;
 
 set local role anon;
@@ -242,17 +245,11 @@ begin
   n := public._t_count('booking_stage_progress', job);
   insert into results values ('check-in from arrived starts the job with a four item checklist', b.status = 'in_progress' and n = 4, concat_ws(' | ', b.status, n));
 
-  begin
-    perform public.detailer_finish_job(tok, job, 'Sam');
-    insert into results values ('the job cannot be finished with items unticked', false, 'finished');
-  exception when others then insert into results values ('the job cannot be finished with items unticked', sqlerrm like 'Tick off every stage%', sqlerrm); end;
-
   perform public.detailer_toggle_stage(tok, job, 'exterior', true);
   perform public.detailer_toggle_stage(tok, job, 'interior', true);
   perform public.detailer_toggle_stage(tok, job, 'protection', true);
   select status into b.status from public._t_booking(job);
   insert into results values ('ticking stages does not change the booking status', b.status = 'in_progress', b.status);
-  perform public.detailer_toggle_stage(tok, job, 'final_check', true);
 
   begin
     perform public.detailer_finish_job('tok-leah-0002', job, 'Sam');
@@ -262,6 +259,7 @@ begin
   perform public.detailer_finish_job(tok, job, 'Sam');
   select * into b from public._t_booking(job);
   insert into results values ('finishing completes the job in one step', b.status = 'completed' and b.completed_at is not null, b.status);
+  insert into results values ('finishing marks any item still open as done', public._t_open_stages(job) = 0, public._t_open_stages(job)::text);
   insert into results values ('the customer''s name is recorded at handover', public._t_ack(job) = 'Sam', 'ack');
 
   p := public.claim_booking_email(job, 'completed', tok);

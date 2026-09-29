@@ -201,7 +201,7 @@ function BookingFlow() {
   return (
     <AppShell
       area="customer"
-      width="narrow"
+      width="medium"
       eyebrow="We come to you"
       title={
         <>
@@ -223,7 +223,7 @@ function BookingFlow() {
       {step === "vehicle" ? (
         <section>
           <h2 className="font-display text-[28px] leading-none">Vehicle and package</h2>
-          <div className="mt-5 flex flex-col gap-8">
+          <div className="mt-5 grid gap-8 lg:grid-cols-2">
             <div>
               <p className="eyebrow text-muted-foreground">Vehicle</p>
               <div className="mt-3 flex flex-col gap-2.5">
@@ -301,7 +301,7 @@ function BookingFlow() {
 
               <div className="mt-5">
                 <span className="eyebrow block text-muted-foreground">Add-ons</span>
-                <div className="mt-2 flex flex-col gap-2">
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   {DETAIL_ADDONS.map((a) => (
                     <label
                       key={a.id}
@@ -342,7 +342,7 @@ function BookingFlow() {
       {step === "schedule" ? (
         <section>
           <h2 className="font-display text-[28px] leading-none">When and where</h2>
-          <div className="mt-5 flex flex-col gap-8">
+          <div className="mt-5 grid gap-8 lg:grid-cols-2">
             <div>
               <p className="eyebrow text-muted-foreground">Date and time</p>
               <div className="mt-5">

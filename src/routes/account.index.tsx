@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { addWeeks, format, isFuture } from "date-fns";
 import { UK_TIME } from "@/lib/uk-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarPlus, Car, ChevronRight, MapPin, Sparkles, UserRound } from "lucide-react";
+import { CalendarPlus, Car, ChevronRight, MapPin, Settings, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -177,7 +177,7 @@ function AccountDashboard() {
                 { to: "/book", label: "Book a detail", icon: CalendarPlus },
                 { to: "/account/vehicles", label: "Your garage", icon: Car },
                 { to: "/account/addresses", label: "Addresses", icon: MapPin },
-                { to: "/account/details", label: "Your details", icon: UserRound },
+                { to: "/account/settings", label: "Settings", icon: Settings },
               ] as const
             ).map(({ to, label, icon: Icon }) => (
               <Link
@@ -289,7 +289,7 @@ function BookingRow({
       className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
     >
       <div className="min-w-0">
-        <p className="truncate text-[14px] font-semibold">{b.package_name}</p>
+        <p className="truncate font-display text-[22px] leading-none">{b.package_name}</p>
         <p className="text-[12px] text-muted-foreground">
           {past
             ? format(new Date(b.scheduled_start), "d MMM yyyy", { in: UK_TIME })
@@ -321,7 +321,7 @@ function NextBookingCard({
         className={`press block rounded-2xl border border-signal/30 bg-ink p-5 text-ink-foreground ${className ?? ""}`}
       >
         <StatusBadge status={booking.status} size="sm" />
-        <p className="mt-3 font-display text-2xl leading-tight">
+        <p className="mt-3 font-display text-[34px] leading-none">
           {customerHeadline(booking.status, booking.detailer?.name?.split(" ")[0])}
         </p>
         {booking.status === "en_route" && booking.eta_seconds != null ? (
@@ -346,7 +346,7 @@ function NextBookingCard({
       className={`press block rounded-2xl border border-hairline bg-surface p-5 hover:bg-surface-2 ${className ?? ""}`}
     >
       <p className="eyebrow text-muted-foreground">Next mobile detail</p>
-      <p className="mt-2 font-display text-2xl leading-tight">{booking.package_name}</p>
+      <p className="mt-2 font-display text-[34px] leading-none">{booking.package_name}</p>
       <p className="mt-1 text-[15px] text-muted-foreground">
         {dayLabel} · {timeLabel}
       </p>

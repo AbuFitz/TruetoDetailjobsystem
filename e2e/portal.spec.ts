@@ -99,7 +99,7 @@ const PAGES: PageCase[] = [
     auth: true,
     staff: true,
     logoHref: "/admin",
-    text: /Full address needed/i,
+    text: /House number and street/i,
   },
   {
     name: "admin customer",
@@ -237,4 +237,86 @@ test("the signed-in booking flow has the website's three steps", async ({ page }
   // Back returns to step one with choices kept.
   await page.getByRole("button", { name: /back/i }).click();
   await expect(page.getByRole("heading", { name: /vehicle and package/i })).toBeVisible();
+});
+
+async function fillCreate(page: Page, email: string) {
+  await page.goto("/account/create", { waitUntil: "networkidle" });
+  await page.waitForTimeout(600);
+  await page.fill("#first-name", "Sam");
+  await page.fill("#email", email);
+  await page.fill("#new-password", "Correct-Horse-9");
+  await page.fill("#confirm-password", "Correct-Horse-9");
+  await page.getByRole("button", { name: /create account/i }).click();
+}
+
+test("registering with an email that already has an account says so and offers sign in", async ({
+  page,
+}) => {
+  await fakeSupabase(page.context());
+  await fillCreate(page, "exists@example.com");
+  await expect(page.getByRole("heading", { name: /already have an account/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^sign in$/i })).toHaveAttribute(
+    "href",
+    /email=exists%40example\.com/,
+  );
+  await expect(page.getByRole("link", { name: /forgot my password/i })).toBeVisible();
+});
+
+test("a new registration says to check email and lets them send it again", async ({ page }) => {
+  await fakeSupabase(page.context());
+  await fillCreate(page, "new@example.com");
+  await expect(page.getByRole("heading", { name: /check your email/i })).toBeVisible();
+  await page.getByRole("button", { name: /send the email again/i }).click();
+  await expect(page.getByText(/sent again/i)).toBeVisible();
+});
+
+test("the confirmation link lands on a verified page that leads to sign in, and handles an expired link", async ({
+  page,
+}) => {
+  await fakeSupabase(page.context());
+  await page.goto("/account/verified", { waitUntil: "networkidle" });
+  await expect(page.getByRole("heading", { name: /email verified/i })).toBeVisible();
+  await expect(page.getByText(/sign in to continue/i)).toBeVisible();
+  // A fresh page load, as a person clicking an expired link gets.
+  const expired = await page.context().newPage();
+  await expired.goto("/account/verified#error=access_denied&error_code=otp_expired", {
+    waitUntil: "networkidle",
+  });
+  await expect(expired.getByRole("heading", { name: /link has expired/i })).toBeVisible();
+});
+
+test("sign in and forgot password are prefilled from the link", async ({ page }) => {
+  await fakeSupabase(page.context());
+  await page.goto("/account/login?email=sam%40example.com", { waitUntil: "networkidle" });
+  await expect(page.locator("#email")).toHaveValue("sam@example.com");
+  await page.goto("/account/forgot?email=sam%40example.com", { waitUntil: "networkidle" });
+  await expect(page.locator("#email")).toHaveValue("sam@example.com");
+});
+
+test("settings hold the password, appearance, help and sign out, and no page footer shows the company phone number", async ({
+  page,
+}) => {
+  await open(page, {
+    name: "settings",
+    path: "/account/settings",
+    auth: true,
+    logoHref: "/account",
+    text: /x/,
+  });
+  await expect(page.getByText("Password", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /dark/i })).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const footer = page.locator("footer");
+  await expect(footer).toContainText("truetodetail.co.uk");
+  await expect(footer).not.toContainText(/07359|591800/);
+});
+
+test("the header has a settings gear and no sign out or theme buttons, and the tab bar has settings on phones", async ({
+  page,
+}) => {
+  await open(page, { name: "dash", path: "/account", auth: true, logoHref: "/account", text: /x/ });
+  await expect(page.getByRole("link", { name: "Settings", exact: true }).first()).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("nav[aria-label='Quick links']").getByText("Settings")).toBeVisible();
 });

@@ -61,15 +61,28 @@ export async function signUpWithEmail(input: {
   password: string;
   firstName: string;
   phone?: string | undefined;
-}): Promise<{ needsConfirmation: boolean }> {
+}): Promise<{ needsConfirmation: boolean; alreadyRegistered: boolean }> {
   const { data, error } = await supabase.auth.signUp({
     email: input.email,
     password: input.password,
     options: {
-      emailRedirectTo: `${window.location.origin}/account`,
+      emailRedirectTo: `${window.location.origin}/account/verified`,
       data: { first_name: input.firstName, phone: input.phone ?? null },
     },
   });
   if (error) throw new Error(error.message, { cause: error });
-  return { needsConfirmation: !data.session };
+  // An email that already has an account gets a normal-looking success with no
+  // new identity and no email, so say so instead of waiting for a message.
+  const alreadyRegistered = Boolean(data.user) && (data.user?.identities?.length ?? 1) === 0;
+  return { needsConfirmation: !data.session && !alreadyRegistered, alreadyRegistered };
+}
+
+/** Sends the confirmation email again (Supabase limits how often). */
+export async function resendConfirmation(email: string): Promise<void> {
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: `${window.location.origin}/account/verified` },
+  });
+  if (error) throw new Error(error.message, { cause: error });
 }

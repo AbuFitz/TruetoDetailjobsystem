@@ -39,12 +39,22 @@ function markSignedIn() {
   }
 }
 
-export async function signUpCustomer(input: SignUpInput): Promise<void> {
-  const { error } = await supabase.auth.signUp({
+/**
+ * Supabase answers a sign-up for an email that already has an account with a
+ * normal-looking success and no new identity (and sends nothing), so the
+ * caller has to look for that and tell the person they already have an
+ * account instead of leaving them waiting for an email that never comes.
+ */
+export interface SignUpResult {
+  alreadyRegistered: boolean;
+}
+
+export async function signUpCustomer(input: SignUpInput): Promise<SignUpResult> {
+  const { data, error } = await supabase.auth.signUp({
     email: input.email,
     password: input.password,
     options: {
-      emailRedirectTo: `${window.location.origin}/account`,
+      emailRedirectTo: `${window.location.origin}/account/verified`,
       data: {
         first_name: input.firstName,
         last_name: input.lastName ?? null,
@@ -53,7 +63,9 @@ export async function signUpCustomer(input: SignUpInput): Promise<void> {
     },
   });
   if (error) throw new Error(error.message, { cause: error });
+  if (data.user && (data.user.identities?.length ?? 1) === 0) return { alreadyRegistered: true };
   markSignedIn();
+  return { alreadyRegistered: false };
 }
 
 export async function signIn(email: string, password: string): Promise<void> {

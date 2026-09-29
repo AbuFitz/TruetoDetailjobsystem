@@ -66,6 +66,31 @@ export function CheckInForm({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  async function quickStart() {
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      await detailerSubmitCheckIn(token, bookingId, {
+        mileage: null,
+        exteriorDamageNotes: "",
+        wheelDamageNotes: "",
+        interiorConditionNotes: "",
+        valuablesNotes: "",
+        customerRequests: "",
+        accessNotes: "",
+        waterAvailable: null,
+        electricAvailable: null,
+        vehiclePositionNotes: "",
+        blockingIssue: "",
+      });
+      onSubmitted();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Couldn't start the job.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function onSubmit(values: CheckInFormValues) {
     setSubmitError(null);
     setSubmitting(true);
@@ -100,9 +125,16 @@ export function CheckInForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={cn("flex flex-col gap-4", className)}>
-      <p className="text-[13px] leading-relaxed text-muted-foreground">
-        Walk round the car with the customer, take a few photos and note anything already there.
-        Everything else is optional.
+      <button
+        type="button"
+        disabled={submitting}
+        onClick={quickStart}
+        className="press flex min-h-14 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep disabled:opacity-60"
+      >
+        Nothing to note, start detailing
+      </button>
+      <p className="text-center text-[12px] text-muted-foreground">
+        or note anything already there first
       </p>
 
       <PhotoGrid photos={photos} onChange={setPhotos} />

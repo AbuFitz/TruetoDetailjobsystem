@@ -1,0 +1,210 @@
+import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { Check, ChevronRight, LogOut, Mail, MessageCircle, Moon, Phone, Sun } from "lucide-react";
+import { NewPasswordFields, passwordProblems } from "@/components/ttd/PasswordFields";
+import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
+import { useTheme } from "@/hooks/use-theme";
+import { signOut, updateMyPassword } from "@/lib/auth";
+import { supportContact, ttdSiteLinks } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+
+export function SettingsCard({
+  title,
+  description,
+  children,
+  className,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={cn("rounded-2xl border border-hairline bg-surface p-5", className)}>
+      <p className="eyebrow text-muted-foreground">{title}</p>
+      {description ? (
+        <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{description}</p>
+      ) : null}
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+/** A tappable row that opens another settings page. */
+export function SettingsLink({
+  to,
+  title,
+  hint,
+  icon: Icon,
+}: {
+  to: string;
+  title: string;
+  hint: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+}) {
+  return (
+    <Link
+      to={to}
+      className="press flex items-center gap-3.5 rounded-xl border border-hairline bg-surface-2 p-3.5 hover:bg-surface"
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-signal/10 text-signal">
+        <Icon className="h-5 w-5" strokeWidth={2.1} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-medium leading-tight">{title}</span>
+        <span className="mt-0.5 block text-[13px] text-muted-foreground">{hint}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2.4} />
+    </Link>
+  );
+}
+
+export function AppearanceSection() {
+  const { theme, toggleTheme } = useTheme();
+  const options = [
+    { key: "light", label: "Light", icon: Sun },
+    { key: "dark", label: "Dark", icon: Moon },
+  ] as const;
+  return (
+    <SettingsCard
+      title="Appearance"
+      description="Light matches the website. Dark is easier on the eyes at night."
+    >
+      <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-2">
+        {options.map(({ key, label, icon: Icon }) => {
+          const active = theme === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => (active ? undefined : toggleTheme())}
+              className={cn(
+                "press flex min-h-12 items-center justify-center gap-2 rounded-xl border text-[13px] font-semibold",
+                active
+                  ? "border-signal bg-signal text-signal-foreground"
+                  : "border-input bg-surface-2 hover:bg-surface",
+              )}
+            >
+              <Icon className="h-4 w-4" strokeWidth={2.2} />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </SettingsCard>
+  );
+}
+
+export function PasswordSection() {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaved(false);
+    const problems = passwordProblems(password);
+    if (problems.length)
+      return setError(`Your password needs: ${problems.join(", ").toLowerCase()}.`);
+    if (password !== confirm) return setError("The two passwords do not match.");
+    setBusy(true);
+    try {
+      await updateMyPassword(password);
+      setPassword("");
+      setConfirm("");
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't change your password.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SettingsCard title="Password" description="Choose a new password for signing in.">
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <NewPasswordFields
+          password={password}
+          confirm={confirm}
+          onPassword={setPassword}
+          onConfirm={setConfirm}
+        />
+        {error ? (
+          <p role="alert" className="text-[13px] text-destructive">
+            {error}
+          </p>
+        ) : null}
+        {saved ? (
+          <p className="flex items-center gap-1.5 text-[13px] font-medium text-success">
+            <Check className="h-4 w-4" strokeWidth={2.6} /> Password updated
+          </p>
+        ) : null}
+        <PrimaryActionButton type="submit" variant="ink" loading={busy}>
+          Update password
+        </PrimaryActionButton>
+      </form>
+    </SettingsCard>
+  );
+}
+
+/** Contact details live here rather than in every footer. */
+export function HelpSection() {
+  const tel = supportContact.phone.replace(/\s/g, "");
+  const wa = `https://wa.me/44${tel.slice(1)}`;
+  return (
+    <SettingsCard
+      title="Help and contact"
+      description={`We are on the phone Monday to Saturday, 8am to 7pm.`}
+    >
+      <div className="grid gap-2 sm:grid-cols-3">
+        {[
+          { href: `tel:${tel}`, label: "Call", icon: Phone },
+          { href: wa, label: "WhatsApp", icon: MessageCircle },
+          { href: `mailto:${supportContact.email}`, label: "Email", icon: Mail },
+        ].map(({ href, label, icon: Icon }) => (
+          <a
+            key={label}
+            href={href}
+            className="press inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-2 text-[13px] font-semibold hover:bg-surface"
+          >
+            <Icon className="h-4 w-4" strokeWidth={2.2} />
+            {label}
+          </a>
+        ))}
+      </div>
+      <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
+        <a className="underline underline-offset-2" href={ttdSiteLinks.terms}>
+          Terms
+        </a>
+        <a className="underline underline-offset-2" href={ttdSiteLinks.privacy}>
+          Privacy
+        </a>
+        <a className="underline underline-offset-2" href={ttdSiteLinks.cookies}>
+          Cookies
+        </a>
+        <a className="underline underline-offset-2" href={ttdSiteLinks.faq}>
+          FAQ
+        </a>
+      </p>
+    </SettingsCard>
+  );
+}
+
+export function SignOutSection({ email }: { email?: string | null | undefined }) {
+  return (
+    <SettingsCard title="Session">
+      {email ? (
+        <p className="mb-3 text-[14px] text-muted-foreground">Signed in as {email}</p>
+      ) : null}
+      <PrimaryActionButton variant="outline" onClick={() => signOut()}>
+        <LogOut className="h-4 w-4" strokeWidth={2.2} />
+        Sign out
+      </PrimaryActionButton>
+    </SettingsCard>
+  );
+}

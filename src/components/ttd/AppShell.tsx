@@ -5,8 +5,6 @@ import {
   ChevronLeft,
   ClipboardList,
   HardHat,
-  LogOut,
-  MapPin,
   Plus,
   Settings,
   UserRound,
@@ -14,10 +12,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { TtdLogo } from "@/components/ttd/Header";
-import { ThemeToggle } from "@/components/ttd/ThemeToggle";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
-import { signOut } from "@/lib/auth";
-import { supportContact, ttdSiteLinks } from "@/lib/constants";
+import { ttdSiteLinks } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 /**
@@ -53,34 +49,27 @@ const CUSTOMER_NAV: NavItem[] = [
   },
   { to: "/book", label: "Book a detail", short: "Book", icon: CalendarPlus, match: ["/book"] },
   { to: "/account/vehicles", label: "Garage", icon: Car, match: ["/account/vehicles"] },
-  { to: "/account/addresses", label: "Addresses", icon: MapPin, match: ["/account/addresses"] },
-  { to: "/account/details", label: "Details", icon: UserRound, match: ["/account/details"] },
 ];
 
-const CUSTOMER_TABS: NavItem[] = [
-  {
-    to: "/account",
-    label: "My Account",
-    short: "Account",
-    icon: UserRound,
-    match: ["/account"],
-    exact: true,
-  },
-  { to: "/book", label: "Book a detail", short: "Book", icon: CalendarPlus, match: ["/book"] },
-  { to: "/account/vehicles", label: "Garage", icon: Car, match: ["/account/vehicles"] },
-  {
-    to: "/account/details",
-    label: "Profile",
-    icon: Settings,
-    match: ["/account/details", "/account/addresses"],
-  },
-];
+const CUSTOMER_SETTINGS: NavItem = {
+  to: "/account/settings",
+  label: "Settings",
+  icon: Settings,
+  match: ["/account/settings", "/account/details", "/account/addresses"],
+};
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/admin", label: "Today", icon: ClipboardList, match: ["/admin"], exact: true },
   { to: "/admin/customers", label: "Customers", icon: Users, match: ["/admin/customers"] },
   { to: "/admin/detailers", label: "Detailers", icon: HardHat, match: ["/admin/detailers"] },
 ];
+
+const ADMIN_SETTINGS: NavItem = {
+  to: "/admin/settings",
+  label: "Settings",
+  icon: Settings,
+  match: ["/admin/settings"],
+};
 
 const HOME: Record<ShellArea, string> = { customer: "/account", admin: "/admin" };
 
@@ -98,7 +87,7 @@ interface AppShellProps {
   actions?: React.ReactNode;
   back?: { to: string; label: string; params?: Record<string, string> };
   /** "narrow" for forms and single records, "wide" (default) for dashboards and lists. */
-  width?: "narrow" | "wide";
+  width?: "narrow" | "medium" | "wide";
   children: React.ReactNode;
 }
 
@@ -116,13 +105,15 @@ export function AppShell({
   const nav = area === "admin" ? ADMIN_NAV : CUSTOMER_NAV;
   const home = HOME[area];
 
+  const settings = area === "admin" ? ADMIN_SETTINGS : CUSTOMER_SETTINGS;
   const tabs: NavItem[] =
     area === "admin"
       ? [
           ...ADMIN_NAV,
           { to: "/admin/bookings/new", label: "New", icon: Plus, match: ["/admin/bookings/new"] },
+          settings,
         ]
-      : CUSTOMER_TABS;
+      : [...CUSTOMER_NAV, settings];
 
   return (
     <div className="flex min-h-screen flex-col bg-ink">
@@ -172,16 +163,16 @@ export function AppShell({
                 Book now
               </Link>
             )}
-            <ThemeToggle className="border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
-            <button
-              type="button"
-              onClick={() => signOut()}
-              aria-label="Sign out"
-              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 text-[12px] font-medium text-ink-foreground/70 hover:text-ink-foreground"
+            <Link
+              to={settings.to}
+              aria-label="Settings"
+              className={cn(
+                "press grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-white/5 hover:text-ink-foreground",
+                isActive(path, settings) ? "text-signal" : "text-ink-foreground/70",
+              )}
             >
-              <LogOut className="h-3.5 w-3.5" strokeWidth={2.2} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
+              <Settings className="h-4 w-4" strokeWidth={2.2} />
+            </Link>
           </div>
         </div>
       </header>
@@ -221,7 +212,7 @@ export function AppShell({
         <div
           className={cn(
             "mx-auto w-full px-5 pt-7 sm:px-8 sm:pt-9",
-            width === "narrow" ? "max-w-3xl" : "max-w-6xl",
+            width === "narrow" ? "max-w-3xl" : width === "medium" ? "max-w-5xl" : "max-w-6xl",
           )}
         >
           {children}
@@ -230,18 +221,9 @@ export function AppShell({
 
       <footer className="hidden bg-ink py-6 text-ink-foreground/50 lg:block">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-6 px-8 text-[12px]">
-          <p>
-            <a href={ttdSiteLinks.website} className="hover:text-ink-foreground">
-              truetodetail.co.uk
-            </a>
-            <span aria-hidden> · </span>
-            <a
-              href={`tel:${supportContact.phone.replace(/\s/g, "")}`}
-              className="hover:text-ink-foreground"
-            >
-              {supportContact.phone}
-            </a>
-          </p>
+          <a href={ttdSiteLinks.website} className="hover:text-ink-foreground">
+            truetodetail.co.uk
+          </a>
           <LegalLinks className="justify-end text-ink-foreground/50" />
         </div>
       </footer>
@@ -251,7 +233,10 @@ export function AppShell({
         className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
         <ul
-          className={cn("mx-auto grid max-w-lg", area === "admin" ? "grid-cols-4" : "grid-cols-4")}
+          className={cn(
+            "mx-auto grid max-w-lg",
+            area === "admin" ? " grid-cols-4" : " grid-cols-4",
+          )}
         >
           {tabs.map((item) => {
             const active = isActive(path, item);

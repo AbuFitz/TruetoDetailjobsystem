@@ -31,7 +31,7 @@ export function AdminBookingCard({
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="min-w-0">
             <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
-            <p className="mt-1 truncate font-display text-xl font-bold leading-tight">
+            <p className="mt-1 truncate font-display text-[26px] leading-none">
               {booking.package_name}
             </p>
           </div>

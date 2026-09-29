@@ -370,7 +370,10 @@ function DetailerJob() {
 
         {job.status === "in_progress" || job.status === "qc" || job.status === "handover" ? (
           <section className="rise-in mt-4 rounded-2xl border border-hairline bg-surface p-5">
-            <p className="eyebrow mb-3 text-muted-foreground">Detailing checklist</p>
+            <p className="eyebrow text-muted-foreground">Detailing</p>
+            <p className="mb-3 mt-1 text-[13px] text-muted-foreground">
+              Tick items as you go so the customer can follow along. Finish when you are done.
+            </p>
             <StageChecklist
               stages={stages ?? []}
               interactive
@@ -392,7 +395,6 @@ function DetailerJob() {
                 className="mt-3"
                 variant="success"
                 loading={transitioning}
-                disabled={!stages || stages.length === 0 || stages.some((s) => !s.completed_at)}
                 onClick={handleFinish}
               >
                 <Check className="h-5 w-5" strokeWidth={2.6} />

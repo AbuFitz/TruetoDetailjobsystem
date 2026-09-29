@@ -40,7 +40,7 @@ const PHONE_RE = /^[\d\s+\-()]{7,20}$/;
 const CAR_REG_RE = /^[A-Z0-9]{2,8}$/;
 
 type Step = 1 | 2 | 3;
-type View = "form" | "success" | "account" | "account-done";
+type View = "form" | "success" | "account" | "account-done" | "account-exists";
 
 const STEP_LABELS = ["Vehicle & Pack", "Schedule", "Your Details"];
 
@@ -163,13 +163,17 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
     try {
       const [firstName, ...rest] = name.trim().split(" ");
       const lastName = rest.join(" ");
-      await signUpCustomer({
+      const result = await signUpCustomer({
         email: email.trim(),
         password,
         firstName: firstName || email.split("@")[0] || "there",
         ...(lastName ? { lastName } : {}),
         ...(phone.trim() ? { phone: phone.trim() } : {}),
       });
+      if (result.alreadyRegistered) {
+        setView("account-exists");
+        return;
+      }
       const session = await getSession();
       if (session) {
         navigate({ to: "/account" });
@@ -222,7 +226,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
           <div className="mb-5 flex items-start justify-between">
             <div>
               <p className="eyebrow text-ink-foreground/30">
-                {view === "success" || view === "account" || view === "account-done"
+                {view === "success" ||
+                view === "account" ||
+                view === "account-done" ||
+                view === "account-exists"
                   ? "Booking Requested"
                   : "Mobile Detailing · Hertfordshire"}
               </p>
@@ -230,7 +237,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                 id="quick-booking-title"
                 className="mt-1.5 font-display text-[28px] leading-none tracking-wide"
               >
-                {view === "success" || view === "account" || view === "account-done" ? (
+                {view === "success" ||
+                view === "account" ||
+                view === "account-done" ||
+                view === "account-exists" ? (
                   "REQUEST SENT."
                 ) : (
                   <>
@@ -690,6 +700,42 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
               >
                 Skip for now
               </button>
+            </div>
+          ) : null}
+
+          {view === "account-exists" ? (
+            <div className="pt-2 text-center">
+              <div className="mx-auto mb-6 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-success">
+                <Check className="h-7 w-7 text-success-foreground" strokeWidth={2.5} />
+              </div>
+              <h3 className="font-display mb-3 text-[32px] leading-none">
+                YOU ALREADY HAVE AN ACCOUNT.
+              </h3>
+              <p className="mx-auto mb-7 max-w-[340px] text-[15px] leading-relaxed text-muted-foreground">
+                {email} is already registered, so your booking will be on it once we confirm the
+                slot. Sign in with that email, or reset your password if you have forgotten it.
+              </p>
+              <div className="flex flex-col gap-2.5">
+                <PrimaryActionButton
+                  type="button"
+                  onClick={() => {
+                    handleClose();
+                    navigate({ to: "/account/login", search: { email: email.trim() } });
+                  }}
+                >
+                  Sign in
+                </PrimaryActionButton>
+                <PrimaryActionButton
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    handleClose();
+                    navigate({ to: "/account/forgot", search: { email: email.trim() } });
+                  }}
+                >
+                  I forgot my password
+                </PrimaryActionButton>
+              </div>
             </div>
           ) : null}
 

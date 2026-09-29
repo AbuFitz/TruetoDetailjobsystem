@@ -196,7 +196,7 @@ function AdminDashboard() {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as BookingStatus | "all")}
           aria-label="Filter by status"
-          className="min-h-11 shrink-0 rounded-xl border border-hairline bg-surface-2 pl-3 pr-8 text-[13px] font-medium outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+          className="select-field min-h-11 shrink-0 rounded-xl border border-hairline bg-surface-2 pl-3 text-[13px] font-medium outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
         >
           {STATUS_FILTER_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -330,7 +330,7 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
-          <p className="mt-1 font-display text-xl leading-tight">{booking.package_name}</p>
+          <p className="mt-1 font-display text-[26px] leading-none">{booking.package_name}</p>
         </div>
         <StatusBadge status={booking.status} size="sm" />
       </div>

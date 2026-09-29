@@ -103,7 +103,7 @@ function AddressesPage() {
           YOUR ADDRESSES<span className="text-signal">.</span>
         </>
       }
-      back={{ to: "/account", label: "Your account" }}
+      back={{ to: "/account/settings", label: "Settings" }}
     >
       {isLoading ? (
         <BrandedLoading label="Loading addresses" className="mt-8" />
