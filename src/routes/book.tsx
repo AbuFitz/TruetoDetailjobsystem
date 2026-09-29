@@ -38,14 +38,14 @@ export const Route = createFileRoute("/book")({
   component: BookingFlow,
 });
 
-type Step = "postcode" | "address" | "vehicle" | "package" | "schedule" | "review" | "done";
+type Step = "vehicle" | "schedule" | "review" | "done";
 
 function BookingFlow() {
   const { session, loading: authLoading } = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [step, setStep] = useState<Step>("postcode");
+  const [step, setStep] = useState<Step>("vehicle");
   const [postcode, setPostcode] = useState("");
   const [areaResult, setAreaResult] = useState<ServiceAreaResult | null>(null);
   const [checkingArea, setCheckingArea] = useState(false);
@@ -84,8 +84,10 @@ function BookingFlow() {
   });
 
   useEffect(() => {
-    if (addresses && addresses.length > 0 && addressChoice === null) {
-      setAddressChoice(addresses.find((a) => a.is_default) ?? addresses[0]!);
+    if (addresses && addressChoice === null) {
+      setAddressChoice(
+        addresses.length > 0 ? (addresses.find((a) => a.is_default) ?? addresses[0]!) : "new",
+      );
     }
   }, [addresses, addressChoice]);
 
@@ -108,13 +110,6 @@ function BookingFlow() {
     try {
       const result = await checkServiceArea(postcode);
       setAreaResult(result);
-      if (result.covered) {
-        if (!session) {
-          navigate({ to: "/account/login", search: { next: "/book" } });
-          return;
-        }
-        setStep("address");
-      }
     } catch (err) {
       setAreaError(err instanceof Error ? err.message : "Couldn't check that postcode.");
     } finally {
@@ -136,7 +131,7 @@ function BookingFlow() {
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["my-addresses"] });
       setAddressChoice(created);
-      setStep("vehicle");
+      setStep("review");
     },
   });
 
@@ -190,7 +185,12 @@ function BookingFlow() {
     },
   });
 
-  if (authLoading) {
+  // Signed-out visitors are sent to sign in, then straight back here.
+  useEffect(() => {
+    if (!authLoading && !session) navigate({ to: "/account/login", search: { next: "/book" } });
+  }, [authLoading, session, navigate]);
+
+  if (authLoading || !session) {
     return (
       <div className="min-h-screen bg-background">
         <BrandedLoading label="Loading" />
@@ -209,7 +209,7 @@ function BookingFlow() {
         </>
       }
     >
-      {step !== "postcode" && step !== "done" ? (
+      {step !== "vehicle" && step !== "done" ? (
         <button
           type="button"
           onClick={() => setStep(prevStep(step))}
@@ -220,285 +220,279 @@ function BookingFlow() {
         </button>
       ) : null}
 
-      {step === "postcode" ? (
-        <section>
-          <h2 className="font-display text-[30px] leading-none">
-            Where should we detail the vehicle?
-          </h2>
-          <p className="mt-2 text-[15px] text-muted-foreground">
-            Enter your postcode and we'll check we cover your area.
-          </p>
-          <div className="mt-5 flex gap-2">
-            <input
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value)}
-              placeholder="e.g. HP2 6EL"
-              className="min-h-12 min-w-0 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
-            />
-            <PrimaryActionButton
-              className="w-auto px-6"
-              loading={checkingArea}
-              onClick={handlePostcodeSubmit}
-            >
-              Check
-            </PrimaryActionButton>
-          </div>
-          {areaResult ? (
-            areaResult.covered ? (
-              <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-success">
-                <Check className="h-4 w-4" strokeWidth={3} /> We cover your area
-              </p>
-            ) : (
-              <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-destructive">
-                <TriangleAlert className="h-4 w-4" /> This address is currently outside our mobile
-                service area.
-              </p>
-            )
-          ) : null}
-          {areaError ? <p className="mt-3 text-[13px] text-destructive">{areaError}</p> : null}
-        </section>
-      ) : null}
-
-      {step === "address" ? (
-        <section>
-          <h2 className="font-display text-[28px] leading-none">Where should we come?</h2>
-          <div className="mt-5 flex flex-col gap-2.5">
-            {(addresses ?? []).map((a) => (
-              <ChoiceCard
-                key={a.id}
-                selected={addressChoice !== "new" && addressChoice?.id === a.id}
-                onClick={() => setAddressChoice(a)}
-              >
-                <p className="text-[14px] font-semibold">{a.label}</p>
-                <p className="text-[13px] text-muted-foreground">
-                  {a.line1} · {a.postcode}
-                </p>
-              </ChoiceCard>
-            ))}
-            <ChoiceCard selected={addressChoice === "new"} onClick={() => setAddressChoice("new")}>
-              <p className="text-[14px] font-semibold">Another address</p>
-              <p className="text-[13px] text-muted-foreground">Postcode {areaResult?.postcode}</p>
-            </ChoiceCard>
-          </div>
-
-          {addressChoice === "new" ? (
-            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-4">
-              <div className="grid grid-cols-3 gap-2">
-                {(["Home", "Work", "Other"] as const).map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setNewAddress((s) => ({ ...s, label: l }))}
-                    className={`min-h-9 border text-[13px] font-semibold ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-              <input
-                value={newAddress.line1}
-                onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
-                placeholder="Address line 1"
-                className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-              />
-              <input
-                value={newAddress.city}
-                onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
-                placeholder="Town / city"
-                className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-              />
-            </div>
-          ) : null}
-
-          <PrimaryActionButton
-            className="mt-5"
-            loading={createAddressMutation.isPending}
-            disabled={addressChoice === null}
-            onClick={() =>
-              addressChoice === "new" ? createAddressMutation.mutate() : setStep("vehicle")
-            }
-          >
-            Continue
-          </PrimaryActionButton>
-        </section>
-      ) : null}
-
       {step === "vehicle" ? (
         <section>
-          <h2 className="font-display text-[28px] leading-none">Which vehicle?</h2>
-          <div className="mt-5 flex flex-col gap-2.5">
-            {(vehicles ?? []).map((v) => (
-              <ChoiceCard
-                key={v.id}
-                selected={vehicleChoice !== "new" && vehicleChoice?.id === v.id}
-                onClick={() => setVehicleChoice(v)}
-              >
-                <div className="flex items-center gap-2">
-                  {vehicleDescription(v) ? (
-                    <p className="text-[14px] font-semibold">{vehicleDescription(v)}</p>
-                  ) : null}
-                  <PlateTag registration={v.registration} />
-                </div>
-              </ChoiceCard>
-            ))}
-            <ChoiceCard selected={vehicleChoice === "new"} onClick={() => setVehicleChoice("new")}>
-              <p className="text-[14px] font-semibold">Add a new vehicle</p>
-            </ChoiceCard>
-          </div>
-
-          {vehicleChoice === "new" ? (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <input
-                value={newVehicle.make}
-                onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
-                placeholder="Make"
-                className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-              />
-              <input
-                value={newVehicle.model}
-                onChange={(e) => setNewVehicle((s) => ({ ...s, model: e.target.value }))}
-                placeholder="Model"
-                className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-              />
-              <input
-                value={newVehicle.registration}
-                onChange={(e) => setNewVehicle((s) => ({ ...s, registration: e.target.value }))}
-                placeholder="Registration"
-                className="col-span-2 min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
-              />
-            </div>
-          ) : null}
-
-          <div className="mt-5">
-            <span className="eyebrow block text-muted-foreground">Vehicle size</span>
-            <VehicleSizePicker className="mt-2" value={vehicleSize} onChange={setVehicleSize} />
-          </div>
-
-          <PrimaryActionButton
-            className="mt-5"
-            disabled={vehicleChoice === null}
-            onClick={() => setStep("package")}
-          >
-            Continue
-          </PrimaryActionButton>
-        </section>
-      ) : null}
-
-      {step === "package" ? (
-        <section>
-          <h2 className="font-display text-[28px] leading-none">Choose your package</h2>
-          <div className="mt-5 flex flex-col gap-2.5">
-            {DETAIL_PACKAGES.map((p) => (
-              <ChoiceCard
-                key={p.id}
-                selected={packageId === p.id}
-                onClick={() => setPackageId(p.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[15px] font-semibold">{p.name}</p>
-                    <p className="text-[13px] text-muted-foreground">
-                      {p.tagline} · {p.durationLabel}
-                    </p>
-                  </div>
-                  <p className="font-display text-xl">£{p.priceBySize[vehicleSize]}</p>
-                </div>
-              </ChoiceCard>
-            ))}
-          </div>
-
-          <div className="mt-5">
-            <span className="eyebrow block text-muted-foreground">Add-ons</span>
-            <div className="mt-2 flex flex-col gap-2">
-              {DETAIL_ADDONS.map((a) => (
-                <label
-                  key={a.id}
-                  className="press flex items-center justify-between rounded-xl border border-hairline bg-surface p-3.5"
+          <h2 className="font-display text-[28px] leading-none">Vehicle and package</h2>
+          <div className="mt-5 flex flex-col gap-8">
+            <div>
+              <p className="eyebrow text-muted-foreground">Vehicle</p>
+              <div className="mt-3 flex flex-col gap-2.5">
+                {(vehicles ?? []).map((v) => (
+                  <ChoiceCard
+                    key={v.id}
+                    selected={vehicleChoice !== "new" && vehicleChoice?.id === v.id}
+                    onClick={() => setVehicleChoice(v)}
+                  >
+                    <div className="flex items-center gap-2">
+                      {vehicleDescription(v) ? (
+                        <p className="text-[14px] font-semibold">{vehicleDescription(v)}</p>
+                      ) : null}
+                      <PlateTag registration={v.registration} />
+                    </div>
+                  </ChoiceCard>
+                ))}
+                <ChoiceCard
+                  selected={vehicleChoice === "new"}
+                  onClick={() => setVehicleChoice("new")}
                 >
-                  <span className="flex items-center gap-2.5 text-[14px] font-medium">
-                    <input
-                      type="checkbox"
-                      checked={addonIds.includes(a.id)}
-                      onChange={(e) =>
-                        setAddonIds((prev) =>
-                          e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
-                        )
-                      }
-                      className="h-4 w-4 rounded border-input accent-[var(--color-signal)]"
-                    />
-                    {a.label}
-                  </span>
-                  <span className="text-[13px] text-muted-foreground">+£{a.price}</span>
-                </label>
-              ))}
+                  <p className="text-[14px] font-semibold">Add a new vehicle</p>
+                </ChoiceCard>
+              </div>
+
+              {vehicleChoice === "new" ? (
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <input
+                    value={newVehicle.make}
+                    onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
+                    placeholder="Make"
+                    className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  />
+                  <input
+                    value={newVehicle.model}
+                    onChange={(e) => setNewVehicle((s) => ({ ...s, model: e.target.value }))}
+                    placeholder="Model"
+                    className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                  />
+                  <input
+                    value={newVehicle.registration}
+                    onChange={(e) => setNewVehicle((s) => ({ ...s, registration: e.target.value }))}
+                    placeholder="Registration"
+                    className="col-span-2 min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
+                  />
+                </div>
+              ) : null}
+
+              <div className="mt-5">
+                <span className="eyebrow block text-muted-foreground">Vehicle size</span>
+                <VehicleSizePicker className="mt-2" value={vehicleSize} onChange={setVehicleSize} />
+              </div>
+            </div>
+            <div>
+              <p className="eyebrow text-muted-foreground">Package</p>
+              <div className="mt-3 flex flex-col gap-2.5">
+                {DETAIL_PACKAGES.map((p) => (
+                  <ChoiceCard
+                    key={p.id}
+                    selected={packageId === p.id}
+                    onClick={() => setPackageId(p.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[15px] font-semibold">{p.name}</p>
+                        <p className="text-[13px] text-muted-foreground">
+                          {p.tagline} · {p.durationLabel}
+                        </p>
+                      </div>
+                      <p className="font-display text-xl">£{p.priceBySize[vehicleSize]}</p>
+                    </div>
+                  </ChoiceCard>
+                ))}
+              </div>
+
+              <div className="mt-5">
+                <span className="eyebrow block text-muted-foreground">Add-ons</span>
+                <div className="mt-2 flex flex-col gap-2">
+                  {DETAIL_ADDONS.map((a) => (
+                    <label
+                      key={a.id}
+                      className="press flex items-center justify-between rounded-xl border border-hairline bg-surface p-3.5"
+                    >
+                      <span className="flex items-center gap-2.5 text-[14px] font-medium">
+                        <input
+                          type="checkbox"
+                          checked={addonIds.includes(a.id)}
+                          onChange={(e) =>
+                            setAddonIds((prev) =>
+                              e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
+                            )
+                          }
+                          className="h-4 w-4 rounded border-input accent-[var(--color-signal)]"
+                        />
+                        {a.label}
+                      </span>
+                      <span className="text-[13px] text-muted-foreground">+£{a.price}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-
-          <PrimaryActionButton className="mt-5" onClick={() => setStep("schedule")}>
-            Continue · £{totalPrice}
+          <PrimaryActionButton
+            className="mt-6"
+            disabled={
+              vehicleChoice === null || (vehicleChoice === "new" && !newVehicle.registration.trim())
+            }
+            onClick={() => setStep("schedule")}
+          >
+            Next: when and where · £{totalPrice}
           </PrimaryActionButton>
         </section>
       ) : null}
 
       {step === "schedule" ? (
         <section>
-          <h2 className="font-display text-[28px] leading-none">Pick a date and time</h2>
-          <div className="mt-5">
-            <span className="eyebrow block text-muted-foreground">Date</span>
-            <input
-              type="date"
-              value={date}
-              min={ukNow().date}
-              onChange={(e) => {
-                const next = e.target.value;
-                setDate(next);
-                if (next && !isSlotAvailable(next, time)) setTime(firstAvailableSlot(next) ?? "");
-              }}
-              className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
-            />
-          </div>
-          <div className="mt-4">
-            <span className="eyebrow block text-muted-foreground">Time</span>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {TIME_SLOTS.map((t) => {
-                const unavailable = Boolean(date) && !isSlotAvailable(date, t);
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    disabled={unavailable}
-                    aria-pressed={time === t}
-                    onClick={() => setTime(t)}
-                    className={`min-h-11 border text-[13px] font-semibold disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
+          <h2 className="font-display text-[28px] leading-none">When and where</h2>
+          <div className="mt-5 flex flex-col gap-8">
+            <div>
+              <p className="eyebrow text-muted-foreground">Date and time</p>
+              <div className="mt-5">
+                <span className="eyebrow block text-muted-foreground">Date</span>
+                <input
+                  type="date"
+                  value={date}
+                  min={ukNow().date}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setDate(next);
+                    if (next && !isSlotAvailable(next, time))
+                      setTime(firstAvailableSlot(next) ?? "");
+                  }}
+                  className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
+                />
+              </div>
+              <div className="mt-4">
+                <span className="eyebrow block text-muted-foreground">Time</span>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {TIME_SLOTS.map((t) => {
+                    const unavailable = Boolean(date) && !isSlotAvailable(date, t);
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        disabled={unavailable}
+                        aria-pressed={time === t}
+                        onClick={() => setTime(t)}
+                        className={`min-h-11 border text-[13px] font-semibold disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
+                {date && !firstAvailableSlot(date) ? (
+                  <p className="mt-2 text-[13px] text-muted-foreground">
+                    No slots left on this day. Please pick another date.
+                  </p>
+                ) : null}
+              </div>
             </div>
-            {date && !firstAvailableSlot(date) ? (
-              <p className="mt-2 text-[13px] text-muted-foreground">
-                No slots left on this day. Please pick another date.
-              </p>
-            ) : null}
-          </div>
-          <div className="mt-4">
-            <span className="eyebrow block text-muted-foreground">
-              Anything we should know? (optional)
-            </span>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
-            />
+            <div>
+              <p className="eyebrow text-muted-foreground">Where should we come?</p>
+              <div className="mt-3 flex flex-col gap-2.5">
+                {(addresses ?? []).map((a) => (
+                  <ChoiceCard
+                    key={a.id}
+                    selected={addressChoice !== "new" && addressChoice?.id === a.id}
+                    onClick={() => setAddressChoice(a)}
+                  >
+                    <p className="text-[14px] font-semibold">{a.label}</p>
+                    <p className="text-[13px] text-muted-foreground">
+                      {a.line1} · {a.postcode}
+                    </p>
+                  </ChoiceCard>
+                ))}
+                <ChoiceCard
+                  selected={addressChoice === "new"}
+                  onClick={() => setAddressChoice("new")}
+                >
+                  <p className="text-[14px] font-semibold">Another address</p>
+                  <p className="text-[13px] text-muted-foreground">
+                    Postcode {areaResult?.postcode}
+                  </p>
+                </ChoiceCard>
+              </div>
+              {addressChoice === "new" ? (
+                <div className="mt-4">
+                  <p className="text-[14px] text-muted-foreground">
+                    Enter the postcode and we'll check we cover your area.
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      value={postcode}
+                      onChange={(e) => setPostcode(e.target.value)}
+                      placeholder="e.g. HP2 6EL"
+                      className="min-h-12 min-w-0 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+                    />
+                    <PrimaryActionButton
+                      className="w-auto px-6"
+                      loading={checkingArea}
+                      onClick={handlePostcodeSubmit}
+                    >
+                      Check
+                    </PrimaryActionButton>
+                  </div>
+                  {areaResult ? (
+                    areaResult.covered ? (
+                      <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-success">
+                        <Check className="h-4 w-4" strokeWidth={3} /> We cover your area
+                      </p>
+                    ) : (
+                      <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-destructive">
+                        <TriangleAlert className="h-4 w-4" /> This address is currently outside our
+                        mobile service area.
+                      </p>
+                    )
+                  ) : null}
+                  {areaError ? (
+                    <p className="mt-3 text-[13px] text-destructive">{areaError}</p>
+                  ) : null}
+                  {areaResult?.covered ? (
+                    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-4">
+                      <div className="grid grid-cols-3 gap-2">
+                        {(["Home", "Work", "Other"] as const).map((l) => (
+                          <button
+                            key={l}
+                            type="button"
+                            onClick={() => setNewAddress((s) => ({ ...s, label: l }))}
+                            className={`min-h-9 border text-[13px] font-semibold ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                          >
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        value={newAddress.line1}
+                        onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
+                        placeholder="Address line 1"
+                        className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                      />
+                      <input
+                        value={newAddress.city}
+                        onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
+                        placeholder="Town / city"
+                        className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </div>
           <PrimaryActionButton
-            className="mt-5"
-            disabled={!date || !time || !isSlotAvailable(date, time)}
-            onClick={() => setStep("review")}
+            className="mt-6"
+            loading={createAddressMutation.isPending}
+            disabled={
+              !date ||
+              !time ||
+              !isSlotAvailable(date, time) ||
+              addressChoice === null ||
+              (addressChoice === "new" && (!areaResult?.covered || !newAddress.line1.trim()))
+            }
+            onClick={() =>
+              addressChoice === "new" ? createAddressMutation.mutate() : setStep("review")
+            }
           >
-            Review booking
+            Next: review
           </PrimaryActionButton>
         </section>
       ) : null}
@@ -536,6 +530,18 @@ function BookingFlow() {
               <p className="font-display text-lg">Total</p>
               <p className="font-display text-2xl">£{totalPrice}</p>
             </div>
+          </div>
+
+          <div className="mt-4">
+            <span className="eyebrow block text-muted-foreground">
+              Anything we should know? (optional)
+            </span>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
+            />
           </div>
           {submitBooking.isError ? (
             <p className="mt-3 text-[13px] text-destructive">
@@ -603,7 +609,7 @@ function SummaryRow({ label, children }: { label: string; children: React.ReactN
 }
 
 function prevStep(step: Step): Step {
-  const order: Step[] = ["postcode", "address", "vehicle", "package", "schedule", "review"];
+  const order: Step[] = ["vehicle", "schedule", "review"];
   const idx = order.indexOf(step);
-  return order[Math.max(0, idx - 1)] ?? "postcode";
+  return order[Math.max(0, idx - 1)] ?? "vehicle";
 }

@@ -220,3 +220,21 @@ test("the booking popup asks for the vehicle size with the UK guide", async ({ p
   await expect(group).toContainText("SUVs, 4x4s and people carriers");
   await expect(page.locator("body")).not.toContainText(/sedan/i);
 });
+
+test("the signed-in booking flow has the website's three steps", async ({ page }) => {
+  await open(page, { name: "book", path: "/book", auth: true, logoHref: "/account", text: /x/ });
+  await expect(page.getByRole("heading", { name: /vehicle and package/i })).toBeVisible();
+  await expect(page.getByRole("radiogroup", { name: /vehicle size/i })).toContainText(
+    "Saloons and estates",
+  );
+  await page
+    .getByRole("button", { name: /full valet/i })
+    .first()
+    .click();
+  await page.getByRole("button", { name: /next: when and where/i }).click();
+  await expect(page.getByRole("heading", { name: /when and where/i })).toBeVisible();
+  await expect(page.getByText(/enter the postcode/i)).toBeVisible();
+  // Back returns to step one with choices kept.
+  await page.getByRole("button", { name: /back/i }).click();
+  await expect(page.getByRole("heading", { name: /vehicle and package/i })).toBeVisible();
+});
