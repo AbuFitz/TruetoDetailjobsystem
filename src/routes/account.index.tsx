@@ -129,7 +129,7 @@ function AccountDashboard() {
 
       <div className="bg-ink py-7 text-ink-foreground">
         <div className="mx-auto w-full max-w-2xl px-5 sm:px-6">
-          <p className="eyebrow text-ink-foreground/55">
+          <p className="eyebrow text-ink-foreground/30">
             {format(new Date(), "EEEE, d MMMM", { in: UK_TIME })}
           </p>
           <h1 className="mt-1 font-display text-[40px] leading-[0.9] sm:text-[48px]">
@@ -251,7 +251,7 @@ function AccountDashboard() {
           <div className="rounded-xl border border-hairline bg-surface p-4">
             <div className="flex items-baseline gap-1.5">
               <p className="font-display text-[44px] leading-none">{qualifyingVisits}</p>
-              <p className="font-display text-xl leading-none text-muted-foreground">/ 7</p>
+              <p className="font-display text-xl leading-none text-muted-foreground/50">/ 7</p>
             </div>
             <p className="mt-2 text-[13px] text-muted-foreground">
               qualifying visits toward your next reward
