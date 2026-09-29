@@ -45,7 +45,7 @@ export const VEHICLE_SIZE_GUIDE: Record<VehicleSize, { body: string; examples: s
 };
 
 export const VEHICLE_SIZE_NOTE =
-  "Not sure? Pick the closest and we will confirm before we arrive. Vans are quoted on our van fleet page.";
+  "Not sure? Pick the closest and we will confirm before we arrive. Van and fleet cleaning is coming soon.";
 
 export interface DetailPackage {
   id: string;
