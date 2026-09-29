@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { X, Check, Loader2 } from "lucide-react";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -9,6 +9,7 @@ import {
   VEHICLE_SIZE_LABELS,
   type VehicleSize,
 } from "@/lib/constants";
+import { TIME_SLOTS, formatBookingDate, isSlotAvailable, ukNow } from "@/lib/slots";
 
 // Same lead-capture endpoint the main site's own booking popup posts to —
 // this app has no separate booking backend for an anonymous, not-yet-signed-in
@@ -24,8 +25,6 @@ const PACK_ID_FOR_API: Record<string, string> = {
   "full-valet": "Full Valet",
   "premium-detail": "Premium Detail",
 };
-
-const TIME_SLOTS = ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM"];
 
 const POSTCODE_RE = /^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -70,7 +69,8 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
     (s, a) => s + a.price,
     0,
   );
-  const basePrice = selectedPackage && vehicleSize ? selectedPackage.priceBySize[vehicleSize] : null;
+  const basePrice =
+    selectedPackage && vehicleSize ? selectedPackage.priceBySize[vehicleSize] : null;
   const totalPrice = basePrice !== null ? basePrice + addonTotal : null;
 
   const postcodeValid = POSTCODE_RE.test(postcode.trim());
@@ -177,14 +177,28 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
     }
   }
 
+  // Escape closes the popup, like every other dialog on the site.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   if (!open) return null;
 
+  const slotOk = Boolean(date && time) && isSlotAvailable(date, time);
+
   return (
-    <div className="fixed inset-0 z-100 flex justify-end">
-      <div
-        className="absolute inset-0 bg-ink/80 backdrop-blur-[3px]"
-        onClick={handleClose}
-      />
+    <div
+      className="fixed inset-0 z-100 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="quick-booking-title"
+    >
+      <div className="absolute inset-0 bg-ink/80 backdrop-blur-[3px]" onClick={handleClose} />
 
       <div className="relative flex h-dvh w-full max-w-[520px] flex-col overflow-hidden bg-background animate-in slide-in-from-right duration-300">
         {/* Header */}
@@ -196,7 +210,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                   ? "Booking Requested"
                   : "Mobile Detailing · Hertfordshire"}
               </p>
-              <h2 className="mt-1.5 font-display text-[28px] leading-none tracking-wide">
+              <h2
+                id="quick-booking-title"
+                className="mt-1.5 font-display text-[28px] leading-none tracking-wide"
+              >
                 {view === "success" || view === "account" || view === "account-done" ? (
                   "REQUEST SENT."
                 ) : (
@@ -354,7 +371,12 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                               selected ? "border-signal bg-signal" : "border-input"
                             }`}
                           >
-                            {selected ? <Check className="h-2.5 w-2.5 text-signal-foreground" strokeWidth={3} /> : null}
+                            {selected ? (
+                              <Check
+                                className="h-2.5 w-2.5 text-signal-foreground"
+                                strokeWidth={3}
+                              />
+                            ) : null}
                           </span>
                           <span
                             className={`text-[13px] font-medium ${selected ? "text-foreground" : "text-muted-foreground"}`}
@@ -402,9 +424,13 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                     <input
                       type="date"
                       required
-                      min={new Date().toISOString().split("T")[0]}
+                      min={ukNow().date}
                       value={date}
-                      onChange={(e) => setDate(e.target.value)}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setDate(next);
+                        if (time && next && !isSlotAvailable(next, time)) setTime("");
+                      }}
                       className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
                     />
                   </div>
@@ -417,8 +443,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                         <button
                           key={t}
                           type="button"
+                          disabled={Boolean(date) && !isSlotAvailable(date, t)}
+                          aria-pressed={time === t}
                           onClick={() => setTime(t)}
-                          className={`rounded-xl border px-2 py-3 text-[13px] font-semibold transition-colors ${
+                          className={`rounded-xl border px-2 py-3 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${
                             time === t
                               ? "border-ink bg-ink text-ink-foreground"
                               : "border-input bg-surface-2 text-muted-foreground"
@@ -438,9 +466,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                 </p>
                 <div className="flex flex-col gap-5">
                   <div>
-                    <label className="eyebrow block text-muted-foreground">
-                      Service Postcode
-                    </label>
+                    <label className="eyebrow block text-muted-foreground">Service Postcode</label>
                     <input
                       value={postcode}
                       onChange={(e) => setPostcode(e.target.value.toUpperCase())}
@@ -485,9 +511,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
               </p>
 
               <div>
-                <label className="eyebrow block text-muted-foreground">
-                  Full Name (optional)
-                </label>
+                <label className="eyebrow block text-muted-foreground">Full Name (optional)</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -550,7 +574,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                       ["Pack", selectedPackage?.name ?? "Not set"],
                       ["Vehicle", vehicleSize ? VEHICLE_SIZE_LABELS[vehicleSize] : "Not set"],
                       ["Reg", carReg || "Not set"],
-                      ["Date & Time", date && time ? `${date} · ${time}` : "Not set"],
+                      [
+                        "Date & Time",
+                        date && time ? `${formatBookingDate(date)} · ${time}` : "Not set",
+                      ],
                       ["Postcode", postcode || "Not set"],
                     ] as [string, string][]
                   ).map(([k, v]) => (
@@ -589,7 +616,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
               ) : null}
               <p className="mx-auto mb-7 max-w-[340px] text-[15px] leading-relaxed text-muted-foreground">
                 We&rsquo;ll be in touch as soon as possible to confirm your slot on{" "}
-                <strong className="text-foreground">{date}</strong> at{" "}
+                <strong className="text-foreground">{formatBookingDate(date)}</strong> at{" "}
                 <strong className="text-foreground">{time}</strong>.
               </p>
 
@@ -719,10 +746,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
               <PrimaryActionButton
                 type="button"
                 className="flex-1"
-                disabled={!date || !time || !postcodeValid || !carRegValid}
+                disabled={!slotOk || !postcodeValid || !carRegValid}
                 onClick={() => {
                   setTouched((t) => ({ ...t, postcode: true, carReg: true }));
-                  if (date && time && postcodeValid && carRegValid) setStep(3);
+                  if (slotOk && postcodeValid && carRegValid) setStep(3);
                 }}
               >
                 {!date

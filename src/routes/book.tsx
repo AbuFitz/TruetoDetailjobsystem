@@ -17,6 +17,14 @@ import {
 import { listMyVehicles, createVehicle, vehicleDescription, type Vehicle } from "@/lib/vehicles";
 import { createBooking } from "@/lib/bookings";
 import {
+  TIME_SLOTS,
+  firstAvailableSlot,
+  formatBookingDate,
+  isSlotAvailable,
+  ukNow,
+  ukSlotToIso,
+} from "@/lib/slots";
+import {
   DETAIL_ADDONS,
   DETAIL_PACKAGES,
   VEHICLE_SIZE_LABELS,
@@ -29,8 +37,6 @@ export const Route = createFileRoute("/book")({
 });
 
 type Step = "postcode" | "address" | "vehicle" | "package" | "schedule" | "review" | "done";
-
-const TIME_SLOTS = ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM"];
 
 function BookingFlow() {
   const { session, loading: authLoading } = useSession();
@@ -148,9 +154,9 @@ function BookingFlow() {
       if (!vehicle) throw new Error("Select or add a vehicle first.");
       if (!address) throw new Error("Select or add an address first.");
 
-      const [hour, minutePeriod] = parseTimeSlot(time);
-      const scheduledStart = new Date(date);
-      scheduledStart.setHours(hour, minutePeriod, 0, 0);
+      if (!isSlotAvailable(date, time)) {
+        throw new Error("That time has already passed. Please pick a later slot or another day.");
+      }
 
       const booking = await createBooking({
         vehicle_id: vehicle.id,
@@ -169,7 +175,7 @@ function BookingFlow() {
         addon_ids: addonIds,
         addon_labels: DETAIL_ADDONS.filter((a) => addonIds.includes(a.id)).map((a) => a.label),
         price: totalPrice,
-        scheduled_start: scheduledStart.toISOString(),
+        scheduled_start: ukSlotToIso(date, time),
         estimated_duration_minutes: selectedPackage.durationMinutes,
         customer_notes: notes || undefined,
       });
@@ -450,25 +456,39 @@ function BookingFlow() {
               <input
                 type="date"
                 value={date}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setDate(e.target.value)}
+                min={ukNow().date}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setDate(next);
+                  if (next && !isSlotAvailable(next, time)) setTime(firstAvailableSlot(next) ?? "");
+                }}
                 className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
               />
             </div>
             <div className="mt-4">
               <span className="eyebrow block text-muted-foreground">Time</span>
               <div className="mt-2 grid grid-cols-3 gap-2">
-                {TIME_SLOTS.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTime(t)}
-                    className={`min-h-11 border text-[13px] font-semibold ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
-                  >
-                    {t}
-                  </button>
-                ))}
+                {TIME_SLOTS.map((t) => {
+                  const unavailable = Boolean(date) && !isSlotAvailable(date, t);
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      disabled={unavailable}
+                      aria-pressed={time === t}
+                      onClick={() => setTime(t)}
+                      className={`min-h-11 border text-[13px] font-semibold disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
               </div>
+              {date && !firstAvailableSlot(date) ? (
+                <p className="mt-2 text-[13px] text-muted-foreground">
+                  No slots left on this day. Please pick another date.
+                </p>
+              ) : null}
             </div>
             <div className="mt-4">
               <span className="eyebrow block text-muted-foreground">
@@ -483,7 +503,7 @@ function BookingFlow() {
             </div>
             <PrimaryActionButton
               className="mt-5"
-              disabled={!date}
+              disabled={!date || !time || !isSlotAvailable(date, time)}
               onClick={() => setStep("review")}
             >
               Review booking
@@ -511,7 +531,7 @@ function BookingFlow() {
                     : ""}
               </SummaryRow>
               <SummaryRow label="When">
-                {date} · {time}
+                {formatBookingDate(date)} · {time}
               </SummaryRow>
               {addonIds.length ? (
                 <SummaryRow label="Add-ons">
@@ -549,8 +569,8 @@ function BookingFlow() {
             </span>
             <h1 className="mt-5 font-display text-[28px] leading-tight">Booking confirmed</h1>
             <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">
-              We'll see you on {date}. Your detailer will come to you, and you can track it all from
-              your account.
+              We'll see you on {formatBookingDate(date)} at {time}. Your detailer will come to you,
+              and you can track it all from your account.
             </p>
             <Link to="/account/bookings/$id" params={{ id: bookingId }} className="mt-6">
               <PrimaryActionButton className="w-auto px-8">View booking</PrimaryActionButton>
@@ -595,16 +615,4 @@ function prevStep(step: Step): Step {
   const order: Step[] = ["postcode", "address", "vehicle", "package", "schedule", "review"];
   const idx = order.indexOf(step);
   return order[Math.max(0, idx - 1)] ?? "postcode";
-}
-
-/** "10:00 AM" -> [10, 0], "2:00 PM" -> [14, 0]. */
-function parseTimeSlot(slot: string): [number, number] {
-  const match = /(\d+):(\d+)\s*(AM|PM)/.exec(slot);
-  if (!match) return [10, 0];
-  let hour = Number(match[1]);
-  const minute = Number(match[2]);
-  const period = match[3];
-  if (period === "PM" && hour !== 12) hour += 12;
-  if (period === "AM" && hour === 12) hour = 0;
-  return [hour, minute];
 }
