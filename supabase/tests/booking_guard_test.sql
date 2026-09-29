@@ -88,6 +88,15 @@ begin
   end;
 end $$;
 
+-- A trusted connection with no signed-in user (SQL editor) is not re-priced.
+reset role;
+set local request.jwt.claim.sub = '';
+insert into public.bookings (customer_id, service_address_line1, service_postcode, vehicle_registration, package_id, package_name,
+  vehicle_size, price, scheduled_start, estimated_duration_minutes, internal_notes)
+select customer_id, 'x', 'HP2 6EL', 'X', 'essential', 'Essential Car Detail', 'small', 50, now() - interval '2 days', 150, 'Entered by hand' from attempt;
+insert into results select 'a direct database insert keeps its own price and date', price = 50, price::text
+from public.bookings where internal_notes = 'Entered by hand';
+
 -- Staff keep full control, including custom prices and assigning up front.
 reset role;
 set local role authenticated;

@@ -52,7 +52,9 @@ declare
   v_addon_total numeric;
   v_labels text[];
 begin
-  if public.is_staff() then
+  -- Staff, and trusted server-side connections with no signed-in user
+  -- (SQL editor, service role), keep full control.
+  if auth.uid() is null or public.is_staff() then
     return new;
   end if;
 
