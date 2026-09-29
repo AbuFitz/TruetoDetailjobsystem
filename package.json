@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "bun test tests"
+    "test": "bun test tests",
+    "test:db": "scripts/db-test.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
