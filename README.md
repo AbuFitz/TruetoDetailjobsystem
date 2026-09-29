@@ -192,9 +192,19 @@ order** (they're timestamped, so sorting by name is correct):
    link uses.
 8. `20260927120700_service_role_grants.sql` — the `service_role` grant the `get-eta` Edge Function
    needs.
+9. `20260928170000_decouple_customers_from_auth.sql`: customers no longer need a login (walk-in
+   customers staff add on a booking), plus `my_customer_id()`.
+10. `20260929120000_customer_booking_guard.sql`: the database price list and the trigger that
+    rebuilds price and staff-only fields on customer-created bookings, walk-in records claimed only
+    after email confirmation, the JPEG-only check-in photo bucket, and a friendlier
+    `cancel_own_booking()` message.
 
 (If you have the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
 linked to your project instead, `supabase db push` applies all of these in order.)
+
+To check the migrations and database rules before applying them, `npm run test:db` loads every
+migration into a throwaway local Postgres (needs the Postgres server binaries installed) and runs
+the SQL tests in `supabase/tests/`. It never touches your Supabase project.
 
 ### 3. Create the staff account
 
