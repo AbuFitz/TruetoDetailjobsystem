@@ -1,20 +1,20 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addWeeks, format, isFuture } from "date-fns";
+import { cn } from "@/lib/utils";
 import { UK_TIME } from "@/lib/uk-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarPlus, Car, ChevronRight, MapPin, Settings, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarPlus, Car, ChevronRight, Gift, MapPin, Check } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
-import { EmptyState } from "@/components/ttd/EmptyState";
-import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
+import { Avatar } from "@/components/ttd/Avatar";
 import { useRequireCustomerSession } from "@/hooks/use-session";
 import { getMyProfile } from "@/lib/customers";
 import { listMyBookings, LIVE_JOB_STATUSES, type BookingWithDetailer } from "@/lib/bookings";
 import { listMyVehicles, vehicleDescription } from "@/lib/vehicles";
-import { formatAppointment } from "@/lib/format";
+import { daysUntilLabel, formatAppointment } from "@/lib/format";
 import { MAINTENANCE_DETAIL_INTERVAL_WEEKS } from "@/lib/constants";
 import { customerHeadline, formatDuration } from "@/lib/progress";
 
@@ -112,6 +112,9 @@ function AccountDashboard() {
     );
   }
 
+  const REWARD_VISITS = 7;
+  const toReward = Math.max(0, REWARD_VISITS - qualifyingVisits);
+
   return (
     <AppShell
       area="customer"
@@ -126,147 +129,144 @@ function AccountDashboard() {
         </>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-8">
           {bookingsLoading ? (
             <BrandedLoading label="Loading your bookings" className="mt-8" />
           ) : nextBooking ? (
-            <NextBookingCard booking={nextBooking} live={Boolean(liveBooking)} />
+            <NextVisitCard booking={nextBooking} live={Boolean(liveBooking)} />
           ) : (
-            <EmptyState
-              icon={Sparkles}
-              title="No upcoming detail"
-              description="Book your next mobile detail and we'll come to you."
-              action={
-                <Link to="/book">
-                  <PrimaryActionButton size="md" className="w-auto px-6">
-                    Book a detail
-                  </PrimaryActionButton>
-                </Link>
-              }
-            />
+            <BookNextCard lastVisit={previousBookings[0] ?? null} />
           )}
 
           {otherUpcoming.length > 0 ? (
             <Section title="Also booked">
-              <div className="flex flex-col gap-2">
-                {otherUpcoming.map((b) => (
-                  <BookingRow key={b.id} booking={b} />
-                ))}
-              </div>
+              <VisitList bookings={otherUpcoming} />
             </Section>
           ) : null}
 
           <Section title="Previous details">
             {previousBookings.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {previousBookings.map((b) => (
-                  <BookingRow key={b.id} booking={b} past />
-                ))}
-              </div>
+              <VisitList bookings={previousBookings} past />
             ) : (
-              <p className="text-[13px] text-muted-foreground">Nothing completed yet.</p>
+              <p className="rounded-2xl border border-dashed border-hairline px-5 py-6 text-center text-[14px] text-muted-foreground">
+                Your finished details will collect here, with the date, car and what we did.
+              </p>
             )}
           </Section>
         </div>
 
         <div className="flex min-w-0 flex-col gap-8">
-          <nav aria-label="Account" className="grid grid-cols-2 gap-2">
-            {(
-              [
-                { to: "/book", label: "Book a detail", icon: CalendarPlus },
-                { to: "/account/vehicles", label: "Your garage", icon: Car },
-                { to: "/account/addresses", label: "Addresses", icon: MapPin },
-                { to: "/account/settings", label: "Settings", icon: Settings },
-              ] as const
-            ).map(({ to, label, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                className="press flex flex-col items-start gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
-              >
-                <Icon className="h-5 w-5 text-signal" strokeWidth={2.2} />
-                <span className="flex w-full items-center justify-between gap-1 text-[13px] font-semibold leading-tight">
-                  {label}
-                  <ChevronRight
-                    className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
-                    strokeWidth={2.4}
-                  />
-                </span>
-              </Link>
-            ))}
-          </nav>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              to="/book"
+              className="press col-span-2 inline-flex min-h-12 items-center justify-between bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep sm:col-span-1 lg:col-span-2"
+            >
+              Book a detail
+              <CalendarPlus className="h-4 w-4" strokeWidth={2.4} />
+            </Link>
+            <Link
+              to="/account/addresses"
+              className="press col-span-2 inline-flex min-h-12 items-center justify-between border border-hairline bg-surface px-5 text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-surface-2 sm:col-span-1 lg:col-span-2"
+            >
+              Your addresses
+              <MapPin className="h-4 w-4 text-signal-deep" strokeWidth={2.4} />
+            </Link>
+          </div>
 
           <Section title="Rewards">
-            <div className="rounded-xl border border-hairline bg-surface p-4">
-              <div className="flex items-baseline gap-1.5">
-                <p className="font-display text-[44px] leading-none">{qualifyingVisits}</p>
-                <p className="font-display text-xl leading-none text-muted-foreground/50">/ 7</p>
+            <div className="rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+              <div className="flex items-end justify-between gap-4">
+                <p className="font-display text-[56px] leading-[0.8]">
+                  {Math.min(qualifyingVisits, REWARD_VISITS)}
+                  <span className="text-[28px] text-muted-foreground/50"> / {REWARD_VISITS}</span>
+                </p>
+                <p className="max-w-[9rem] text-right text-[13px] leading-snug text-muted-foreground">
+                  {toReward === 0
+                    ? "Reward unlocked. Ask us on your next visit."
+                    : `${toReward} more ${toReward === 1 ? "visit" : "visits"} to your reward`}
+                </p>
               </div>
-              <p className="mt-2 text-[13px] text-muted-foreground">
-                qualifying visits toward your next reward
-              </p>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
-                <div
-                  className="h-full rounded-full bg-signal"
-                  style={{ width: `${Math.min(100, (qualifyingVisits / 7) * 100)}%` }}
-                />
-              </div>
+              <ol className="mt-5 grid grid-cols-7 gap-1.5" aria-label="Reward stamps">
+                {Array.from({ length: REWARD_VISITS }, (_, i) => {
+                  const done = i < qualifyingVisits;
+                  const last = i === REWARD_VISITS - 1;
+                  return (
+                    <li
+                      key={i}
+                      className={cn(
+                        "grid aspect-square place-items-center rounded-full border-2",
+                        done
+                          ? "border-signal bg-signal text-signal-foreground"
+                          : last
+                            ? "border-dashed border-signal/60 text-signal-deep"
+                            : "border-hairline text-transparent",
+                      )}
+                    >
+                      {done ? (
+                        <Check className="h-3.5 w-3.5" strokeWidth={3.2} />
+                      ) : last ? (
+                        <Gift className="h-3.5 w-3.5" strokeWidth={2.4} />
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
           </Section>
 
           <Section title="Your garage">
-            {vehicles && vehicles.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {vehicles.map((v) => (
-                  <div
-                    key={v.id}
-                    className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-3.5"
-                  >
-                    <div className="min-w-0">
-                      {vehicleDescription(v) ? (
-                        <p className="truncate text-[15px] font-semibold">
-                          {vehicleDescription(v)}
+            <div className="overflow-hidden rounded-2xl border border-hairline bg-surface">
+              {vehicles && vehicles.length > 0 ? (
+                <ul className="divide-y divide-hairline">
+                  {vehicles.map((v) => (
+                    <li key={v.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-muted-foreground">
+                          <Car className="h-4 w-4" strokeWidth={2.1} />
+                        </span>
+                        <p className="truncate text-[14px] font-semibold">
+                          {vehicleDescription(v) || "Saved car"}
                         </p>
-                      ) : null}
-                      <PlateTag registration={v.registration} className="mt-1" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={Car}
-                title="No vehicles saved yet"
-                description="Add a vehicle from your next booking."
-              />
-            )}
-            <Link
-              to="/account/vehicles"
-              className="mt-3 inline-block text-[13px] font-semibold text-signal-deep underline underline-offset-2"
-            >
-              Manage garage
-            </Link>
+                      </div>
+                      <PlateTag registration={v.registration} />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="px-4 py-5 text-[14px] text-muted-foreground">
+                  Cars you book are saved here, so rebooking takes two taps.
+                </p>
+              )}
+              <Link
+                to="/account/vehicles"
+                className="press flex items-center justify-between border-t border-hairline bg-surface-2 px-4 py-3 text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-surface"
+              >
+                Manage garage
+                <ChevronRight className="h-4 w-4 text-muted-foreground" strokeWidth={2.4} />
+              </Link>
+            </div>
           </Section>
 
           {recommendedDate ? (
-            <Section title="Recommended">
-              <div className="rounded-xl border border-signal/25 bg-signal/8 p-4">
-                <p className="text-[14px] font-semibold">
-                  Maintenance detail due around {format(recommendedDate, "d MMMM", { in: UK_TIME })}
-                </p>
-                <p className="mt-1 text-[13px] text-muted-foreground">
-                  {isFuture(recommendedDate)
-                    ? "Keeps your finish looking its best between full details."
-                    : "You're due, book whenever suits."}
-                </p>
-                <Link to="/book" className="mt-3 inline-block">
-                  <PrimaryActionButton size="sm" variant="outline" className="w-auto px-4">
-                    Book now
-                  </PrimaryActionButton>
-                </Link>
-              </div>
-            </Section>
+            <div className="rounded-2xl border border-signal/30 bg-signal/8 p-5">
+              <p className="eyebrow text-signal-deep">Recommended</p>
+              <p className="mt-2 font-display text-[28px] leading-[0.95]">
+                MAINTENANCE DETAIL DUE AROUND{" "}
+                {format(recommendedDate, "d MMMM", { in: UK_TIME }).toUpperCase()}
+              </p>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+                {isFuture(recommendedDate)
+                  ? "Keeps your finish looking its best between full details."
+                  : "You are due. Book whenever suits."}
+              </p>
+              <Link
+                to="/book"
+                className="press mt-4 inline-flex min-h-11 items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-deep"
+              >
+                Book now <ArrowRight className="h-4 w-4" strokeWidth={2.6} />
+              </Link>
+            </div>
           ) : null}
         </div>
       </div>
@@ -274,89 +274,196 @@ function AccountDashboard() {
   );
 }
 
-function BookingRow({
-  booking: b,
-  past = false,
-}: {
-  booking: BookingWithDetailer;
-  past?: boolean;
-}) {
-  const { dayLabel, timeLabel } = formatAppointment(b.scheduled_start);
+/** Big day and month, the way the booking sits on a calendar. */
+function DateBlock({ iso, tone = "light" }: { iso: string; tone?: "light" | "dark" }) {
+  const d = new Date(iso);
   return (
-    <Link
-      to="/account/bookings/$id"
-      params={{ id: b.id }}
-      className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+    <div
+      className={cn(
+        "flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl",
+        tone === "dark" ? "bg-white/10" : "bg-surface-2",
+      )}
     >
-      <div className="min-w-0">
-        <p className="truncate font-display text-[22px] leading-none">{b.package_name}</p>
-        <p className="text-[12px] text-muted-foreground">
-          {past
-            ? format(new Date(b.scheduled_start), "d MMM yyyy", { in: UK_TIME })
-            : `${dayLabel}, ${timeLabel}`}{" "}
-          · {b.vehicle_registration}
-        </p>
-      </div>
-      <StatusBadge status={b.status} size="sm" />
-    </Link>
+      <span className="font-display text-[26px] leading-[0.85]">
+        {format(d, "d", { in: UK_TIME })}
+      </span>
+      <span
+        className={cn(
+          "text-[10px] font-bold uppercase tracking-[0.14em]",
+          tone === "dark" ? "text-ink-foreground/60" : "text-muted-foreground",
+        )}
+      >
+        {format(d, "MMM", { in: UK_TIME })}
+      </span>
+    </div>
   );
 }
 
-function NextBookingCard({
-  booking,
-  live,
-  className,
+/** One card with rows, not a stack of separate boxes. */
+function VisitList({
+  bookings,
+  past = false,
 }: {
-  booking: BookingWithDetailer;
-  live: boolean;
-  className?: string;
+  bookings: BookingWithDetailer[];
+  past?: boolean;
 }) {
-  const { dayLabel, timeLabel } = formatAppointment(booking.scheduled_start);
+  return (
+    <ul className="divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline bg-surface">
+      {bookings.map((b) => {
+        const { dayLabel, timeLabel } = formatAppointment(b.scheduled_start);
+        return (
+          <li key={b.id}>
+            <Link
+              to="/account/bookings/$id"
+              params={{ id: b.id }}
+              className="press flex items-center gap-3.5 px-4 py-3.5 hover:bg-surface-2"
+            >
+              <DateBlock iso={b.scheduled_start} />
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-[22px] leading-[1.02] sm:truncate">
+                  {b.package_name}
+                </p>
+                <p className="mt-1 text-[12px] text-muted-foreground">
+                  {past
+                    ? format(new Date(b.scheduled_start), "EEEE", { in: UK_TIME })
+                    : `${dayLabel}, ${timeLabel}`}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <PlateTag registration={b.vehicle_registration} className="text-[13px]" />
+                  <span className="sm:hidden">
+                    <StatusBadge status={b.status} size="sm" />
+                  </span>
+                </div>
+              </div>
+              <span className="hidden shrink-0 sm:block">
+                <StatusBadge status={b.status} size="sm" />
+              </span>
+              <ChevronRight
+                className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block"
+                strokeWidth={2.4}
+              />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
-  if (live) {
-    return (
-      <Link
-        to="/account/bookings/$id"
-        params={{ id: booking.id }}
-        className={`press block rounded-2xl border border-signal/30 bg-ink p-5 text-ink-foreground ${className ?? ""}`}
-      >
-        <StatusBadge status={booking.status} size="sm" />
-        <p className="mt-3 font-display text-[34px] leading-none">
-          {customerHeadline(booking.status, booking.detailer?.name?.split(" ")[0])}
-        </p>
-        {booking.status === "en_route" && booking.eta_seconds != null ? (
-          <p className="mt-1 text-[15px] font-semibold text-signal">
-            About {formatDuration(booking.eta_seconds)} away
-          </p>
-        ) : null}
-        <p className="mt-1 text-[14px] text-ink-foreground/70">
-          {booking.package_name} · {booking.vehicle_registration}
-        </p>
-        <span className="mt-4 inline-flex min-h-11 items-center gap-2 bg-signal px-5 font-sans text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground">
-          {booking.status === "en_route" ? "Watch live" : "View job"}
-        </span>
-      </Link>
-    );
-  }
+function NextVisitCard({ booking, live }: { booking: BookingWithDetailer; live: boolean }) {
+  const { timeLabel } = formatAppointment(booking.scheduled_start);
+  const d = new Date(booking.scheduled_start);
+  const first = booking.detailer?.name?.split(" ")[0];
 
   return (
     <Link
       to="/account/bookings/$id"
       params={{ id: booking.id }}
-      className={`press block rounded-2xl border border-hairline bg-surface p-5 hover:bg-surface-2 ${className ?? ""}`}
+      className="press relative block overflow-hidden rounded-2xl bg-ink p-5 text-ink-foreground shadow-card sm:p-7"
     >
-      <p className="eyebrow text-muted-foreground">Next mobile detail</p>
-      <p className="mt-2 font-display text-[34px] leading-none">{booking.package_name}</p>
-      <p className="mt-1 text-[15px] text-muted-foreground">
-        {dayLabel} · {timeLabel}
-      </p>
-      <p className="mt-1 text-[14px] text-muted-foreground">
-        {booking.vehicle_registration} · {booking.service_postcode}
-      </p>
-      <div className="mt-3">
-        <StatusBadge status={booking.status} size="sm" />
+      <span className="absolute inset-x-0 top-0 h-1 bg-signal" aria-hidden />
+      <div className="flex items-center justify-between gap-3">
+        <p className="eyebrow flex items-center gap-2 text-ink-foreground/55">
+          {live ? (
+            <span className="relative grid h-2 w-2 place-items-center">
+              <span className="pulse-ring absolute h-2 w-2 rounded-full bg-signal" />
+              <span className="h-2 w-2 rounded-full bg-signal" />
+            </span>
+          ) : null}
+          {live ? "Happening now" : "Next visit"}
+        </p>
+        {!live ? (
+          <span className="bg-white/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-signal">
+            {daysUntilLabel(booking.scheduled_start)}
+          </span>
+        ) : (
+          <StatusBadge status={booking.status} size="sm" />
+        )}
       </div>
+
+      {live ? (
+        <>
+          <p className="mt-4 font-display text-[44px] leading-[0.9] sm:text-[56px]">
+            {customerHeadline(booking.status, first).toUpperCase()}
+          </p>
+          {booking.status === "en_route" && booking.eta_seconds != null ? (
+            <p className="mt-2 text-[17px] font-semibold text-signal">
+              About {formatDuration(booking.eta_seconds)} away
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <div className="mt-4 flex items-end gap-4">
+          <p className="font-display text-[64px] leading-[0.82] sm:text-[88px]">
+            {format(d, "EEE d", { in: UK_TIME }).toUpperCase()}
+            <span className="ml-3 text-ink-foreground/40">
+              {format(d, "MMM", { in: UK_TIME }).toUpperCase()}
+            </span>
+          </p>
+        </div>
+      )}
+
+      <p className="mt-4 font-display text-[28px] leading-none sm:text-[32px]">
+        {booking.package_name}
+        {!live ? <span className="text-ink-foreground/45"> · {timeLabel}</span> : null}
+      </p>
+
+      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-white/10 pt-5">
+        <PlateTag registration={booking.vehicle_registration} />
+        <span className="flex min-w-0 items-center gap-1.5 text-[13px] text-ink-foreground/65">
+          <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.1} />
+          <span className="truncate">{booking.service_postcode}</span>
+        </span>
+        {booking.detailer ? (
+          <span className="flex items-center gap-2 text-[13px] text-ink-foreground/80">
+            <Avatar
+              name={booking.detailer.name}
+              photoUrl={booking.detailer.photo_url}
+              size="sm"
+              className="bg-signal text-signal-foreground"
+            />
+            {first}
+          </span>
+        ) : null}
+        <span className="ml-auto inline-flex min-h-11 items-center gap-2 bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground">
+          {live ? (booking.status === "en_route" ? "Watch live" : "View job") : "View booking"}
+          <ArrowRight className="h-4 w-4" strokeWidth={2.6} />
+        </span>
+      </div>
+      {!live ? <StatusBadgeRow status={booking.status} /> : null}
     </Link>
+  );
+}
+
+function StatusBadgeRow({ status }: { status: BookingWithDetailer["status"] }) {
+  const line =
+    status === "requested"
+      ? "We are checking your slot and will confirm by email."
+      : status === "assigned"
+        ? "Your detailer is set. You will be told when they set off."
+        : "You are booked in. There is nothing you need to do.";
+  return <p className="mt-4 text-[13px] text-ink-foreground/55">{line}</p>;
+}
+
+function BookNextCard({ lastVisit }: { lastVisit: BookingWithDetailer | null }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-signal/30 bg-signal/8 p-6 sm:p-8">
+      <p className="eyebrow text-signal-deep">Nothing booked</p>
+      <p className="mt-3 font-display text-[44px] leading-[0.9] sm:text-[60px]">
+        READY FOR YOUR NEXT DETAIL?
+      </p>
+      <p className="mt-3 max-w-md text-[15px] leading-relaxed text-muted-foreground">
+        {lastVisit
+          ? `Your last detail was on ${format(new Date(lastVisit.scheduled_start), "d MMMM", { in: UK_TIME })}. Pick a day and we come to you.`
+          : "Pick a day and we come to you, with our own water and power."}
+      </p>
+      <Link
+        to="/book"
+        className="press mt-6 inline-flex min-h-12 items-center gap-2 bg-signal px-6 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep"
+      >
+        Book a detail <ArrowRight className="h-4 w-4" strokeWidth={2.6} />
+      </Link>
+    </div>
   );
 }
 

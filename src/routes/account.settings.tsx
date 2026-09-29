@@ -68,7 +68,7 @@ function AccountSettings() {
           <HelpSection />
         </div>
         <div className="flex flex-col gap-4">
-          <PasswordSection />
+          <PasswordSection customer />
           <SignOutSection email={session.user.email} />
         </div>
       </div>

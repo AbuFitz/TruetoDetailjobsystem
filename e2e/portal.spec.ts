@@ -212,7 +212,8 @@ test("the admin queue lets staff confirm a website request", async ({ page }) =>
 
 test("the booking popup asks for the vehicle size with the UK guide", async ({ page }) => {
   await fakeSupabase(page.context());
-  await page.goto("/account/login", { waitUntil: "networkidle" });
+  await page.goto("/account/login?mode=register", { waitUntil: "networkidle" });
+  await page.waitForTimeout(400);
   await page.getByRole("button", { name: /book a detail/i }).click();
   const group = page.getByRole("radiogroup", { name: /vehicle size/i });
   await expect(group).toContainText("Hatchbacks and coupes");
@@ -304,7 +305,7 @@ test("settings hold the password, appearance, help and sign out, and no page foo
     text: /x/,
   });
   await expect(page.getByText("Password", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /sign out/i }).first()).toBeVisible();
   await expect(page.getByRole("radio", { name: /dark/i })).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 900 });
   const footer = page.locator("footer");
@@ -312,11 +313,130 @@ test("settings hold the password, appearance, help and sign out, and no page foo
   await expect(footer).not.toContainText(/07359|591800/);
 });
 
-test("the header has a settings gear and no sign out or theme buttons, and the tab bar has settings on phones", async ({
+test("the header has a settings gear and a sign out button, and the tab bar has settings on phones", async ({
   page,
 }) => {
   await open(page, { name: "dash", path: "/account", auth: true, logoHref: "/account", text: /x/ });
   await expect(page.getByRole("link", { name: "Settings", exact: true }).first()).toBeVisible();
+  const header = page.locator("header");
+  await expect(header.getByRole("button", { name: "Sign out" })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(header.getByRole("button", { name: "Sign out" })).toBeVisible();
   await expect(page.locator("nav[aria-label='Quick links']").getByText("Settings")).toBeVisible();
+});
+
+for (const area of [
+  { name: "customer", path: "/account/settings", staff: false },
+  { name: "staff", path: "/admin/settings", staff: true },
+]) {
+  test(`${area.name} settings: the password change checks the current password and gives clear answers`, async ({
+    page,
+  }) => {
+    await fakeSupabase(page.context(), { staff: area.staff });
+    await page.context().addCookies([sessionCookie]);
+    await page.goto(area.path, { waitUntil: "networkidle" });
+    const fill = async (current: string, next: string) => {
+      await page.fill("#current-password", current);
+      await page.fill("#new-password", next);
+      await page.fill("#confirm-password", next);
+      await page.getByRole("button", { name: /update password/i }).click();
+    };
+    await fill("Wrong-Pass-1", "Brand-New-Pass-7");
+    await expect(page.getByRole("alert")).toContainText(/current password is not right/i);
+    await fill("Old-Pass-1", "Reused-Pass-1");
+    await expect(page.getByRole("alert")).toContainText(/not used before/i);
+    await fill("Old-Pass-1", "Brand-New-Pass-7");
+    await expect(page.getByText("Password updated")).toBeVisible();
+    await expect(page.locator("#current-password")).toHaveValue("");
+  });
+}
+
+test("the sign out button is in the header of the customer and staff portals, on desktop and phone", async ({
+  page,
+}) => {
+  for (const [path, staff] of [
+    ["/account", false],
+    ["/admin", true],
+  ] as const) {
+    await fakeSupabase(page.context(), { staff });
+    await page.context().addCookies([sessionCookie]);
+    for (const w of [1280, 390]) {
+      await page.setViewportSize({ width: w, height: 800 });
+      await page.goto(path, { waitUntil: "networkidle" });
+      await expect(page.locator("header").getByRole("button", { name: "Sign out" })).toBeVisible();
+    }
+  }
+});
+
+test("tracking, on the way: route distance, journey log, alerts, calendar and share", async ({
+  page,
+}) => {
+  await fakeSupabase(page.context(), { trackedStatus: "en_route" });
+  await page.goto("/account/track/tok_abcdef123456", { waitUntil: "networkidle" });
+  await expect(page.getByText(/Your visit so far/i)).toBeVisible();
+  await expect(page.getByText(/Jamie set off/i)).toBeVisible();
+  await expect(page.getByText(/Before we arrive/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: /Google/ })).toHaveAttribute(
+    "href",
+    /calendar\.google\.com.*action=TEMPLATE/,
+  );
+  await expect(page.getByRole("button", { name: /Apple \/ Outlook/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Share this page/ })).toBeVisible();
+  await expect(page).toHaveTitle(/min away|on the way/i);
+});
+
+test("tracking, detailing: finish estimate and checklist progress", async ({ page }) => {
+  await fakeSupabase(page.context(), { trackedStatus: "in_progress" });
+  await page.goto("/account/track/tok_abcdef123456", { waitUntil: "networkidle" });
+  await expect(page.getByText(/Done by|Nearly there/)).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: /Detailing progress/ })).toHaveAttribute(
+    "aria-valuenow",
+    "25",
+  );
+  await expect(page.getByText(/1 of 4 steps done/)).toBeVisible();
+});
+
+test("tracking, finished: thank you, time on site and a way to book again", async ({ page }) => {
+  await fakeSupabase(page.context(), { trackedStatus: "completed" });
+  await page.goto("/account/track/tok_abcdef123456", { waitUntil: "networkidle" });
+  await expect(page.getByText(/Enjoy the finish, Sam/)).toBeVisible();
+  await expect(page.getByRole("link", { name: /Book again/ })).toHaveAttribute("href", "/book");
+  await expect(page.getByText(/Detailing started/)).toBeVisible();
+});
+
+test("the public login page toggles between sign in and register, and register points to booking", async ({
+  page,
+}) => {
+  await fakeSupabase(page.context());
+  await page.goto("/account/login", { waitUntil: "networkidle" });
+  await page.waitForTimeout(500);
+  await expect(page.getByRole("tab", { name: "Sign in" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("#password")).toBeVisible();
+  await page.getByRole("tab", { name: "Register" }).click();
+  await expect(
+    page.getByRole("heading", { name: /book a detail, and your account is ready/i }),
+  ).toBeVisible();
+  await expect(page.locator("#password")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /create one/i })).toHaveAttribute(
+    "href",
+    /account\/create/,
+  );
+  await page.getByRole("button", { name: "Book a detail" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("tab", { name: "Sign in" }).click();
+  await expect(page.locator("#password")).toBeVisible();
+  await page.goto("/account/login?mode=register", { waitUntil: "networkidle" });
+  await page.waitForTimeout(400);
+  await expect(page.getByRole("tab", { name: "Register" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+});
+
+test("the staff sign in has no register option", async ({ page }) => {
+  await fakeSupabase(page.context());
+  await page.goto("/admin/login", { waitUntil: "networkidle" });
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await expect(page.getByText(/register|create an account|sign up/i)).toHaveCount(0);
 });

@@ -66,7 +66,7 @@ export function PlateTag({
       >
         GB
       </span>
-      <span className="px-2 py-[3px] font-display text-[19px] uppercase leading-[1.05] tracking-[0.1em] text-ink">
+      <span className="px-2 pb-[0.095em] pt-[0.22em] font-display text-[19px] uppercase leading-[1.05] tracking-[0.1em] text-ink">
         {registration}
       </span>
     </span>

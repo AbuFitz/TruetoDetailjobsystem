@@ -1,12 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarClock, Car, MapPin, MessageCircle, Phone, Sparkles } from "lucide-react";
+import { MessageCircle, PartyPopper, Phone, Sparkles } from "lucide-react";
+import { BookingSummary } from "@/components/ttd/BookingSummary";
 import { PublicShell } from "@/components/ttd/PublicShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { LiveJobPanel, StepTracker, viewFromTracked } from "@/components/ttd/LiveJob";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { getTrackedBooking } from "@/lib/tracking";
-import { customerHeadline } from "@/lib/progress";
+import {
+  AlertsToggle,
+  ConnectionBanner,
+  JourneyLog,
+  PrepList,
+  ShareLink,
+  useLiveTitle,
+  useTrackingAlerts,
+} from "@/components/ttd/TrackingExtras";
+import { customerHeadline, formatDuration } from "@/lib/progress";
+import { journeyEvents, timeOnSiteMinutes } from "@/lib/journey";
 import { formatAppointment } from "@/lib/format";
 import { supportContact } from "@/lib/constants";
 
@@ -23,11 +34,30 @@ function TrackPage() {
     data: booking,
     isLoading,
     isError,
+    dataUpdatedAt,
   } = useQuery({
     queryKey: ["tracked", token],
     queryFn: () => getTrackedBooking(token),
-    refetchInterval: 10_000,
+    // Quicker while the detailer is driving, relaxed otherwise; pauses in a hidden tab.
+    refetchInterval: (q) => (q.state.data?.status === "en_route" ? 5_000 : 15_000),
+    refetchOnWindowFocus: true,
   });
+
+  const detailerFirst = booking?.detailer?.first_name ?? null;
+  const etaAt = booking?.tracking?.eta_updated_at;
+  const etaSecs = booking?.tracking?.eta_seconds;
+  const etaMinutes =
+    booking?.status === "en_route" && etaAt && etaSecs != null
+      ? Math.max(1, Math.round((new Date(etaAt).getTime() + etaSecs * 1000 - Date.now()) / 60_000))
+      : null;
+  useTrackingAlerts(booking?.status, detailerFirst, etaMinutes);
+  useLiveTitle(
+    booking?.status === "en_route" && etaMinutes != null
+      ? `${detailerFirst ?? "Detailer"} is ${etaMinutes} min away`
+      : booking
+        ? customerHeadline(booking.status, detailerFirst)
+        : null,
+  );
 
   if (isLoading) {
     return (
@@ -67,6 +97,17 @@ function TrackPage() {
     booking.status,
   );
   const first = booking.customer_first_name;
+  const upcoming = ["requested", "confirmed", "assigned", "en_route"].includes(booking.status);
+  const events = journeyEvents(booking, view.detailerFirstName);
+  const onSite = timeOnSiteMinutes(booking);
+  const calendarEvent = {
+    uid: booking.reference,
+    title: `True To Detail: ${booking.package_name}`,
+    start: new Date(booking.scheduled_start),
+    durationMinutes: booking.estimated_duration_minutes || 120,
+    location: [booking.service_city, booking.service_postcode].filter(Boolean).join(", "),
+    description: `Booking ${booking.reference}. Follow your detailer live: ${typeof window === "undefined" ? "" : window.location.href}`,
+  };
 
   return (
     <PublicShell
@@ -84,6 +125,31 @@ function TrackPage() {
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-4">
+          <ConnectionBanner
+            dataUpdatedAt={dataUpdatedAt}
+            live={booking.status === "en_route"}
+            locationUpdatedAt={booking.tracking?.updated_at ?? null}
+          />
+          {booking.status === "completed" ? (
+            <section className="rounded-2xl bg-ink p-5 text-ink-foreground shadow-card">
+              <p className="eyebrow flex items-center gap-2 text-ink-foreground/55">
+                <PartyPopper className="h-3.5 w-3.5" strokeWidth={2.4} /> Finished
+              </p>
+              <p className="mt-3 font-display text-[40px] leading-none">
+                Enjoy the finish{first ? `, ${first}` : ""}
+              </p>
+              <p className="mt-2 text-[14px] leading-relaxed text-ink-foreground/70">
+                {onSite ? `${formatDuration(onSite * 60)} on site. ` : ""}Thanks for choosing True
+                To Detail. Rebooking takes a couple of taps.
+              </p>
+              <Link
+                to="/book"
+                className="press mt-4 inline-flex min-h-11 items-center justify-center bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
+              >
+                Book again
+              </Link>
+            </section>
+          ) : null}
           {live ? (
             <LiveJobPanel view={view} showHeadline={false} />
           ) : (
@@ -104,6 +170,10 @@ function TrackPage() {
               <StepTracker status={booking.status} className="mt-6" />
             </div>
           )}
+          {booking.status !== "requested" ? <JourneyLog events={events} /> : null}
+          {["confirmed", "assigned", "en_route", "requested"].includes(booking.status) ? (
+            <PrepList />
+          ) : null}
           {!live && view.detailerName ? (
             <p className="rounded-xl bg-surface-2 px-4 py-3 text-[14px]">
               <span className="font-semibold">{view.detailerName}</span> is your detailer
@@ -113,37 +183,19 @@ function TrackPage() {
         </div>
 
         <aside className="flex flex-col gap-4">
-          <section className="rounded-2xl border border-hairline bg-surface p-5">
-            <p className="eyebrow text-muted-foreground">Your booking</p>
-            <p className="mt-2 font-display text-[28px] leading-none">{booking.package_name}</p>
-            {booking.addon_labels && booking.addon_labels.length > 0 ? (
-              <p className="mt-1.5 text-[13px] text-muted-foreground">
-                + {booking.addon_labels.join(", ")}
-              </p>
-            ) : null}
-            <dl className="mt-4 flex flex-col gap-3 text-[14px]">
-              <Row icon={CalendarClock} label="When">
-                {dayLabel}, {timeLabel}
-              </Row>
-              <Row icon={Car} label="Vehicle">
-                {[booking.vehicle_description, booking.vehicle_registration]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </Row>
-              <Row icon={MapPin} label="Where">
-                {[booking.service_city, booking.service_postcode].filter(Boolean).join(", ")}
-              </Row>
-            </dl>
-            {booking.price != null ? (
-              <p className="mt-4 flex items-baseline justify-between border-t border-hairline pt-3">
-                <span className="eyebrow">Total</span>
-                <span className="font-display text-[28px] leading-none">£{booking.price}</span>
-              </p>
-            ) : null}
-            <p className="mt-2 text-[12px] text-muted-foreground">
-              Paid on the day by card, bank transfer or cash. The price is fixed.
-            </p>
-          </section>
+          {upcoming ? <AlertsToggle /> : null}
+          <BookingSummary
+            packageName={booking.package_name}
+            addons={booking.addon_labels}
+            dayLabel={dayLabel}
+            timeLabel={timeLabel}
+            vehicleDescription={booking.vehicle_description}
+            registration={booking.vehicle_registration}
+            where={[booking.service_city, booking.service_postcode].filter(Boolean).join(", ")}
+            price={booking.price}
+            calendar={upcoming ? calendarEvent : null}
+          />
+          {upcoming ? <ShareLink /> : null}
 
           {!booking.customer_has_account ? (
             <section className="rounded-2xl border border-signal/30 bg-signal/8 p-5">
@@ -196,27 +248,5 @@ function TrackPage() {
         </aside>
       </div>
     </PublicShell>
-  );
-}
-
-function Row({
-  icon: Icon,
-  label,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2.2} />
-      <div className="min-w-0">
-        <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-          {label}
-        </dt>
-        <dd className="font-semibold">{children}</dd>
-      </div>
-    </div>
   );
 }

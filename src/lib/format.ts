@@ -148,3 +148,15 @@ export function formatCountdownToAppointment(
   }
   return `in ${formatDistanceToNowStrict(new Date(appointmentAtIso))}`;
 }
+
+/** "Today", "Tomorrow", "In 3 days", "In 2 weeks": how far off a date is, counted in UK calendar days. */
+export function daysUntilLabel(iso: string, now: Date = new Date()): string {
+  const day = (d: Date) => format(d, "yyyy-MM-dd", { in: UK_TIME });
+  const a = new Date(`${day(now)}T00:00:00Z`).getTime();
+  const b = new Date(`${day(new Date(iso))}T00:00:00Z`).getTime();
+  const days = Math.round((b - a) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  if (days < 14) return `In ${days} days`;
+  return `In ${Math.round(days / 7)} weeks`;
+}

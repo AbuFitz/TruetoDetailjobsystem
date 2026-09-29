@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+  type GeoJSONSource,
   LngLatBounds,
   Map as MapLibreMap,
   Marker,
@@ -35,6 +36,8 @@ interface TrackingMapProps {
   /** Detailer's profile photo — shown as the marker itself when set, generic figure otherwise. */
   detailerPhotoUrl?: string | null;
   lastUpdate?: string | null;
+  /** Road route from the detailer to the address, drawn as a line under the markers. */
+  route?: [number, number][] | null;
   className?: string;
 }
 
@@ -107,6 +110,7 @@ export function TrackingMap({
   destination,
   detailerPhotoUrl,
   lastUpdate,
+  route,
   className,
 }: TrackingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -237,6 +241,40 @@ export function TrackingMap({
       hasFitBoundsRef.current = true;
     }
   }, [detailerPosition, destination, detailerPhotoUrl, lastUpdate]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const data = {
+      type: "Feature" as const,
+      properties: {},
+      geometry: { type: "LineString" as const, coordinates: route ?? [] },
+    };
+    const apply = () => {
+      const source = map.getSource("route") as GeoJSONSource | undefined;
+      if (source) {
+        source.setData(data);
+      } else if (route && route.length > 1) {
+        map.addSource("route", { type: "geojson", data });
+        map.addLayer({
+          id: "route-casing",
+          type: "line",
+          source: "route",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.9 },
+        });
+        map.addLayer({
+          id: "route-line",
+          type: "line",
+          source: "route",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#e84a0c", "line-width": 4.5 },
+        });
+      }
+    };
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+  }, [route]);
 
   return (
     <div

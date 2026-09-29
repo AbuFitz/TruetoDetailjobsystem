@@ -4,7 +4,9 @@ import { Check, ChevronRight, LogOut, Mail, MessageCircle, Moon, Phone, Sun } fr
 import { NewPasswordFields, passwordProblems } from "@/components/ttd/PasswordFields";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { useTheme } from "@/hooks/use-theme";
-import { signOut, updateMyPassword } from "@/lib/auth";
+import { changeMyPassword, signOut } from "@/lib/auth";
+import { confirmPasswordChanged } from "@/lib/accounts";
+import { AuthField } from "@/components/ttd/PublicShell";
 import { supportContact, ttdSiteLinks } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -97,7 +99,8 @@ export function AppearanceSection() {
   );
 }
 
-export function PasswordSection() {
+export function PasswordSection({ customer = false }: { customer?: boolean }) {
+  const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -114,7 +117,10 @@ export function PasswordSection() {
     if (password !== confirm) return setError("The two passwords do not match.");
     setBusy(true);
     try {
-      await updateMyPassword(password);
+      await changeMyPassword(current, password);
+      // A customer's "choose a new password" flag is cleared whenever they set their own.
+      if (customer) await confirmPasswordChanged().catch(() => undefined);
+      setCurrent("");
       setPassword("");
       setConfirm("");
       setSaved(true);
@@ -128,6 +134,15 @@ export function PasswordSection() {
   return (
     <SettingsCard title="Password" description="Choose a new password for signing in.">
       <form onSubmit={submit} className="flex flex-col gap-4">
+        <AuthField
+          id="current-password"
+          label="Current password"
+          type="password"
+          autoComplete="current-password"
+          value={current}
+          onChange={(e) => setCurrent(e.target.value)}
+          required
+        />
         <NewPasswordFields
           password={password}
           confirm={confirm}

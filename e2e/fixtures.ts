@@ -149,10 +149,12 @@ export const tracked = (status: string, hasAccount = false) => ({
   customer_first_name: "Sam",
   customer_has_account: hasAccount,
   created_at: iso(now - 86400e3),
-  en_route_at: null,
-  arrived_at: null,
-  in_progress_at: null,
-  completed_at: null,
+  en_route_at: ["en_route", "arrived", "in_progress", "completed"].includes(status)
+    ? iso(now - 1200e3)
+    : null,
+  arrived_at: ["arrived", "in_progress", "completed"].includes(status) ? iso(now - 600e3) : null,
+  in_progress_at: ["in_progress", "completed"].includes(status) ? iso(now - 500e3) : null,
+  completed_at: status === "completed" ? iso(now - 60e3) : null,
   cancelled_at: null,
   detailer: {
     first_name: "Jamie",
@@ -226,7 +228,26 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
       });
     }
     if (p.endsWith("/auth/v1/resend")) return json({});
-    if (p.endsWith("/auth/v1/user")) return json(user);
+    if (p.endsWith("/auth/v1/token")) {
+      const body = JSON.parse(req.postData() ?? "{}") as { password?: string };
+      if (body.password === "Wrong-Pass-1")
+        return json({ code: "invalid_credentials", message: "Invalid login credentials" }, 400);
+      return json(session);
+    }
+    if (p.endsWith("/auth/v1/user")) {
+      if (req.method() === "PUT") {
+        const body = JSON.parse(req.postData() ?? "{}") as { password?: string };
+        if (body.password === "Reused-Pass-1")
+          return json(
+            {
+              code: "same_password",
+              message: "New password should be different from the old password.",
+            },
+            422,
+          );
+      }
+      return json(user);
+    }
     if (p.endsWith("/rpc/is_staff")) return json(Boolean(opts.staff));
     if (p.endsWith("/rpc/get_tracked_booking"))
       return json(tracked(opts.trackedStatus ?? "en_route", opts.hasAccount));

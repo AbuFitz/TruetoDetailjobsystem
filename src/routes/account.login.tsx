@@ -46,7 +46,11 @@ function LoginField({
   );
 }
 
-const searchSchema = z.object({ next: z.string().optional(), email: z.string().optional() });
+const searchSchema = z.object({
+  next: z.string().optional(),
+  email: z.string().optional(),
+  mode: z.enum(["signin", "register"]).optional(),
+});
 
 export const Route = createFileRoute("/account/login")({
   head: () => ({
@@ -69,6 +73,7 @@ function AccountLogin() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [mode, setMode] = useState<"signin" | "register">(search.mode ?? "signin");
   // Starts false to match the server-rendered/first-paint state (localStorage
   // doesn't exist during SSR), then flips true right after hydration for a
   // browser that really has signed in before — avoids a hydration mismatch
@@ -144,62 +149,103 @@ function AccountLogin() {
 
       <div className="flex-1 rounded-t-3xl bg-background px-6 pb-10 pt-8 text-foreground sm:px-10">
         <div className="mx-auto w-full max-w-sm">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            <LoginField
-              id="email"
-              label="Email"
-              type="email"
-              inputProps={register("email", { required: true })}
-            />
-            <LoginField
-              id="password"
-              label="Password"
-              type="password"
-              inputProps={register("password", { required: true })}
-            />
-
-            <p className="-mt-1 text-right text-[13px]">
-              <Link
-                to="/account/forgot"
-                className="press text-muted-foreground underline underline-offset-2"
-              >
-                Forgot your password?
-              </Link>
-            </p>
-
-            {error ? (
-              <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
-                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
-                {error}
-              </p>
-            ) : null}
-
-            <PrimaryActionButton type="submit" loading={submitting}>
-              Sign in
-            </PrimaryActionButton>
-          </form>
-
-          <div className="mt-8 border-t border-hairline pt-6 text-center text-[13px] text-muted-foreground">
-            <p>
-              New here?{" "}
-              <Link
-                to="/account/create"
-                className="press font-semibold text-foreground underline underline-offset-2"
-              >
-                Create an account
-              </Link>{" "}
-              or{" "}
+          <div
+            role="tablist"
+            aria-label="Sign in or register"
+            className="mb-6 grid grid-cols-2 border border-black/12 bg-surface-2 p-1"
+          >
+            {(
+              [
+                ["signin", "Sign in"],
+                ["register", "Register"],
+              ] as const
+            ).map(([key, label]) => (
               <button
+                key={key}
                 type="button"
-                onClick={() => setBookingOpen(true)}
-                className="press font-semibold text-foreground underline underline-offset-2"
+                role="tab"
+                id={`tab-${key}`}
+                aria-selected={mode === key}
+                aria-controls={`panel-${key}`}
+                onClick={() => setMode(key)}
+                className={`press min-h-11 text-[12px] font-bold uppercase tracking-[0.14em] transition-colors ${
+                  mode === key
+                    ? "bg-ink text-ink-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
-                book a detail
+                {label}
               </button>
-              .
-            </p>
+            ))}
           </div>
-          <LegalLinks className="mt-3" />
+
+          {mode === "register" ? (
+            <div id="panel-register" role="tabpanel" aria-labelledby="tab-register">
+              <h2 className="font-display text-[32px] leading-[0.95]">
+                BOOK A DETAIL, AND YOUR ACCOUNT IS READY
+              </h2>
+              <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
+                The easiest way in is to make a booking. We set up your account with it, email you
+                the details, and you can follow your detailer live and rebook in two taps.
+              </p>
+              <PrimaryActionButton className="mt-5" onClick={() => setBookingOpen(true)}>
+                Book a detail
+              </PrimaryActionButton>
+              <p className="mt-6 text-center text-[13px] text-muted-foreground">
+                Only want an account for now?{" "}
+                <Link
+                  to="/account/create"
+                  className="press font-semibold text-foreground underline underline-offset-2"
+                >
+                  Create one
+                </Link>
+                .
+              </p>
+            </div>
+          ) : (
+            <form
+              id="panel-signin"
+              role="tabpanel"
+              aria-labelledby="tab-signin"
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex flex-col gap-4"
+            >
+              <LoginField
+                id="email"
+                label="Email"
+                type="email"
+                inputProps={register("email", { required: true })}
+              />
+              <LoginField
+                id="password"
+                label="Password"
+                type="password"
+                inputProps={register("password", { required: true })}
+              />
+
+              <p className="-mt-1 text-right text-[13px]">
+                <Link
+                  to="/account/forgot"
+                  className="press text-muted-foreground underline underline-offset-2"
+                >
+                  Forgot your password?
+                </Link>
+              </p>
+
+              {error ? (
+                <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
+                  <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
+                  {error}
+                </p>
+              ) : null}
+
+              <PrimaryActionButton type="submit" loading={submitting}>
+                Sign in
+              </PrimaryActionButton>
+            </form>
+          )}
+
+          <LegalLinks className="mt-8" />
         </div>
       </div>
 

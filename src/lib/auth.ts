@@ -76,7 +76,39 @@ export async function signIn(email: string, password: string): Promise<void> {
 
 export async function updateMyPassword(password: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw new Error(error.message, { cause: error });
+  if (error) throw new Error(passwordChangeMessage(error), { cause: error });
+}
+
+/** Plain-English reasons a password change is refused. */
+export function passwordChangeMessage(error: {
+  message?: string | undefined;
+  code?: string | undefined;
+}): string {
+  const text = `${error.code ?? ""} ${error.message ?? ""}`.toLowerCase();
+  if (text.includes("same_password") || text.includes("different from the old"))
+    return "Choose a password you have not used before on this account.";
+  if (text.includes("weak") || text.includes("pwned") || text.includes("easy to guess"))
+    return "That password is too easy to guess. Try a longer one with a mix of letters and numbers.";
+  if (text.includes("reauthentication") || text.includes("session"))
+    return "For your security, please sign out, sign in again and then change your password.";
+  if (text.includes("rate") || text.includes("too many"))
+    return "Too many tries. Please wait a minute and try again.";
+  return error.message || "Couldn't change your password. Please try again.";
+}
+
+/**
+ * Change the signed-in person's password. Their current password is checked
+ * first, so a phone left unlocked cannot be used to lock the owner out.
+ */
+export async function changeMyPassword(current: string, next: string): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const email = data.session?.user.email;
+  if (!email) throw new Error("Please sign in again to change your password.");
+  const { error: verify } = await supabase.auth.signInWithPassword({ email, password: current });
+  if (verify) throw new Error("Your current password is not right.", { cause: verify });
+  if (current === next)
+    throw new Error("Choose a password you have not used before on this account.");
+  await updateMyPassword(next);
 }
 
 export async function signOut(): Promise<void> {

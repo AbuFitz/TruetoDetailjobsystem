@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ClipboardList,
   HardHat,
+  LogOut,
   Plus,
   Settings,
   UserRound,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { TtdLogo } from "@/components/ttd/Header";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
+import { signOut } from "@/lib/auth";
 import { ttdSiteLinks } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -173,6 +175,15 @@ export function AppShell({
             >
               <Settings className="h-4 w-4" strokeWidth={2.2} />
             </Link>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              aria-label="Sign out"
+              className="press inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-ink-foreground/70 hover:text-ink-foreground sm:px-3.5"
+            >
+              <LogOut className="h-4 w-4" strokeWidth={2.2} />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
           </div>
         </div>
       </header>

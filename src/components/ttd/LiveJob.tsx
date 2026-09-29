@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Clock, MapPinned } from "lucide-react";
 import { format } from "date-fns";
 import { UK_TIME } from "@/lib/uk-time";
@@ -10,11 +10,14 @@ import {
   formatDuration,
 } from "@/lib/progress";
 import { formatRelativeUpdate } from "@/lib/format";
+import { fetchDrivingRoute, formatMiles, type DrivingRoute } from "@/lib/eta";
+import { estimatedFinish } from "@/lib/journey";
 import type { BookingStatus, BookingWithDetailer } from "@/lib/bookings";
 import type { TrackedBooking } from "@/lib/tracking";
 import { TrackingMap } from "@/components/ttd/TrackingMap";
 import { DetailerCard } from "@/components/ttd/DetailerCard";
 import { StageChecklist } from "@/components/ttd/StageChecklist";
+import { FinishPanel } from "@/components/ttd/TrackingExtras";
 import type { StageProgress } from "@/lib/detailers";
 import type { DetailStageKey } from "@/lib/constants";
 
@@ -33,6 +36,9 @@ export interface JobView {
   locationUpdatedAt: string | null;
   etaSeconds: number | null;
   etaUpdatedAt: string | null;
+  arrivedAt: string | null;
+  inProgressAt: string | null;
+  durationMinutes: number;
   stages: StageProgress[];
 }
 
@@ -57,6 +63,9 @@ export function viewFromBooking(b: BookingWithDetailer, stages: StageProgress[] 
     locationUpdatedAt: b.location_updated_at,
     etaSeconds: b.eta_seconds,
     etaUpdatedAt: b.eta_updated_at,
+    arrivedAt: b.arrived_at,
+    inProgressAt: b.in_progress_at,
+    durationMinutes: b.estimated_duration_minutes,
     stages,
   };
 }
@@ -80,6 +89,9 @@ export function viewFromTracked(t: TrackedBooking): JobView {
     locationUpdatedAt: tr?.updated_at ?? null,
     etaSeconds: tr?.eta_seconds ?? null,
     etaUpdatedAt: tr?.eta_updated_at ?? null,
+    arrivedAt: t.arrived_at,
+    inProgressAt: t.in_progress_at,
+    durationMinutes: t.estimated_duration_minutes,
     stages: t.stages.map((s) => ({
       stage_key: s.key as DetailStageKey,
       completed_at: s.done ? "done" : null,
@@ -94,6 +106,33 @@ function useNow(everyMs = 20_000): number {
     return () => clearInterval(id);
   }, [everyMs]);
   return now;
+}
+
+/** The road route from the detailer to the address, refreshed at most every 30 seconds while they are on the way. */
+export function useDrivingRoute(
+  position: { lat: number; lng: number } | null,
+  destination: { lat: number; lng: number } | null,
+  active: boolean,
+): DrivingRoute | null {
+  const [route, setRoute] = useState<DrivingRoute | null>(null);
+  const lastAt = useRef(0);
+  const lat = position?.lat;
+  const lng = position?.lng;
+  const dLat = destination?.lat;
+  const dLng = destination?.lng;
+  useEffect(() => {
+    if (!active || lat == null || lng == null || dLat == null || dLng == null) return;
+    if (Date.now() - lastAt.current < 30_000) return;
+    lastAt.current = Date.now();
+    let cancelled = false;
+    void fetchDrivingRoute({ lat, lng }, { lat: dLat, lng: dLng }).then((r) => {
+      if (!cancelled && r) setRoute(r);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [active, lat, lng, dLat, dLng]);
+  return route;
 }
 
 /** Five steps, one line. The current step is highlighted; on a phone the labels stay under the dots. */
@@ -151,7 +190,13 @@ export function StepTracker({ status, className }: { status: BookingStatus; clas
 }
 
 /** The big "Arriving in 12 min" card, driven by the detailer's phone (routing ETA), never a guess. */
-export function EtaPanel({ view }: { view: JobView }) {
+export function EtaPanel({
+  view,
+  distanceMeters,
+}: {
+  view: JobView;
+  distanceMeters?: number | null;
+}) {
   const now = useNow();
   if (view.status !== "en_route") return null;
 
@@ -194,6 +239,11 @@ export function EtaPanel({ view }: { view: JobView }) {
             {lateMs > 10 * 60 * 1000
               ? ` (a little after your ${format(slot, "h:mm a", { in: UK_TIME })} slot)`
               : null}
+            {distanceMeters != null ? (
+              <span className="ml-1 text-ink-foreground/55">
+                · {formatMiles(distanceMeters)} by road
+              </span>
+            ) : null}
           </p>
         </>
       ) : (
@@ -224,6 +274,17 @@ export function LiveJobPanel({
   showHeadline?: boolean;
 }) {
   const detailing = ["arrived", "check_in", "in_progress", "qc", "handover"].includes(view.status);
+  const route = useDrivingRoute(view.position, view.destination, view.status === "en_route");
+  const finish = estimatedFinish({
+    status: view.status,
+    arrived_at: view.arrivedAt,
+    in_progress_at: view.inProgressAt,
+    estimated_duration_minutes: view.durationMinutes,
+  });
+  const checklist = view.stages.map((s) => ({
+    key: s.stage_key as string,
+    done: Boolean(s.completed_at),
+  }));
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       <div className="rounded-2xl border border-hairline bg-surface p-5">
@@ -242,7 +303,9 @@ export function LiveJobPanel({
         ) : null}
       </div>
 
-      <EtaPanel view={view} />
+      <EtaPanel view={view} distanceMeters={route?.meters ?? null} />
+
+      {detailing ? <FinishPanel stages={checklist} finish={finish} /> : null}
 
       {view.status === "en_route" && (view.position || view.destination) ? (
         <TrackingMap
@@ -251,6 +314,7 @@ export function LiveJobPanel({
           destination={view.destination}
           detailerPhotoUrl={view.detailerPhoto}
           lastUpdate={view.locationUpdatedAt}
+          route={route?.line ?? null}
         />
       ) : null}
 
