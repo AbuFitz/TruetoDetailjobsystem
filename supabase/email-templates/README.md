@@ -1,7 +1,8 @@
 # Supabase auth email templates
 
-Paste these into the Supabase dashboard (Authentication, then Email Templates). They are the same
-minimal, single column design as the booking emails, and they keep the `{{ .ConfirmationURL }}`
+Paste these into the Supabase dashboard (Authentication, then Email Templates). They are built from the
+same layout as every booking email the website sends (one column, no boxes inside boxes, full width
+text on a phone), and they keep the `{{ .ConfirmationURL }}`
 link Supabase fills in.
 
 | Template in Supabase | File | Subject |
