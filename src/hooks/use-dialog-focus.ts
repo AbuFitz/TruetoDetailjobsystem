@@ -34,7 +34,7 @@ export function useDialogFocus(
     if (target === el) {
       if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
       // Focus sits on the panel only so it's announced; no ring round the whole popup.
-      el.style.outline = "none";
+      el.style.setProperty("outline", "none");
     }
     target.focus({ preventScroll: true });
 
