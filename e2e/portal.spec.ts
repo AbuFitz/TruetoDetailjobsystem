@@ -554,3 +554,19 @@ test("phone: the staff tab bar stays on one row and booking titles are not cut o
     );
   expect(cut, "no booking title is truncated").toBe(0);
 });
+
+test("phone: the detailer sees where and what on each job, and the job page is one card of plain rows", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fakeSupabase(page.context());
+  await page.goto("/d/tok-jamie", { waitUntil: "networkidle" });
+  await expect(page.getByText("Hemel Hempstead, HP2 6EL").first()).toBeVisible();
+  await expect(page.getByText("Full Valet Car Detail").first()).toBeVisible();
+  await page.goto("/d/tok-jamie/b1", { waitUntil: "networkidle" });
+  await expect(page.getByText("12 Acacia Road, HP2 6EL")).toBeVisible();
+  await expect(page.getByRole("link", { name: /start navigation/i })).toBeVisible();
+  await expect(page.getByText(/gate code 1234/)).toBeVisible();
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(over).toBeLessThanOrEqual(1);
+});

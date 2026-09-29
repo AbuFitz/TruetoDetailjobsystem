@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarClock, Clock3, Mail, Phone, Wrench } from "lucide-react";
+import { CalendarClock, Clock3, Mail, MapPin, Phone, Wrench } from "lucide-react";
 import { TtdLogo } from "@/components/ttd/Header";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -131,6 +131,13 @@ function DetailerQueue() {
                         {formatCountdownToAppointment(job.scheduled_start)}
                       </span>
                     ) : null}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" strokeWidth={2.2} />
+                      {[job.service_address_city, job.service_postcode].filter(Boolean).join(", ")}
+                    </span>
+                    <span>{job.package_name}</span>
                   </div>
                 </Link>
               );

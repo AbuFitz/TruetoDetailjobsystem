@@ -16,7 +16,7 @@ import {
 import { TtdLogo } from "@/components/ttd/Header";
 import { Check } from "lucide-react";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
-import { VehicleCard } from "@/components/ttd/VehicleTag";
+import { PlateTag } from "@/components/ttd/VehicleTag";
 import { ContactActions } from "@/components/ttd/ContactActions";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -233,22 +233,38 @@ function DetailerJob() {
             <StatusBadge status={job.status} size="sm" />
           </div>
 
-          <VehicleCard
-            className="mt-4 rounded-xl border-0 bg-surface-2 p-3"
-            vehicle={{
-              description: job.vehicle_description,
-              registration: job.vehicle_registration,
-            }}
-          />
-
-          <div className="mt-3 grid grid-cols-2 gap-2.5">
-            <Tile icon={CalendarClock} label="Appointment">
-              {dayLabel}, {timeLabel}
-            </Tile>
-            <Tile icon={MapPin} label="Address">
-              {job.service_address_line1}, {job.service_postcode}
-            </Tile>
-          </div>
+          <dl className="mt-4 divide-y divide-hairline border-y border-hairline text-[14px]">
+            <div className="flex items-start gap-3 py-3">
+              <CalendarClock
+                className="mt-0.5 h-4 w-4 shrink-0 text-signal-deep"
+                strokeWidth={2.2}
+              />
+              <div className="min-w-0">
+                <dt className="eyebrow text-muted-foreground">Appointment</dt>
+                <dd className="mt-0.5 font-semibold">
+                  {dayLabel}, {timeLabel}
+                </dd>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 py-3">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-signal-deep" strokeWidth={2.2} />
+              <div className="min-w-0">
+                <dt className="eyebrow text-muted-foreground">Address</dt>
+                <dd className="mt-0.5 font-semibold">
+                  {job.service_address_line1}, {job.service_postcode}
+                </dd>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <dt className="eyebrow text-muted-foreground">Vehicle</dt>
+                {job.vehicle_description ? (
+                  <dd className="mt-0.5 truncate font-semibold">{job.vehicle_description}</dd>
+                ) : null}
+              </div>
+              <PlateTag registration={job.vehicle_registration} />
+            </div>
+          </dl>
 
           <a
             href={navigationUrlFor(job)}
@@ -263,7 +279,7 @@ function DetailerJob() {
           <ContactActions className="mt-2.5" phone={job.customer_phone} label="the customer" />
 
           {job.internal_notes ? (
-            <div className="mt-3 rounded-xl border border-signal/30 bg-signal/10 p-3.5">
+            <div className="mt-4 border-l-2 border-signal pl-3.5">
               <p className="eyebrow flex items-center gap-1.5 text-signal-deep">
                 <NotebookPen className="h-3 w-3" strokeWidth={2.4} />
                 Job notes
@@ -272,7 +288,7 @@ function DetailerJob() {
             </div>
           ) : null}
           {job.customer_notes ? (
-            <div className="mt-2 rounded-xl border border-hairline bg-surface-2 p-3.5">
+            <div className="mt-4 border-l-2 border-hairline pl-3.5">
               <p className="eyebrow text-muted-foreground">Customer requested</p>
               <p className="mt-1.5 text-[13px] leading-relaxed">{job.customer_notes}</p>
             </div>
@@ -410,27 +426,5 @@ function DetailerJob() {
         ) : null}
       </div>
     </main>
-  );
-}
-
-function Tile({
-  icon: Icon,
-  label,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="min-w-0 rounded-xl border border-hairline bg-surface-2 p-3.5">
-      <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
-        <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
-        <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-[0.04em]">
-          {label}
-        </span>
-      </span>
-      <p className="mt-1.5 text-[15px] font-semibold leading-tight">{children}</p>
-    </div>
   );
 }

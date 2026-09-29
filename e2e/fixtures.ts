@@ -133,6 +133,40 @@ export const bookings = [
   }),
 ];
 
+const jobOf = (b: (typeof bookings)[number], first: string, phone: string | null) => ({
+  id: b.id,
+  booking_reference: b.booking_reference,
+  customer_first_name: first,
+  customer_phone: phone,
+  vehicle_registration: b.vehicle_registration,
+  vehicle_description: b.vehicle_description,
+  service_address_line1: b.service_address_line1,
+  service_address_line2: null,
+  service_address_city: b.service_address_city,
+  service_postcode: b.service_postcode,
+  destination_lat: b.destination_lat,
+  destination_lng: b.destination_lng,
+  scheduled_start: b.scheduled_start,
+  estimated_duration_minutes: b.estimated_duration_minutes,
+  package_name: b.package_name,
+  status: b.status,
+  customer_notes: "Silver Focus on the driveway, gate code 1234.",
+  internal_notes: null,
+  tracking_active: b.tracking_active,
+  current_lat: b.current_lat,
+  current_lng: b.current_lng,
+  location_updated_at: b.location_updated_at,
+});
+const detailerJobs = [
+  jobOf(bookings[0]!, "Sam", "07700 900123"),
+  {
+    ...jobOf(bookings[2]!, "Priya", null),
+    id: "b3",
+    status: "assigned",
+    scheduled_start: iso(now + 26 * 3600e3),
+  },
+];
+
 export const tracked = (status: string, hasAccount = false) => ({
   reference: "TTD-9A3E7220",
   status,
@@ -248,6 +282,26 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
       }
       return json(user);
     }
+    if (p.endsWith("/rpc/get_detailer_profile"))
+      return json([
+        {
+          id: "d1",
+          name: detailer.name,
+          photo_url: null,
+          phone: detailer.phone,
+          job_title: detailer.job_title,
+          vehicle_description: detailer.vehicle_description,
+        },
+      ]);
+    if (p.endsWith("/rpc/get_detailer_jobs")) return json(detailerJobs);
+    if (p.endsWith("/rpc/get_detailer_job_history")) return json([]);
+    if (p.endsWith("/rpc/get_detailer_job_stages"))
+      return json([
+        { stage_key: "exterior", completed_at: iso(now - 60e3) },
+        { stage_key: "interior", completed_at: null },
+        { stage_key: "protection", completed_at: null },
+        { stage_key: "final_check", completed_at: null },
+      ]);
     if (p.endsWith("/rpc/is_staff")) return json(Boolean(opts.staff));
     if (p.endsWith("/rpc/get_tracked_booking"))
       return json(tracked(opts.trackedStatus ?? "en_route", opts.hasAccount));
