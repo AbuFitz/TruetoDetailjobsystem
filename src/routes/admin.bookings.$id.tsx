@@ -162,6 +162,12 @@ function AdminBookingDetail() {
               {booking.customer_notes}
             </p>
           ) : null}
+          {booking.internal_notes ? (
+            <p className="mt-2 rounded-xl border border-signal/25 bg-signal/8 px-3.5 py-3 text-[13px] leading-relaxed text-foreground">
+              <span className="font-semibold">Job notes for the detailer: </span>
+              {booking.internal_notes}
+            </p>
+          ) : null}
         </section>
 
         {customer ? (

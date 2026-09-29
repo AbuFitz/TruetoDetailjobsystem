@@ -184,6 +184,7 @@ function NewBooking() {
         price: totalPrice,
         scheduled_start: scheduledStart.toISOString(),
         estimated_duration_minutes: selectedPackage.durationMinutes,
+        internal_notes: internalNotes.trim() || undefined,
       });
     },
     onSuccess: (booking) => navigate({ to: "/admin/bookings/$id", params: { id: booking.id } }),

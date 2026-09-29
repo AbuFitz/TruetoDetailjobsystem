@@ -232,6 +232,8 @@ export async function getCustomerBookings(customerId: string): Promise<BookingWi
 
 export interface StaffCreateBookingInput extends CreateBookingInput {
   customer_id: string;
+  /** Staff-only note for the detailer, shown on their job screen as "Job notes". */
+  internal_notes?: string | undefined;
 }
 
 export async function createBookingForCustomer(input: StaffCreateBookingInput): Promise<Booking> {
