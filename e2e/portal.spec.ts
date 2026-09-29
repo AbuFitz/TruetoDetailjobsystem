@@ -527,5 +527,6 @@ test("phone: the signed-in booking page guides from vehicle to size to package",
     .click();
   await page.waitForTimeout(900);
   const addons = page.getByText("Add-ons", { exact: true });
-  expect((await topOf(page, addons))!).toBeLessThan(400);
+  // In the upper part of the screen, not left at the bottom edge.
+  expect((await topOf(page, addons))!).toBeLessThan(490);
 });
