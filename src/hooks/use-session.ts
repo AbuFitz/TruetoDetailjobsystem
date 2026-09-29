@@ -45,7 +45,14 @@ export function useRequireCustomerSession(): SessionState {
   useEffect(() => {
     if (loading) return;
     if (!session) {
-      navigate({ to: "/account/login", replace: true });
+      // Remember where they were headed (e.g. a "track your detailer" link)
+      // so signing in lands them back there rather than on the dashboard.
+      const here = window.location.pathname;
+      navigate({
+        to: "/account/login",
+        search: here === "/account" || here === "/account/" ? {} : { next: here },
+        replace: true,
+      });
       return;
     }
     let mounted = true;

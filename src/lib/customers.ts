@@ -113,7 +113,9 @@ export async function updateCustomer(id: string, patch: StaffCustomerUpdate): Pr
 
 /** Staff-only: search customers by name/email/phone, for the "New booking" flow. */
 export async function searchCustomers(query: string): Promise<Customer[]> {
-  const q = query.trim();
+  // Commas, brackets and quotes are filter syntax inside PostgREST's or(),
+  // so "Smith, John" would otherwise break the query or add conditions.
+  const q = query.replace(/[,()"\\*]/g, " ").trim();
   if (!q) return [];
   const { data, error } = await supabase
     .from("customers")

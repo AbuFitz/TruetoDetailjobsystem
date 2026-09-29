@@ -44,6 +44,16 @@ function LoginField({
 
 const searchSchema = z.object({ next: z.string().optional() });
 
+// Only follow `next` to a path on this site. "//host" and "/\host" are read
+// by browsers as another website, so a crafted login link could otherwise
+// send someone to a lookalike page straight after they sign in.
+function safeNext(value: string | undefined): string | undefined {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+    return undefined;
+  }
+  return value;
+}
+
 export const Route = createFileRoute("/account/login")({
   head: () => ({
     meta: [{ title: "Sign in | True To Detail" }, { name: "robots", content: "noindex" }],
@@ -59,7 +69,7 @@ interface FormValues {
 
 function AccountLogin() {
   const navigate = useNavigate();
-  const { next } = useSearch({ from: "/account/login" });
+  const next = safeNext(useSearch({ from: "/account/login" }).next);
   const { session } = useSession();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
