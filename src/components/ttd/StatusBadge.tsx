@@ -5,6 +5,11 @@ const MAP: Record<
   BookingStatus,
   { label: string; className: string; dot: string; pulse?: boolean; glow?: boolean }
 > = {
+  requested: {
+    label: "Request received",
+    className: "bg-warning/15 text-warning-text border-warning/30",
+    dot: "bg-warning",
+  },
   confirmed: {
     label: "Confirmed",
     className: "bg-surface-2 text-foreground border-hairline",
@@ -12,7 +17,7 @@ const MAP: Record<
     glow: true,
   },
   assigned: {
-    label: "Assigned",
+    label: "Detailer set",
     className: "bg-surface-2 text-foreground border-hairline",
     dot: "bg-success",
     glow: true,
@@ -29,24 +34,24 @@ const MAP: Record<
     dot: "bg-success",
   },
   check_in: {
-    label: "Checking in",
+    label: "Detailing",
     className: "bg-signal text-signal-foreground border-signal-deep/30",
     dot: "bg-signal-foreground",
     pulse: true,
   },
   in_progress: {
-    label: "Detail in progress",
+    label: "Detailing",
     className: "bg-signal text-signal-foreground border-signal-deep/30",
     dot: "bg-signal-foreground",
     pulse: true,
   },
   qc: {
-    label: "Final QC",
+    label: "Detailing",
     className: "bg-signal/15 text-signal-deep border-signal/30",
     dot: "bg-signal-deep",
   },
   handover: {
-    label: "Handover",
+    label: "Detailing",
     className: "bg-success/12 text-success border-success/30",
     dot: "bg-success",
   },

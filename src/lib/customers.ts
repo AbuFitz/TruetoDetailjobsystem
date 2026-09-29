@@ -8,6 +8,7 @@ export interface Customer {
   last_name: string | null;
   phone: string | null;
   email: string | null;
+  must_change_password?: boolean;
   created_at: string;
 }
 

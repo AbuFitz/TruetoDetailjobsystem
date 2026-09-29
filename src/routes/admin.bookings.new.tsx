@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, TriangleAlert } from "lucide-react";
-import { TtdHeader } from "@/components/ttd/Header";
+import { AppShell } from "@/components/ttd/AppShell";
+import { sendBookingEmail } from "@/lib/portal-email";
+import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { searchCustomers, createWalkInCustomer, type Customer } from "@/lib/customers";
 import {
@@ -162,7 +164,7 @@ function NewBooking() {
       if (!selectedAddress) throw new Error("Select a service address.");
       if (!selectedVehicle) throw new Error("Select a vehicle.");
 
-      return createBookingForCustomer({
+      const created = await createBookingForCustomer({
         customer_id: customer.id,
         vehicle_id: selectedVehicle.id,
         vehicle_registration: selectedVehicle.registration,
@@ -184,444 +186,431 @@ function NewBooking() {
         estimated_duration_minutes: selectedPackage.durationMinutes,
         internal_notes: internalNotes.trim() || undefined,
       });
+      // Email the customer their booking and tracking link. If it fails the
+      // booking still stands, and the booking page has a Resend button.
+      await sendBookingEmail(created.id, "booked_in");
+      return created;
     },
     onSuccess: (booking) => navigate({ to: "/admin/bookings/$id", params: { id: booking.id } }),
   });
 
   return (
-    <main className="min-h-screen bg-background pb-16">
-      <TtdHeader eyebrow="New booking" containerClassName="max-w-2xl" />
-
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        <Link
-          to="/admin"
-          className="press inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Dashboard
-        </Link>
-
-        <h1 className="mt-4 font-display text-[28px] leading-none">Create a booking</h1>
-
-        <section className="mt-5">
-          <span className="eyebrow block text-muted-foreground">Customer</span>
-          {customer ? (
-            <div className="mt-2 flex items-center justify-between rounded-xl border border-signal/30 bg-signal/8 p-3.5">
-              <p className="text-[14px] font-semibold">
-                {customer.first_name} {customer.last_name}
-                {customer.email ? ` · ${customer.email}` : ""}
-                {!customer.auth_user_id ? (
-                  <span className="ml-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Walk-in
-                  </span>
-                ) : null}
-              </p>
+    <AppShell
+      area="admin"
+      width="narrow"
+      eyebrow="New booking"
+      title={
+        <>
+          CREATE A BOOKING<span className="text-signal">.</span>
+        </>
+      }
+      back={{ to: "/admin", label: "Today" }}
+      subtitle="The customer gets an email with their booking and a tracking link as soon as you save."
+    >
+      <section className="mt-5">
+        <span className="eyebrow block text-muted-foreground">Customer</span>
+        {customer ? (
+          <div className="mt-2 flex items-center justify-between rounded-xl border border-signal/30 bg-signal/8 p-3.5">
+            <p className="text-[14px] font-semibold">
+              {customer.first_name} {customer.last_name}
+              {customer.email ? ` · ${customer.email}` : ""}
+              {!customer.auth_user_id ? (
+                <span className="ml-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Walk-in
+                </span>
+              ) : null}
+            </p>
+            <button
+              type="button"
+              onClick={() => setCustomer(null)}
+              className="text-[12px] font-semibold text-muted-foreground underline"
+            >
+              Change
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="mt-2 grid grid-cols-2 gap-1.5">
               <button
                 type="button"
-                onClick={() => setCustomer(null)}
-                className="text-[12px] font-semibold text-muted-foreground underline"
+                onClick={() => setCustomerMode("search")}
+                className={`min-h-10 rounded-xl border text-[13px] font-semibold ${
+                  customerMode === "search"
+                    ? "border-signal bg-signal text-signal-foreground"
+                    : "border-input bg-surface-2 text-muted-foreground"
+                }`}
               >
-                Change
+                Search existing
+              </button>
+              <button
+                type="button"
+                onClick={() => setCustomerMode("new")}
+                className={`min-h-10 rounded-xl border text-[13px] font-semibold ${
+                  customerMode === "new"
+                    ? "border-signal bg-signal text-signal-foreground"
+                    : "border-input bg-surface-2 text-muted-foreground"
+                }`}
+              >
+                New customer
               </button>
             </div>
-          ) : (
-            <>
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setCustomerMode("search")}
-                  className={`min-h-10 rounded-xl border text-[13px] font-semibold ${
-                    customerMode === "search"
-                      ? "border-signal bg-signal text-signal-foreground"
-                      : "border-input bg-surface-2 text-muted-foreground"
-                  }`}
-                >
-                  Search existing
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCustomerMode("new")}
-                  className={`min-h-10 rounded-xl border text-[13px] font-semibold ${
-                    customerMode === "new"
-                      ? "border-signal bg-signal text-signal-foreground"
-                      : "border-input bg-surface-2 text-muted-foreground"
-                  }`}
-                >
-                  New customer
-                </button>
-              </div>
 
-              {customerMode === "search" ? (
-                <>
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search by name, email or phone"
-                    className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                  />
-                  {results && results.length > 0 ? (
-                    <div className="mt-2 flex flex-col gap-1.5">
-                      {results.map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => setCustomer(c)}
-                          className="press rounded-xl border border-hairline bg-surface p-3 text-left text-sm hover:bg-surface-2"
-                        >
-                          {c.first_name} {c.last_name} · {c.email}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <div className="mt-2 flex flex-col gap-2">
-                  <p className="text-[12px] text-muted-foreground">
-                    No account needed. This creates a customer record staff can book against. If
-                    they sign up later with the same email, their history carries over
-                    automatically.
-                  </p>
-                  <input
-                    value={newCustomer.first_name}
-                    onChange={(e) => setNewCustomer((p) => ({ ...p, first_name: e.target.value }))}
-                    placeholder="First name"
-                    className="min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                  />
-                  <input
-                    value={newCustomer.last_name}
-                    onChange={(e) => setNewCustomer((p) => ({ ...p, last_name: e.target.value }))}
-                    placeholder="Last name (optional)"
-                    className="min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                  />
-                  <input
-                    value={newCustomer.phone}
-                    onChange={(e) => setNewCustomer((p) => ({ ...p, phone: e.target.value }))}
-                    placeholder="Phone"
-                    className="min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                  />
-                  <input
-                    value={newCustomer.email}
-                    onChange={(e) => setNewCustomer((p) => ({ ...p, email: e.target.value }))}
-                    placeholder="Email"
-                    type="email"
-                    className="min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                  />
-                  {createCustomer.isError ? (
-                    <p className="text-[12px] text-destructive">
-                      {createCustomer.error instanceof Error
-                        ? createCustomer.error.message
-                        : "Couldn't create this customer."}
-                    </p>
-                  ) : null}
-                  <PrimaryActionButton
-                    size="sm"
-                    className="w-auto px-5"
-                    disabled={!newCustomer.first_name.trim()}
-                    loading={createCustomer.isPending}
-                    onClick={() => createCustomer.mutate()}
-                  >
-                    Add customer
-                  </PrimaryActionButton>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-
-        {customer ? (
-          <>
-            <section className="mt-5">
-              <span className="eyebrow block text-muted-foreground">Service address</span>
-              <div className="mt-2 flex flex-col gap-1.5">
-                {(addresses ?? []).map((a) => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onClick={() => setAddressId(a.id)}
-                    className={`rounded-xl border p-3 text-left text-sm ${addressId === a.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
-                  >
-                    {a.label} · {a.line1}, {a.postcode}
-                  </button>
-                ))}
-                {addresses && addresses.length === 0 && !showAddAddress ? (
-                  <p className="text-[13px] text-muted-foreground">
-                    This customer has no saved addresses yet.
-                  </p>
-                ) : null}
-              </div>
-
-              {showAddAddress ? (
-                <div className="mt-2 flex flex-col gap-2 rounded-xl border border-hairline bg-surface p-3.5">
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {ADDRESS_LABELS.map((l) => (
+            {customerMode === "search" ? (
+              <>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by name, email or phone"
+                  className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                />
+                {results && results.length > 0 ? (
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    {results.map((c) => (
                       <button
-                        key={l}
+                        key={c.id}
                         type="button"
-                        onClick={() => setAddressForm((p) => ({ ...p, label: l }))}
-                        className={`min-h-9 rounded-lg border text-[12px] font-semibold ${
-                          addressForm.label === l
-                            ? "border-signal bg-signal text-signal-foreground"
-                            : "border-input bg-surface-2 text-muted-foreground"
-                        }`}
+                        onClick={() => setCustomer(c)}
+                        className="press rounded-xl border border-hairline bg-surface p-3 text-left text-sm hover:bg-surface-2"
                       >
-                        {l}
+                        {c.first_name} {c.last_name} · {c.email}
                       </button>
                     ))}
                   </div>
-                  <input
-                    value={addressForm.line1}
-                    onChange={(e) => setAddressForm((p) => ({ ...p, line1: e.target.value }))}
-                    placeholder="Address line 1"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
-                  />
-                  <input
-                    value={addressForm.city}
-                    onChange={(e) => setAddressForm((p) => ({ ...p, city: e.target.value }))}
-                    placeholder="Town / city (optional)"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
-                  />
-                  <input
-                    value={addressForm.postcode}
-                    onChange={(e) => setAddressForm((p) => ({ ...p, postcode: e.target.value }))}
-                    placeholder="Postcode"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm uppercase outline-none focus:border-signal"
-                  />
-                  {createAddress.isError ? (
-                    <p className="text-[12px] text-destructive">
-                      {createAddress.error instanceof Error
-                        ? createAddress.error.message
-                        : "Couldn't save this address."}
-                    </p>
-                  ) : null}
-                  <div className="flex gap-2">
-                    <PrimaryActionButton
-                      size="sm"
-                      className="w-auto px-4"
-                      disabled={!addressForm.line1.trim() || !addressForm.postcode.trim()}
-                      loading={createAddress.isPending}
-                      onClick={() => createAddress.mutate()}
-                    >
-                      Save address
-                    </PrimaryActionButton>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddAddress(false)}
-                      className="text-[12px] font-semibold text-muted-foreground underline"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowAddAddress(true)}
-                  className="mt-2 text-[13px] font-semibold text-signal-deep underline underline-offset-2"
-                >
-                  + Add address
-                </button>
-              )}
-            </section>
-
-            <section className="mt-5">
-              <span className="eyebrow block text-muted-foreground">Vehicle</span>
-              <div className="mt-2 flex flex-col gap-1.5">
-                {(vehicles ?? []).map((v) => (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => setVehicleId(v.id)}
-                    className={`rounded-xl border p-3 text-left text-sm ${vehicleId === v.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
-                  >
-                    {vehicleDescription(v) ?? "Vehicle"} · {v.registration}
-                  </button>
-                ))}
-                {vehicles && vehicles.length === 0 && !showAddVehicle ? (
-                  <p className="text-[13px] text-muted-foreground">
-                    This customer has no saved vehicles yet.
+                ) : null}
+              </>
+            ) : (
+              <div className="mt-2 flex flex-col gap-2">
+                <p className="text-[12px] text-muted-foreground">
+                  No account needed. This creates a customer record staff can book against. If they
+                  sign up later with the same email, their history carries over automatically.
+                </p>
+                <input
+                  value={newCustomer.first_name}
+                  onChange={(e) => setNewCustomer((p) => ({ ...p, first_name: e.target.value }))}
+                  placeholder="First name"
+                  className="min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                />
+                <input
+                  value={newCustomer.last_name}
+                  onChange={(e) => setNewCustomer((p) => ({ ...p, last_name: e.target.value }))}
+                  placeholder="Last name (optional)"
+                  className="min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                />
+                <input
+                  value={newCustomer.phone}
+                  onChange={(e) => setNewCustomer((p) => ({ ...p, phone: e.target.value }))}
+                  placeholder="Phone"
+                  className="min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                />
+                <input
+                  value={newCustomer.email}
+                  onChange={(e) => setNewCustomer((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="Email"
+                  type="email"
+                  className="min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                />
+                {createCustomer.isError ? (
+                  <p className="text-[12px] text-destructive">
+                    {createCustomer.error instanceof Error
+                      ? createCustomer.error.message
+                      : "Couldn't create this customer."}
                   </p>
                 ) : null}
+                <PrimaryActionButton
+                  size="sm"
+                  className="w-auto px-5"
+                  disabled={!newCustomer.first_name.trim()}
+                  loading={createCustomer.isPending}
+                  onClick={() => createCustomer.mutate()}
+                >
+                  Add customer
+                </PrimaryActionButton>
               </div>
+            )}
+          </>
+        )}
+      </section>
 
-              {showAddVehicle ? (
-                <div className="mt-2 flex flex-col gap-2 rounded-xl border border-hairline bg-surface p-3.5">
+      {customer ? (
+        <>
+          <section className="mt-5">
+            <span className="eyebrow block text-muted-foreground">Service address</span>
+            <div className="mt-2 flex flex-col gap-1.5">
+              {(addresses ?? []).map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => setAddressId(a.id)}
+                  className={`rounded-xl border p-3 text-left text-sm ${addressId === a.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
+                >
+                  {a.label} · {a.line1}, {a.postcode}
+                </button>
+              ))}
+              {addresses && addresses.length === 0 && !showAddAddress ? (
+                <p className="text-[13px] text-muted-foreground">
+                  This customer has no saved addresses yet.
+                </p>
+              ) : null}
+            </div>
+
+            {showAddAddress ? (
+              <div className="mt-2 flex flex-col gap-2 rounded-xl border border-hairline bg-surface p-3.5">
+                <div className="grid grid-cols-3 gap-1.5">
+                  {ADDRESS_LABELS.map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setAddressForm((p) => ({ ...p, label: l }))}
+                      className={`min-h-9 rounded-lg border text-[12px] font-semibold ${
+                        addressForm.label === l
+                          ? "border-signal bg-signal text-signal-foreground"
+                          : "border-input bg-surface-2 text-muted-foreground"
+                      }`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  value={addressForm.line1}
+                  onChange={(e) => setAddressForm((p) => ({ ...p, line1: e.target.value }))}
+                  placeholder="Address line 1"
+                  className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                />
+                <input
+                  value={addressForm.city}
+                  onChange={(e) => setAddressForm((p) => ({ ...p, city: e.target.value }))}
+                  placeholder="Town / city (optional)"
+                  className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                />
+                <input
+                  value={addressForm.postcode}
+                  onChange={(e) => setAddressForm((p) => ({ ...p, postcode: e.target.value }))}
+                  placeholder="Postcode"
+                  className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm uppercase outline-none focus:border-signal"
+                />
+                {createAddress.isError ? (
+                  <p className="text-[12px] text-destructive">
+                    {createAddress.error instanceof Error
+                      ? createAddress.error.message
+                      : "Couldn't save this address."}
+                  </p>
+                ) : null}
+                <div className="flex gap-2">
+                  <PrimaryActionButton
+                    size="sm"
+                    className="w-auto px-4"
+                    disabled={!addressForm.line1.trim() || !addressForm.postcode.trim()}
+                    loading={createAddress.isPending}
+                    onClick={() => createAddress.mutate()}
+                  >
+                    Save address
+                  </PrimaryActionButton>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddAddress(false)}
+                    className="text-[12px] font-semibold text-muted-foreground underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAddAddress(true)}
+                className="mt-2 text-[13px] font-semibold text-signal-deep underline underline-offset-2"
+              >
+                + Add address
+              </button>
+            )}
+          </section>
+
+          <section className="mt-5">
+            <span className="eyebrow block text-muted-foreground">Vehicle</span>
+            <div className="mt-2 flex flex-col gap-1.5">
+              {(vehicles ?? []).map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setVehicleId(v.id)}
+                  className={`rounded-xl border p-3 text-left text-sm ${vehicleId === v.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
+                >
+                  {vehicleDescription(v) ?? "Vehicle"} · {v.registration}
+                </button>
+              ))}
+              {vehicles && vehicles.length === 0 && !showAddVehicle ? (
+                <p className="text-[13px] text-muted-foreground">
+                  This customer has no saved vehicles yet.
+                </p>
+              ) : null}
+            </div>
+
+            {showAddVehicle ? (
+              <div className="mt-2 flex flex-col gap-2 rounded-xl border border-hairline bg-surface p-3.5">
+                <input
+                  value={vehicleForm.registration}
+                  onChange={(e) => setVehicleForm((p) => ({ ...p, registration: e.target.value }))}
+                  placeholder="Registration"
+                  className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm uppercase outline-none focus:border-signal"
+                />
+                <div className="grid grid-cols-2 gap-1.5">
                   <input
-                    value={vehicleForm.registration}
-                    onChange={(e) =>
-                      setVehicleForm((p) => ({ ...p, registration: e.target.value }))
-                    }
-                    placeholder="Registration"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm uppercase outline-none focus:border-signal"
-                  />
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <input
-                      value={vehicleForm.make}
-                      onChange={(e) => setVehicleForm((p) => ({ ...p, make: e.target.value }))}
-                      placeholder="Make (optional)"
-                      className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
-                    />
-                    <input
-                      value={vehicleForm.model}
-                      onChange={(e) => setVehicleForm((p) => ({ ...p, model: e.target.value }))}
-                      placeholder="Model (optional)"
-                      className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
-                    />
-                  </div>
-                  <input
-                    value={vehicleForm.colour}
-                    onChange={(e) => setVehicleForm((p) => ({ ...p, colour: e.target.value }))}
-                    placeholder="Colour (optional)"
+                    value={vehicleForm.make}
+                    onChange={(e) => setVehicleForm((p) => ({ ...p, make: e.target.value }))}
+                    placeholder="Make (optional)"
                     className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
                   />
-                  {createVehicle.isError ? (
-                    <p className="text-[12px] text-destructive">
-                      {createVehicle.error instanceof Error
-                        ? createVehicle.error.message
-                        : "Couldn't save this vehicle."}
-                    </p>
-                  ) : null}
-                  <div className="flex gap-2">
-                    <PrimaryActionButton
-                      size="sm"
-                      className="w-auto px-4"
-                      disabled={!vehicleForm.registration.trim()}
-                      loading={createVehicle.isPending}
-                      onClick={() => createVehicle.mutate()}
-                    >
-                      Save vehicle
-                    </PrimaryActionButton>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddVehicle(false)}
-                      className="text-[12px] font-semibold text-muted-foreground underline"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                  <input
+                    value={vehicleForm.model}
+                    onChange={(e) => setVehicleForm((p) => ({ ...p, model: e.target.value }))}
+                    placeholder="Model (optional)"
+                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                  />
                 </div>
-              ) : (
+                <input
+                  value={vehicleForm.colour}
+                  onChange={(e) => setVehicleForm((p) => ({ ...p, colour: e.target.value }))}
+                  placeholder="Colour (optional)"
+                  className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                />
+                {createVehicle.isError ? (
+                  <p className="text-[12px] text-destructive">
+                    {createVehicle.error instanceof Error
+                      ? createVehicle.error.message
+                      : "Couldn't save this vehicle."}
+                  </p>
+                ) : null}
+                <div className="flex gap-2">
+                  <PrimaryActionButton
+                    size="sm"
+                    className="w-auto px-4"
+                    disabled={!vehicleForm.registration.trim()}
+                    loading={createVehicle.isPending}
+                    onClick={() => createVehicle.mutate()}
+                  >
+                    Save vehicle
+                  </PrimaryActionButton>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddVehicle(false)}
+                    className="text-[12px] font-semibold text-muted-foreground underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAddVehicle(true)}
+                className="mt-2 text-[13px] font-semibold text-signal-deep underline underline-offset-2"
+              >
+                + Add vehicle
+              </button>
+            )}
+
+            <VehicleSizePicker className="mt-3" value={vehicleSize} onChange={setVehicleSize} />
+          </section>
+
+          <section className="mt-5">
+            <span className="eyebrow block text-muted-foreground">Package</span>
+            <div className="mt-2 flex flex-col gap-1.5">
+              {DETAIL_PACKAGES.map((p) => (
                 <button
+                  key={p.id}
                   type="button"
-                  onClick={() => setShowAddVehicle(true)}
-                  className="mt-2 text-[13px] font-semibold text-signal-deep underline underline-offset-2"
+                  onClick={() => setPackageId(p.id)}
+                  className={`flex items-center justify-between rounded-xl border p-3 text-left text-sm ${packageId === p.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
                 >
-                  + Add vehicle
+                  <span>{p.name}</span>
+                  <span className="font-semibold">£{p.priceBySize[vehicleSize]}</span>
                 </button>
-              )}
+              ))}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {DETAIL_ADDONS.map((a) => (
+                <label
+                  key={a.id}
+                  className="press inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-2 px-3 py-1.5 text-[12px]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={addonIds.includes(a.id)}
+                    onChange={(e) =>
+                      setAddonIds((prev) =>
+                        e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
+                      )
+                    }
+                  />
+                  {a.label} (+£{a.price})
+                </label>
+              ))}
+            </div>
+          </section>
 
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {(Object.keys(VEHICLE_SIZE_LABELS) as VehicleSize[]).map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setVehicleSize(size)}
-                    className={`min-h-10 rounded-xl border text-[12px] font-semibold ${vehicleSize === size ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
-                  >
-                    {VEHICLE_SIZE_LABELS[size]}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="mt-5">
-              <span className="eyebrow block text-muted-foreground">Package</span>
-              <div className="mt-2 flex flex-col gap-1.5">
-                {DETAIL_PACKAGES.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setPackageId(p.id)}
-                    className={`flex items-center justify-between rounded-xl border p-3 text-left text-sm ${packageId === p.id ? "border-signal bg-signal/8" : "border-hairline bg-surface"}`}
-                  >
-                    <span>{p.name}</span>
-                    <span className="font-semibold">£{p.priceBySize[vehicleSize]}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {DETAIL_ADDONS.map((a) => (
-                  <label
-                    key={a.id}
-                    className="press inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-2 px-3 py-1.5 text-[12px]"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={addonIds.includes(a.id)}
-                      onChange={(e) =>
-                        setAddonIds((prev) =>
-                          e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
-                        )
-                      }
-                    />
-                    {a.label} (+£{a.price})
-                  </label>
-                ))}
-              </div>
-            </section>
-
-            <section className="mt-5 grid grid-cols-2 gap-3">
-              <div>
-                <span className="eyebrow block text-muted-foreground">Date</span>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
-                />
-              </div>
-              <div>
-                <span className="eyebrow block text-muted-foreground">Time</span>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
-                />
-              </div>
-            </section>
-
-            <section className="mt-5">
-              <span className="eyebrow block text-muted-foreground">
-                Internal notes (detailer only)
-              </span>
-              <textarea
-                value={internalNotes}
-                onChange={(e) => setInternalNotes(e.target.value)}
-                rows={2}
-                className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-2.5 text-sm outline-none focus:border-signal"
+          <section className="mt-5 grid grid-cols-2 gap-3">
+            <div>
+              <span className="eyebrow block text-muted-foreground">Date</span>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
               />
-            </section>
+            </div>
+            <div>
+              <span className="eyebrow block text-muted-foreground">Time</span>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="mt-2 min-h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+              />
+            </div>
+          </section>
 
-            {selectedAddress ? (
-              <AreaCheck postcode={selectedAddress.postcode} onResult={setAreaResult} />
-            ) : null}
+          <section className="mt-5">
+            <span className="eyebrow block text-muted-foreground">
+              Internal notes (detailer only)
+            </span>
+            <textarea
+              value={internalNotes}
+              onChange={(e) => setInternalNotes(e.target.value)}
+              rows={2}
+              className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-2.5 text-sm outline-none focus:border-signal"
+            />
+          </section>
 
-            {submit.isError ? (
-              <p className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] text-destructive">
-                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
-                {submit.error instanceof Error
-                  ? submit.error.message
-                  : "Couldn't create this booking."}
-              </p>
-            ) : null}
+          {selectedAddress ? (
+            <AreaCheck postcode={selectedAddress.postcode} onResult={setAreaResult} />
+          ) : null}
 
-            <PrimaryActionButton
-              className="mt-6"
-              loading={submit.isPending}
-              disabled={
-                !selectedAddress ||
-                !selectedVehicle ||
-                !date ||
-                (areaResult ? !areaResult.covered : false)
-              }
-              onClick={() => submit.mutate()}
-            >
-              Create booking · £{totalPrice}
-            </PrimaryActionButton>
-          </>
-        ) : null}
-      </div>
-    </main>
+          {submit.isError ? (
+            <p className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] text-destructive">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
+              {submit.error instanceof Error
+                ? submit.error.message
+                : "Couldn't create this booking."}
+            </p>
+          ) : null}
+
+          <PrimaryActionButton
+            className="mt-6"
+            loading={submit.isPending}
+            disabled={
+              !selectedAddress ||
+              !selectedVehicle ||
+              !date ||
+              (areaResult ? !areaResult.covered : false)
+            }
+            onClick={() => submit.mutate()}
+          >
+            Create booking · £{totalPrice}
+          </PrimaryActionButton>
+        </>
+      ) : null}
+    </AppShell>
   );
 }
 

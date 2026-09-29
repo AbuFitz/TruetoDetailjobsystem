@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/ttd/EmptyState";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { formatAppointment, formatCountdownToAppointment } from "@/lib/format";
 import { getDetailerJobHistory, getDetailerJobs, getDetailerProfile } from "@/lib/detailers";
-import { supportContact } from "@/lib/constants";
+import { supportContact, ttdSiteLinks } from "@/lib/constants";
 
 export const Route = createFileRoute("/d/$token")({
   head: () => ({
@@ -50,25 +50,32 @@ function DetailerQueue() {
 
   if (profileLoading) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <BrandedLoading label="Loading your link" />
-      </main>
+      </div>
     );
   }
 
   if (!profile) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <InvalidDetailerLink />
-      </main>
+      </div>
     );
   }
 
   return (
     <main className="min-h-screen bg-background pb-10">
       <header className="border-b border-white/10 bg-ink px-5 py-5 text-ink-foreground sm:px-6">
-        <div className="mx-auto w-full max-w-md sm:max-w-lg">
-          <TtdLogo tone="light" />
+        <div className="mx-auto w-full max-w-md sm:max-w-2xl">
+          <Link
+            to="/d/$token"
+            params={{ token }}
+            aria-label="True To Detail, your jobs"
+            className="press inline-block"
+          >
+            <TtdLogo tone="light" />
+          </Link>
           <h1 className="mt-5 font-display text-[34px] leading-none">
             HI {profile.name.split(" ")[0]?.toUpperCase()}
             <span className="text-signal">.</span>
@@ -77,7 +84,7 @@ function DetailerQueue() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-md px-5 py-6 sm:max-w-lg sm:px-6">
+      <div className="mx-auto w-full max-w-md px-5 py-6 sm:max-w-2xl sm:px-6">
         {jobsLoading ? (
           <BrandedLoading label="Loading your jobs" />
         ) : isError ? (
@@ -87,7 +94,7 @@ function DetailerQueue() {
             description="Check your connection and reload this page."
           />
         ) : jobs && jobs.length > 0 ? (
-          <div className="flex flex-col gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {jobs.map((job) => {
               const { dayLabel, timeLabel } = formatAppointment(job.scheduled_start);
               return (
@@ -172,7 +179,13 @@ function InvalidDetailerLink() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-12">
       <div className="rise-in rounded-2xl border border-hairline bg-surface p-7 text-center">
-        <TtdLogo size="lg" />
+        <a
+          href={ttdSiteLinks.website}
+          aria-label="True To Detail, home"
+          className="press inline-block"
+        >
+          <TtdLogo size="lg" />
+        </a>
         <span className="mt-7 inline-grid h-14 w-14 place-items-center bg-surface-2 text-muted-foreground">
           <Clock3 className="h-6 w-6" strokeWidth={2} />
         </span>

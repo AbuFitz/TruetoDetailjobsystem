@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BookingStatus } from "@/lib/bookings";
+import { CUSTOMER_STEPS, customerStepIndex } from "@/lib/progress";
 
 export type TimelineStepState = "done" | "active" | "todo";
 
@@ -78,39 +79,19 @@ export function BookingTimeline({
   );
 }
 
-const STEP_ORDER: BookingStatus[] = [
-  "confirmed",
-  "assigned",
-  "en_route",
-  "arrived",
-  "check_in",
-  "in_progress",
-  "qc",
-  "handover",
-  "completed",
-];
-
-const STEP_LABELS: Record<BookingStatus, string> = {
-  confirmed: "Booking confirmed",
-  assigned: "Detailer assigned",
-  en_route: "Detailer on the way",
-  arrived: "Detailer arrived",
-  check_in: "Vehicle check-in",
-  in_progress: "Detailing in progress",
-  qc: "Final quality check",
-  handover: "Handover",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
-
-/** Builds the customer-facing progress steps from a booking's current status. */
+/** Builds the five progress steps from a booking's current status (same steps the customer sees). */
 export function timelineForStatus(status: BookingStatus): TimelineStep[] {
   if (status === "cancelled") {
     return [{ label: "Booking cancelled", state: "done" }];
   }
-  const idx = STEP_ORDER.indexOf(status);
-  return STEP_ORDER.map((s, i) => ({
-    label: STEP_LABELS[s],
-    state: i < idx ? "done" : i === idx ? (status === "completed" ? "done" : "active") : "todo",
+  const idx = customerStepIndex(status);
+  return CUSTOMER_STEPS.map((step, i) => ({
+    label: step.label,
+    state:
+      i < idx || (status === "completed" && i === 4)
+        ? "done"
+        : i === Math.ceil(idx)
+          ? "active"
+          : "todo",
   }));
 }

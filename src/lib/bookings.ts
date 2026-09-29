@@ -13,6 +13,7 @@ import { getMyCustomerId } from "./customers";
 import type { AddonId, VehicleSize } from "./constants";
 
 export type BookingStatus =
+  | "requested"
   | "confirmed"
   | "assigned"
   | "en_route"
@@ -25,6 +26,7 @@ export type BookingStatus =
   | "cancelled";
 
 export const ACTIVE_STATUSES: BookingStatus[] = [
+  "requested",
   "confirmed",
   "assigned",
   "en_route",
@@ -86,6 +88,13 @@ export interface Booking {
   current_lat: number | null;
   current_lng: number | null;
   location_updated_at: string | null;
+  /** Driving time to the address in seconds, sent by the detailer's phone with each location update. */
+  eta_seconds: number | null;
+  eta_updated_at: string | null;
+
+  /** Private link for the public tracking page. */
+  tracking_token: string;
+  source: "portal" | "staff" | "website";
 
   created_at: string;
   assigned_at: string | null;
@@ -321,20 +330,15 @@ export async function updateBookingDetails(
 }
 
 // ---------------------------------------------------------------------------
-// Live ETA — see supabase/functions/get-eta. Same "no fabricated ETAs" rule
-// as FixNow: null means "no routing ETA available", never an error to
-// surface — callers fall back to comparing real clock times instead.
+// Staff: website requests
 // ---------------------------------------------------------------------------
-export interface BookingEta {
-  durationSeconds: number;
-  distanceMeters: number;
-}
 
-export async function getBookingEta(bookingId: string): Promise<BookingEta | null> {
-  const { data, error } = await supabase.functions.invoke<{
-    duration_seconds?: number;
-    distance_meters?: number;
-  }>("get-eta", { body: { bookingId } });
-  if (error || data?.duration_seconds == null || data?.distance_meters == null) return null;
-  return { durationSeconds: data.duration_seconds, distanceMeters: data.distance_meters };
+/** Staff confirm a website request: it becomes a normal confirmed booking. */
+export async function confirmRequest(id: string): Promise<void> {
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ status: "confirmed" })
+    .eq("id", id)
+    .eq("status", "requested");
+  if (error) throw dbError(error, "Couldn't confirm this request.");
 }

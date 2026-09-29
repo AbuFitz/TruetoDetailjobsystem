@@ -100,33 +100,18 @@ export function CheckInForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={cn("flex flex-col gap-4", className)}>
-      <Field
-        id="mileage"
-        label="Mileage"
-        type="number"
-        placeholder="e.g. 42150"
-        inputProps={register("mileage")}
-      />
+      <p className="text-[13px] leading-relaxed text-muted-foreground">
+        Walk round the car with the customer, take a few photos and note anything already there.
+        Everything else is optional.
+      </p>
+
+      <PhotoGrid photos={photos} onChange={setPhotos} />
 
       <TextareaField
         id="exteriorDamageNotes"
-        label="Existing bodywork damage"
-        placeholder="Scratches, dents, chips: note location and severity"
+        label="Existing damage"
+        placeholder="Scratches, dents, chips, kerbed wheels: where and how bad. Leave blank if none."
         inputProps={register("exteriorDamageNotes")}
-      />
-
-      <TextareaField
-        id="wheelDamageNotes"
-        label="Existing wheel damage"
-        placeholder="Kerb rash, scuffs: note which wheel"
-        inputProps={register("wheelDamageNotes")}
-      />
-
-      <TextareaField
-        id="interiorConditionNotes"
-        label="Interior condition"
-        placeholder="Stains, wear, existing damage"
-        inputProps={register("interiorConditionNotes")}
       />
 
       <TextareaField
@@ -137,44 +122,69 @@ export function CheckInForm({
       />
 
       <TextareaField
-        id="customerRequests"
-        label="Customer requests"
-        placeholder="Anything the customer specifically asked for"
-        inputProps={register("customerRequests")}
-      />
-
-      <TextareaField
-        id="accessNotes"
-        label="Access considerations"
-        placeholder="Gate code, parking, where to find the vehicle"
-        inputProps={register("accessNotes")}
-      />
-
-      <div className="grid grid-cols-2 gap-3">
-        <YesNoField label="Water available" value={waterAvailable} onChange={setWaterAvailable} />
-        <YesNoField
-          label="Electric available"
-          value={electricAvailable}
-          onChange={setElectricAvailable}
-        />
-      </div>
-
-      <TextareaField
-        id="vehiclePositionNotes"
-        label="Where the vehicle is positioned"
-        placeholder="Driveway, street, underground car park…"
-        inputProps={register("vehiclePositionNotes")}
-      />
-
-      <TextareaField
         id="blockingIssue"
-        label="Any issue preventing the booked service"
+        label="Anything stopping the booked service?"
         placeholder="Leave blank if none"
         inputProps={register("blockingIssue")}
         error={errors.blockingIssue?.message}
       />
 
-      <PhotoGrid photos={photos} onChange={setPhotos} />
+      <details className="group rounded-xl border border-hairline bg-surface-2 px-3.5 py-3">
+        <summary className="cursor-pointer text-[13px] font-semibold marker:content-none">
+          More details (optional)
+        </summary>
+        <div className="mt-4 flex flex-col gap-4">
+          <Field
+            id="mileage"
+            label="Mileage"
+            type="number"
+            placeholder="e.g. 42150"
+            inputProps={register("mileage")}
+          />
+          <TextareaField
+            id="wheelDamageNotes"
+            label="Existing wheel damage"
+            placeholder="Kerb rash, scuffs: note which wheel"
+            inputProps={register("wheelDamageNotes")}
+          />
+          <TextareaField
+            id="interiorConditionNotes"
+            label="Interior condition"
+            placeholder="Stains, wear, existing damage"
+            inputProps={register("interiorConditionNotes")}
+          />
+          <TextareaField
+            id="customerRequests"
+            label="Customer requests"
+            placeholder="Anything the customer specifically asked for"
+            inputProps={register("customerRequests")}
+          />
+          <TextareaField
+            id="accessNotes"
+            label="Access considerations"
+            placeholder="Gate code, parking, where to find the vehicle"
+            inputProps={register("accessNotes")}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <YesNoField
+              label="Water available"
+              value={waterAvailable}
+              onChange={setWaterAvailable}
+            />
+            <YesNoField
+              label="Electric available"
+              value={electricAvailable}
+              onChange={setElectricAvailable}
+            />
+          </div>
+          <TextareaField
+            id="vehiclePositionNotes"
+            label="Where the vehicle is positioned"
+            placeholder="Driveway, street, underground car park"
+            inputProps={register("vehiclePositionNotes")}
+          />
+        </div>
+      </details>
 
       {submitError ? (
         <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
@@ -184,7 +194,7 @@ export function CheckInForm({
       ) : null}
 
       <PrimaryActionButton type="submit" loading={submitting}>
-        Save check-in
+        Save and start detailing
       </PrimaryActionButton>
     </form>
   );

@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, Copy } from "lucide-react";
-import { TtdHeader } from "@/components/ttd/Header";
+import { Check, Copy } from "lucide-react";
+import { AppShell } from "@/components/ttd/AppShell";
 import { Field } from "@/components/ttd/FormField";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
@@ -80,67 +80,64 @@ function EditDetailer() {
 
   if (isLoading || !detailer) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <BrandedLoading label="Loading detailer" />
-      </main>
+      </div>
     );
   }
 
   const link = `${window.location.origin}/d/${detailer.link_token}`;
 
   return (
-    <main className="min-h-screen bg-background pb-16">
-      <TtdHeader eyebrow="Edit detailer" containerClassName="max-w-2xl" />
-
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        <Link
-          to="/admin/detailers"
-          className="press inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+    <AppShell
+      area="admin"
+      width="narrow"
+      eyebrow="Edit detailer"
+      title={
+        <>
+          {detailer.name}
+          <span className="text-signal">.</span>
+        </>
+      }
+      back={{ to: "/admin/detailers", label: "Detailers" }}
+    >
+      <div className="mt-3 flex items-center gap-2 rounded-xl border border-hairline bg-surface p-2.5">
+        <p className="min-w-0 flex-1 truncate text-[13px]">{link}</p>
+        <button
+          type="button"
+          onClick={() => copy(link)}
+          aria-label={copied ? "Link copied" : "Copy detailer link"}
+          className="press grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-hairline"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Detailers
-        </Link>
-
-        <h1 className="mt-4 font-display text-[28px] leading-none">{detailer.name}</h1>
-
-        <div className="mt-3 flex items-center gap-2 rounded-xl border border-hairline bg-surface p-2.5">
-          <p className="min-w-0 flex-1 truncate text-[13px]">{link}</p>
-          <button
-            type="button"
-            onClick={() => copy(link)}
-            aria-label={copied ? "Link copied" : "Copy detailer link"}
-            className="press grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-hairline"
-          >
-            {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-          </button>
-        </div>
-
-        <form
-          onSubmit={handleSubmit((v) => updateMutation.mutate(v))}
-          className="mt-5 flex flex-col gap-4"
-        >
-          <Field id="name" label="Name" inputProps={register("name", { required: true })} />
-          <Field id="phone" label="Phone" inputProps={register("phone")} />
-          <Field id="jobTitle" label="Job title" inputProps={register("jobTitle")} />
-          <Field
-            id="vehicleDescription"
-            label="Vehicle"
-            inputProps={register("vehicleDescription")}
-          />
-          <PrimaryActionButton type="submit" loading={updateMutation.isPending}>
-            Save changes
-          </PrimaryActionButton>
-        </form>
-
-        <PrimaryActionButton
-          variant={detailer.active ? "ghostDestructive" : "outline"}
-          className="mt-3"
-          loading={toggleActiveMutation.isPending}
-          onClick={() => toggleActiveMutation.mutate()}
-        >
-          {detailer.active ? "Deactivate detailer" : "Reactivate detailer"}
-        </PrimaryActionButton>
+          {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+        </button>
       </div>
-    </main>
+
+      <form
+        onSubmit={handleSubmit((v) => updateMutation.mutate(v))}
+        className="mt-5 flex flex-col gap-4"
+      >
+        <Field id="name" label="Name" inputProps={register("name", { required: true })} />
+        <Field id="phone" label="Phone" inputProps={register("phone")} />
+        <Field id="jobTitle" label="Job title" inputProps={register("jobTitle")} />
+        <Field
+          id="vehicleDescription"
+          label="Vehicle"
+          inputProps={register("vehicleDescription")}
+        />
+        <PrimaryActionButton type="submit" loading={updateMutation.isPending}>
+          Save changes
+        </PrimaryActionButton>
+      </form>
+
+      <PrimaryActionButton
+        variant={detailer.active ? "ghostDestructive" : "outline"}
+        className="mt-3"
+        loading={toggleActiveMutation.isPending}
+        onClick={() => toggleActiveMutation.mutate()}
+      >
+        {detailer.active ? "Deactivate detailer" : "Reactivate detailer"}
+      </PrimaryActionButton>
+    </AppShell>
   );
 }

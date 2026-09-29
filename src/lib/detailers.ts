@@ -240,12 +240,14 @@ export async function detailerUpdateLocation(
   token: string,
   bookingId: string,
   position: { lat: number; lng: number },
+  etaSeconds?: number | null,
 ): Promise<void> {
   const { error } = await supabase.rpc("detailer_update_location", {
     p_token: token,
     p_booking_id: bookingId,
     p_lat: position.lat,
     p_lng: position.lng,
+    ...(etaSeconds != null ? { p_eta_seconds: etaSeconds } : {}),
   });
   if (error) throw rpcError(error, "Couldn't update your location.");
 }
@@ -371,4 +373,18 @@ export async function detailerCompleteBooking(token: string, bookingId: string):
     p_booking_id: bookingId,
   });
   if (error) throw rpcError(error, "Couldn't complete this job.");
+}
+
+/** Finish the job in one step: every checklist item must be ticked; the name of who the car was handed back to is optional. */
+export async function detailerFinishJob(
+  token: string,
+  bookingId: string,
+  customerName?: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("detailer_finish_job", {
+    p_token: token,
+    p_booking_id: bookingId,
+    p_customer_name: customerName?.trim() || null,
+  });
+  if (error) throw rpcError(error, "Couldn't finish this job.");
 }

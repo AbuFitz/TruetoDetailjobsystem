@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase";
 import { isStaff as checkIsStaff } from "@/lib/auth";
+import { mustChangePassword } from "@/lib/accounts";
 
 interface SessionState {
   session: Session | null;
@@ -56,8 +57,17 @@ export function useRequireCustomerSession(): SessionState {
       return;
     }
     let mounted = true;
-    checkIsStaff().then((staff) => {
-      if (mounted && staff) navigate({ to: "/admin", replace: true });
+    checkIsStaff().then(async (staff) => {
+      if (!mounted) return;
+      if (staff) {
+        navigate({ to: "/admin", replace: true });
+        return;
+      }
+      // An account staff created starts on a temporary password: hold it on
+      // the choose-your-password step until it has been changed.
+      if (await mustChangePassword().catch(() => false)) {
+        if (mounted) navigate({ to: "/account/welcome", replace: true });
+      }
     });
     return () => {
       mounted = false;

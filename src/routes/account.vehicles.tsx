@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Car, Plus, Trash2 } from "lucide-react";
-import { TtdHeader } from "@/components/ttd/Header";
+import { createFileRoute } from "@tanstack/react-router";
+import { Car, Plus, Trash2 } from "lucide-react";
+import { AppShell } from "@/components/ttd/AppShell";
 import { Field } from "@/components/ttd/FormField";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -63,103 +63,99 @@ function VehiclesPage() {
 
   if (authLoading) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <BrandedLoading label="Checking session" />
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background pb-16">
-      <TtdHeader eyebrow="Your Garage" containerClassName="max-w-2xl" />
-
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        <Link
-          to="/account"
-          className="press inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Your account
-        </Link>
-
-        <h1 className="mt-4 font-display text-[28px] leading-none">Your Garage</h1>
-
-        {isLoading ? (
-          <BrandedLoading label="Loading vehicles" className="mt-8" />
-        ) : vehicles && vehicles.length > 0 ? (
-          <div className="mt-5 flex flex-col gap-2.5">
-            {vehicles.map((v) => (
-              <div
-                key={v.id}
-                className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-4"
-              >
-                <span className="grid h-10 w-10 shrink-0 place-items-center bg-surface-2 text-foreground">
-                  <Car className="h-5 w-5" strokeWidth={2} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  {vehicleDescription(v) ? (
-                    <p className="truncate text-[14px] font-semibold">{vehicleDescription(v)}</p>
-                  ) : null}
-                  <PlateTag registration={v.registration} className="mt-1" />
-                </div>
-                <button
-                  type="button"
-                  aria-label="Remove vehicle"
-                  onClick={() => deleteMutation.mutate(v.id)}
-                  className="press grid h-9 w-9 shrink-0 place-items-center rounded-full border border-hairline text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" strokeWidth={2} />
-                </button>
+    <AppShell
+      area="customer"
+      width="narrow"
+      eyebrow="Your Garage"
+      title={
+        <>
+          YOUR GARAGE<span className="text-signal">.</span>
+        </>
+      }
+      back={{ to: "/account", label: "Your account" }}
+    >
+      {isLoading ? (
+        <BrandedLoading label="Loading vehicles" className="mt-8" />
+      ) : vehicles && vehicles.length > 0 ? (
+        <div className="mt-5 flex flex-col gap-2.5">
+          {vehicles.map((v) => (
+            <div
+              key={v.id}
+              className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-4"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center bg-surface-2 text-foreground">
+                <Car className="h-5 w-5" strokeWidth={2} />
+              </span>
+              <div className="min-w-0 flex-1">
+                {vehicleDescription(v) ? (
+                  <p className="truncate text-[14px] font-semibold">{vehicleDescription(v)}</p>
+                ) : null}
+                <PlateTag registration={v.registration} className="mt-1" />
               </div>
-            ))}
-          </div>
-        ) : (
-          <EmptyState className="mt-6" icon={Car} title="No vehicles saved yet" />
-        )}
-
-        {showForm ? (
-          <form
-            onSubmit={handleSubmit((v) => createMutation.mutate(v))}
-            className="mt-5 flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-5"
-          >
-            <div className="grid grid-cols-2 gap-3">
-              <Field id="make" label="Make" placeholder="BMW" inputProps={register("make")} />
-              <Field id="model" label="Model" placeholder="220d" inputProps={register("model")} />
-            </div>
-            <Field
-              id="registration"
-              label="Registration"
-              upper
-              mono
-              placeholder="AB12 CDE"
-              inputProps={register("registration", { required: true })}
-            />
-            <Field id="colour" label="Colour (optional)" inputProps={register("colour")} />
-            <div className="flex gap-2">
-              <PrimaryActionButton
-                type="submit"
-                loading={createMutation.isPending}
-                className="flex-1"
-              >
-                Save vehicle
-              </PrimaryActionButton>
-              <PrimaryActionButton
+              <button
                 type="button"
-                variant="outline"
-                className="w-auto px-5"
-                onClick={() => setShowForm(false)}
+                aria-label="Remove vehicle"
+                onClick={() => deleteMutation.mutate(v.id)}
+                className="press grid h-9 w-9 shrink-0 place-items-center rounded-full border border-hairline text-muted-foreground hover:text-destructive"
               >
-                Cancel
-              </PrimaryActionButton>
+                <Trash2 className="h-4 w-4" strokeWidth={2} />
+              </button>
             </div>
-          </form>
-        ) : (
-          <PrimaryActionButton variant="outline" className="mt-5" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4" />
-            Add vehicle
-          </PrimaryActionButton>
-        )}
-      </div>
-    </main>
+          ))}
+        </div>
+      ) : (
+        <EmptyState className="mt-6" icon={Car} title="No vehicles saved yet" />
+      )}
+
+      {showForm ? (
+        <form
+          onSubmit={handleSubmit((v) => createMutation.mutate(v))}
+          className="mt-5 flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-5"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <Field id="make" label="Make" placeholder="BMW" inputProps={register("make")} />
+            <Field id="model" label="Model" placeholder="220d" inputProps={register("model")} />
+          </div>
+          <Field
+            id="registration"
+            label="Registration"
+            upper
+            mono
+            placeholder="AB12 CDE"
+            inputProps={register("registration", { required: true })}
+          />
+          <Field id="colour" label="Colour (optional)" inputProps={register("colour")} />
+          <div className="flex gap-2">
+            <PrimaryActionButton
+              type="submit"
+              loading={createMutation.isPending}
+              className="flex-1"
+            >
+              Save vehicle
+            </PrimaryActionButton>
+            <PrimaryActionButton
+              type="button"
+              variant="outline"
+              className="w-auto px-5"
+              onClick={() => setShowForm(false)}
+            >
+              Cancel
+            </PrimaryActionButton>
+          </div>
+        </form>
+      ) : (
+        <PrimaryActionButton variant="outline" className="mt-5" onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4" />
+          Add vehicle
+        </PrimaryActionButton>
+      )}
+    </AppShell>
   );
 }

@@ -13,15 +13,20 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as AccountAddressesRouteImport } from './routes/account.addresses'
+import { Route as AccountCreateRouteImport } from './routes/account.create'
 import { Route as AccountDetailsRouteImport } from './routes/account.details'
+import { Route as AccountForgotRouteImport } from './routes/account.forgot'
 import { Route as AccountLoginRouteImport } from './routes/account.login'
+import { Route as AccountResetRouteImport } from './routes/account.reset'
 import { Route as AccountVehiclesRouteImport } from './routes/account.vehicles'
+import { Route as AccountWelcomeRouteImport } from './routes/account.welcome'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminDetailersRouteImport } from './routes/admin.detailers'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as DTokenRouteImport } from './routes/d.$token'
 import { Route as AccountBookingsIdRouteImport } from './routes/account.bookings.$id'
+import { Route as AccountTrackTokenRouteImport } from './routes/account.track.$token'
 import { Route as AdminBookingsIdRouteImport } from './routes/admin.bookings.$id'
 import { Route as AdminBookingsNewRouteImport } from './routes/admin.bookings.new'
 import { Route as AdminCustomersIdRouteImport } from './routes/admin.customers_.$id'
@@ -49,9 +54,19 @@ const AccountAddressesRoute = AccountAddressesRouteImport.update({
   path: '/account/addresses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountCreateRoute = AccountCreateRouteImport.update({
+  id: '/account/create',
+  path: '/account/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountDetailsRoute = AccountDetailsRouteImport.update({
   id: '/account/details',
   path: '/account/details',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountForgotRoute = AccountForgotRouteImport.update({
+  id: '/account/forgot',
+  path: '/account/forgot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountLoginRoute = AccountLoginRouteImport.update({
@@ -59,9 +74,19 @@ const AccountLoginRoute = AccountLoginRouteImport.update({
   path: '/account/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountResetRoute = AccountResetRouteImport.update({
+  id: '/account/reset',
+  path: '/account/reset',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountVehiclesRoute = AccountVehiclesRouteImport.update({
   id: '/account/vehicles',
   path: '/account/vehicles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountWelcomeRoute = AccountWelcomeRouteImport.update({
+  id: '/account/welcome',
+  path: '/account/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -92,6 +117,11 @@ const DTokenRoute = DTokenRouteImport.update({
 const AccountBookingsIdRoute = AccountBookingsIdRouteImport.update({
   id: '/account/bookings/$id',
   path: '/account/bookings/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountTrackTokenRoute = AccountTrackTokenRouteImport.update({
+  id: '/account/track/$token',
+  path: '/account/track/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminBookingsIdRoute = AdminBookingsIdRouteImport.update({
@@ -129,9 +159,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
   '/account/addresses': typeof AccountAddressesRoute
+  '/account/create': typeof AccountCreateRoute
   '/account/details': typeof AccountDetailsRoute
+  '/account/forgot': typeof AccountForgotRoute
   '/account/login': typeof AccountLoginRoute
+  '/account/reset': typeof AccountResetRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/account/welcome': typeof AccountWelcomeRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
@@ -139,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/account/bookings/$id': typeof AccountBookingsIdRoute
+  '/account/track/$token': typeof AccountTrackTokenRoute
   '/admin/bookings/$id': typeof AdminBookingsIdRoute
   '/admin/bookings/new': typeof AdminBookingsNewRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
@@ -150,9 +185,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
   '/account/addresses': typeof AccountAddressesRoute
+  '/account/create': typeof AccountCreateRoute
   '/account/details': typeof AccountDetailsRoute
+  '/account/forgot': typeof AccountForgotRoute
   '/account/login': typeof AccountLoginRoute
+  '/account/reset': typeof AccountResetRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/account/welcome': typeof AccountWelcomeRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
@@ -160,6 +199,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
   '/account/bookings/$id': typeof AccountBookingsIdRoute
+  '/account/track/$token': typeof AccountTrackTokenRoute
   '/admin/bookings/$id': typeof AdminBookingsIdRoute
   '/admin/bookings/new': typeof AdminBookingsNewRoute
   '/admin/customers/$id': typeof AdminCustomersIdRoute
@@ -172,9 +212,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
   '/account/addresses': typeof AccountAddressesRoute
+  '/account/create': typeof AccountCreateRoute
   '/account/details': typeof AccountDetailsRoute
+  '/account/forgot': typeof AccountForgotRoute
   '/account/login': typeof AccountLoginRoute
+  '/account/reset': typeof AccountResetRoute
   '/account/vehicles': typeof AccountVehiclesRoute
+  '/account/welcome': typeof AccountWelcomeRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/detailers': typeof AdminDetailersRoute
   '/admin/login': typeof AdminLoginRoute
@@ -182,6 +226,7 @@ export interface FileRoutesById {
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/account/bookings/$id': typeof AccountBookingsIdRoute
+  '/account/track/$token': typeof AccountTrackTokenRoute
   '/admin/bookings/$id': typeof AdminBookingsIdRoute
   '/admin/bookings/new': typeof AdminBookingsNewRoute
   '/admin/customers_/$id': typeof AdminCustomersIdRoute
@@ -195,9 +240,13 @@ export interface FileRouteTypes {
     | '/'
     | '/book'
     | '/account/addresses'
+    | '/account/create'
     | '/account/details'
+    | '/account/forgot'
     | '/account/login'
+    | '/account/reset'
     | '/account/vehicles'
+    | '/account/welcome'
     | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
@@ -205,6 +254,7 @@ export interface FileRouteTypes {
     | '/account/'
     | '/admin/'
     | '/account/bookings/$id'
+    | '/account/track/$token'
     | '/admin/bookings/$id'
     | '/admin/bookings/new'
     | '/admin/customers/$id'
@@ -216,9 +266,13 @@ export interface FileRouteTypes {
     | '/'
     | '/book'
     | '/account/addresses'
+    | '/account/create'
     | '/account/details'
+    | '/account/forgot'
     | '/account/login'
+    | '/account/reset'
     | '/account/vehicles'
+    | '/account/welcome'
     | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
@@ -226,6 +280,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/account/bookings/$id'
+    | '/account/track/$token'
     | '/admin/bookings/$id'
     | '/admin/bookings/new'
     | '/admin/customers/$id'
@@ -237,9 +292,13 @@ export interface FileRouteTypes {
     | '/'
     | '/book'
     | '/account/addresses'
+    | '/account/create'
     | '/account/details'
+    | '/account/forgot'
     | '/account/login'
+    | '/account/reset'
     | '/account/vehicles'
+    | '/account/welcome'
     | '/admin/customers'
     | '/admin/detailers'
     | '/admin/login'
@@ -247,6 +306,7 @@ export interface FileRouteTypes {
     | '/account/'
     | '/admin/'
     | '/account/bookings/$id'
+    | '/account/track/$token'
     | '/admin/bookings/$id'
     | '/admin/bookings/new'
     | '/admin/customers_/$id'
@@ -259,9 +319,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BookRoute: typeof BookRoute
   AccountAddressesRoute: typeof AccountAddressesRoute
+  AccountCreateRoute: typeof AccountCreateRoute
   AccountDetailsRoute: typeof AccountDetailsRoute
+  AccountForgotRoute: typeof AccountForgotRoute
   AccountLoginRoute: typeof AccountLoginRoute
+  AccountResetRoute: typeof AccountResetRoute
   AccountVehiclesRoute: typeof AccountVehiclesRoute
+  AccountWelcomeRoute: typeof AccountWelcomeRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminDetailersRoute: typeof AdminDetailersRoute
   AdminLoginRoute: typeof AdminLoginRoute
@@ -269,6 +333,7 @@ export interface RootRouteChildren {
   AccountIndexRoute: typeof AccountIndexRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AccountBookingsIdRoute: typeof AccountBookingsIdRoute
+  AccountTrackTokenRoute: typeof AccountTrackTokenRoute
   AdminBookingsIdRoute: typeof AdminBookingsIdRoute
   AdminBookingsNewRoute: typeof AdminBookingsNewRoute
   AdminCustomersIdRoute: typeof AdminCustomersIdRoute
@@ -307,11 +372,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountAddressesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/create': {
+      id: '/account/create'
+      path: '/account/create'
+      fullPath: '/account/create'
+      preLoaderRoute: typeof AccountCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/details': {
       id: '/account/details'
       path: '/account/details'
       fullPath: '/account/details'
       preLoaderRoute: typeof AccountDetailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/forgot': {
+      id: '/account/forgot'
+      path: '/account/forgot'
+      fullPath: '/account/forgot'
+      preLoaderRoute: typeof AccountForgotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/login': {
@@ -321,11 +400,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/reset': {
+      id: '/account/reset'
+      path: '/account/reset'
+      fullPath: '/account/reset'
+      preLoaderRoute: typeof AccountResetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/vehicles': {
       id: '/account/vehicles'
       path: '/account/vehicles'
       fullPath: '/account/vehicles'
       preLoaderRoute: typeof AccountVehiclesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/welcome': {
+      id: '/account/welcome'
+      path: '/account/welcome'
+      fullPath: '/account/welcome'
+      preLoaderRoute: typeof AccountWelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -368,6 +461,13 @@ declare module '@tanstack/react-router' {
       path: '/account/bookings/$id'
       fullPath: '/account/bookings/$id'
       preLoaderRoute: typeof AccountBookingsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/track/$token': {
+      id: '/account/track/$token'
+      path: '/account/track/$token'
+      fullPath: '/account/track/$token'
+      preLoaderRoute: typeof AccountTrackTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/bookings/$id': {
@@ -419,9 +519,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookRoute: BookRoute,
   AccountAddressesRoute: AccountAddressesRoute,
+  AccountCreateRoute: AccountCreateRoute,
   AccountDetailsRoute: AccountDetailsRoute,
+  AccountForgotRoute: AccountForgotRoute,
   AccountLoginRoute: AccountLoginRoute,
+  AccountResetRoute: AccountResetRoute,
   AccountVehiclesRoute: AccountVehiclesRoute,
+  AccountWelcomeRoute: AccountWelcomeRoute,
   AdminCustomersRoute: AdminCustomersRoute,
   AdminDetailersRoute: AdminDetailersRoute,
   AdminLoginRoute: AdminLoginRoute,
@@ -429,6 +533,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountIndexRoute: AccountIndexRoute,
   AdminIndexRoute: AdminIndexRoute,
   AccountBookingsIdRoute: AccountBookingsIdRoute,
+  AccountTrackTokenRoute: AccountTrackTokenRoute,
   AdminBookingsIdRoute: AdminBookingsIdRoute,
   AdminBookingsNewRoute: AdminBookingsNewRoute,
   AdminCustomersIdRoute: AdminCustomersIdRoute,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
 import { TtdLogo } from "@/components/ttd/Header";
 import { Field } from "@/components/ttd/FormField";
@@ -90,6 +90,14 @@ function AdminLogin() {
               type="password"
               inputProps={register("password", { required: true })}
             />
+            <p className="-mt-1 text-right text-[13px]">
+              <Link
+                to="/account/forgot"
+                className="press text-muted-foreground underline underline-offset-2"
+              >
+                Forgot your password?
+              </Link>
+            </p>
             {error ? (
               <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
                 <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { X, Check, Loader2 } from "lucide-react";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
+import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
 import { useDialogFocus } from "@/hooks/use-dialog-focus";
 import { signUpCustomer, getSession } from "@/lib/auth";
 import {
@@ -302,24 +303,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                   Vehicle
                 </p>
                 <p className="eyebrow mb-2.5 text-muted-foreground">What size is your vehicle?</p>
-                <div className="flex gap-1.5">
-                  {(Object.entries(VEHICLE_SIZE_LABELS) as [VehicleSize, string][]).map(
-                    ([key, label]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setVehicleSize(key)}
-                        className={`flex-1 rounded-xl border px-2 py-3.5 text-center text-[12.5px] font-semibold transition-colors ${
-                          vehicleSize === key
-                            ? "border-ink bg-ink text-ink-foreground"
-                            : "border-input bg-surface-2 text-muted-foreground"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ),
-                  )}
-                </div>
+                <VehicleSizePicker tone="ink" value={vehicleSize} onChange={setVehicleSize} />
               </div>
 
               <div>

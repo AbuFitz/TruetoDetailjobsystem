@@ -44,6 +44,7 @@ export async function signUpCustomer(input: SignUpInput): Promise<void> {
     email: input.email,
     password: input.password,
     options: {
+      emailRedirectTo: `${window.location.origin}/account`,
       data: {
         first_name: input.firstName,
         last_name: input.lastName ?? null,

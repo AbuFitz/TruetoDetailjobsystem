@@ -11,7 +11,7 @@ const latest = readdirSync(dir)
   .filter((f) => f.endsWith(".sql"))
   .sort()
   .map((f) => readFileSync(join(dir, f), "utf8"))
-  .filter((sql) => sql.includes("function public.detail_package_list"))
+  .filter((sql) => sql.includes("create or replace function public.detail_package_list"))
   .at(-1)!;
 
 function valuesOf(fn: string): string[][] {

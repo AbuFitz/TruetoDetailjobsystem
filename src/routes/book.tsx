@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, CheckCircle2, ChevronLeft, TriangleAlert } from "lucide-react";
-import { TtdHeader } from "@/components/ttd/Header";
+import { AppShell } from "@/components/ttd/AppShell";
+import { sendBookingEmail } from "@/lib/portal-email";
+import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
@@ -179,6 +181,7 @@ function BookingFlow() {
         estimated_duration_minutes: selectedPackage.durationMinutes,
         customer_notes: notes || undefined,
       });
+      await sendBookingEmail(booking.id, "booked_in");
       return booking;
     },
     onSuccess: (booking) => {
@@ -189,396 +192,384 @@ function BookingFlow() {
 
   if (authLoading) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <BrandedLoading label="Loading" />
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background pb-16">
-      <TtdHeader homeTo="/" eyebrow="Book a mobile detail" containerClassName="max-w-2xl" />
+    <AppShell
+      area="customer"
+      width="narrow"
+      eyebrow="We come to you"
+      title={
+        <>
+          BOOK A DETAIL<span className="text-signal">.</span>
+        </>
+      }
+    >
+      {step !== "postcode" && step !== "done" ? (
+        <button
+          type="button"
+          onClick={() => setStep(prevStep(step))}
+          className="press mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+      ) : null}
 
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        {step !== "postcode" && step !== "done" ? (
-          <button
-            type="button"
-            onClick={() => setStep(prevStep(step))}
-            className="press mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </button>
-        ) : null}
-
-        {step === "postcode" ? (
-          <section>
-            <h1 className="font-display text-[30px] leading-none">
-              Where should we detail the vehicle?
-            </h1>
-            <p className="mt-2 text-[15px] text-muted-foreground">
-              Enter your postcode and we'll check we cover your area.
-            </p>
-            <div className="mt-5 flex gap-2">
-              <input
-                value={postcode}
-                onChange={(e) => setPostcode(e.target.value)}
-                placeholder="e.g. HP2 6EL"
-                className="min-h-12 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
-              />
-              <PrimaryActionButton
-                className="w-auto px-6"
-                loading={checkingArea}
-                onClick={handlePostcodeSubmit}
-              >
-                Check
-              </PrimaryActionButton>
-            </div>
-            {areaResult ? (
-              areaResult.covered ? (
-                <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-success">
-                  <Check className="h-4 w-4" strokeWidth={3} /> We cover your area
-                </p>
-              ) : (
-                <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-destructive">
-                  <TriangleAlert className="h-4 w-4" /> This address is currently outside our mobile
-                  service area.
-                </p>
-              )
-            ) : null}
-            {areaError ? <p className="mt-3 text-[13px] text-destructive">{areaError}</p> : null}
-          </section>
-        ) : null}
-
-        {step === "address" ? (
-          <section>
-            <h1 className="font-display text-[28px] leading-none">Where should we come?</h1>
-            <div className="mt-5 flex flex-col gap-2.5">
-              {(addresses ?? []).map((a) => (
-                <ChoiceCard
-                  key={a.id}
-                  selected={addressChoice !== "new" && addressChoice?.id === a.id}
-                  onClick={() => setAddressChoice(a)}
-                >
-                  <p className="text-[14px] font-semibold">{a.label}</p>
-                  <p className="text-[13px] text-muted-foreground">
-                    {a.line1} · {a.postcode}
-                  </p>
-                </ChoiceCard>
-              ))}
-              <ChoiceCard
-                selected={addressChoice === "new"}
-                onClick={() => setAddressChoice("new")}
-              >
-                <p className="text-[14px] font-semibold">Another address</p>
-                <p className="text-[13px] text-muted-foreground">Postcode {areaResult?.postcode}</p>
-              </ChoiceCard>
-            </div>
-
-            {addressChoice === "new" ? (
-              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {(["Home", "Work", "Other"] as const).map((l) => (
-                    <button
-                      key={l}
-                      type="button"
-                      onClick={() => setNewAddress((s) => ({ ...s, label: l }))}
-                      className={`min-h-9 border text-[13px] font-semibold ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  value={newAddress.line1}
-                  onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
-                  placeholder="Address line 1"
-                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                />
-                <input
-                  value={newAddress.city}
-                  onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
-                  placeholder="Town / city"
-                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                />
-              </div>
-            ) : null}
-
+      {step === "postcode" ? (
+        <section>
+          <h2 className="font-display text-[30px] leading-none">
+            Where should we detail the vehicle?
+          </h2>
+          <p className="mt-2 text-[15px] text-muted-foreground">
+            Enter your postcode and we'll check we cover your area.
+          </p>
+          <div className="mt-5 flex gap-2">
+            <input
+              value={postcode}
+              onChange={(e) => setPostcode(e.target.value)}
+              placeholder="e.g. HP2 6EL"
+              className="min-h-12 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+            />
             <PrimaryActionButton
-              className="mt-5"
-              loading={createAddressMutation.isPending}
-              disabled={addressChoice === null}
-              onClick={() =>
-                addressChoice === "new" ? createAddressMutation.mutate() : setStep("vehicle")
-              }
+              className="w-auto px-6"
+              loading={checkingArea}
+              onClick={handlePostcodeSubmit}
             >
-              Continue
+              Check
             </PrimaryActionButton>
-          </section>
-        ) : null}
+          </div>
+          {areaResult ? (
+            areaResult.covered ? (
+              <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-success">
+                <Check className="h-4 w-4" strokeWidth={3} /> We cover your area
+              </p>
+            ) : (
+              <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-destructive">
+                <TriangleAlert className="h-4 w-4" /> This address is currently outside our mobile
+                service area.
+              </p>
+            )
+          ) : null}
+          {areaError ? <p className="mt-3 text-[13px] text-destructive">{areaError}</p> : null}
+        </section>
+      ) : null}
 
-        {step === "vehicle" ? (
-          <section>
-            <h1 className="font-display text-[28px] leading-none">Which vehicle?</h1>
-            <div className="mt-5 flex flex-col gap-2.5">
-              {(vehicles ?? []).map((v) => (
-                <ChoiceCard
-                  key={v.id}
-                  selected={vehicleChoice !== "new" && vehicleChoice?.id === v.id}
-                  onClick={() => setVehicleChoice(v)}
-                >
-                  <div className="flex items-center gap-2">
-                    {vehicleDescription(v) ? (
-                      <p className="text-[14px] font-semibold">{vehicleDescription(v)}</p>
-                    ) : null}
-                    <PlateTag registration={v.registration} />
-                  </div>
-                </ChoiceCard>
-              ))}
+      {step === "address" ? (
+        <section>
+          <h2 className="font-display text-[28px] leading-none">Where should we come?</h2>
+          <div className="mt-5 flex flex-col gap-2.5">
+            {(addresses ?? []).map((a) => (
               <ChoiceCard
-                selected={vehicleChoice === "new"}
-                onClick={() => setVehicleChoice("new")}
+                key={a.id}
+                selected={addressChoice !== "new" && addressChoice?.id === a.id}
+                onClick={() => setAddressChoice(a)}
               >
-                <p className="text-[14px] font-semibold">Add a new vehicle</p>
+                <p className="text-[14px] font-semibold">{a.label}</p>
+                <p className="text-[13px] text-muted-foreground">
+                  {a.line1} · {a.postcode}
+                </p>
               </ChoiceCard>
-            </div>
+            ))}
+            <ChoiceCard selected={addressChoice === "new"} onClick={() => setAddressChoice("new")}>
+              <p className="text-[14px] font-semibold">Another address</p>
+              <p className="text-[13px] text-muted-foreground">Postcode {areaResult?.postcode}</p>
+            </ChoiceCard>
+          </div>
 
-            {vehicleChoice === "new" ? (
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <input
-                  value={newVehicle.make}
-                  onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
-                  placeholder="Make"
-                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                />
-                <input
-                  value={newVehicle.model}
-                  onChange={(e) => setNewVehicle((s) => ({ ...s, model: e.target.value }))}
-                  placeholder="Model"
-                  className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
-                />
-                <input
-                  value={newVehicle.registration}
-                  onChange={(e) => setNewVehicle((s) => ({ ...s, registration: e.target.value }))}
-                  placeholder="Registration"
-                  className="col-span-2 min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
-                />
-              </div>
-            ) : null}
-
-            <div className="mt-5">
-              <span className="eyebrow block text-muted-foreground">Vehicle size</span>
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {(Object.keys(VEHICLE_SIZE_LABELS) as VehicleSize[]).map((size) => (
+          {addressChoice === "new" ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-4">
+              <div className="grid grid-cols-3 gap-2">
+                {(["Home", "Work", "Other"] as const).map((l) => (
                   <button
-                    key={size}
+                    key={l}
                     type="button"
-                    onClick={() => setVehicleSize(size)}
-                    className={`min-h-11 border text-[12px] font-semibold ${vehicleSize === size ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                    onClick={() => setNewAddress((s) => ({ ...s, label: l }))}
+                    className={`min-h-9 border text-[13px] font-semibold ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
                   >
-                    {VEHICLE_SIZE_LABELS[size]}
+                    {l}
                   </button>
                 ))}
               </div>
+              <input
+                value={newAddress.line1}
+                onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
+                placeholder="Address line 1"
+                className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+              />
+              <input
+                value={newAddress.city}
+                onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
+                placeholder="Town / city"
+                className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+              />
             </div>
+          ) : null}
 
-            <PrimaryActionButton
-              className="mt-5"
-              disabled={vehicleChoice === null}
-              onClick={() => setStep("package")}
-            >
-              Continue
-            </PrimaryActionButton>
-          </section>
-        ) : null}
+          <PrimaryActionButton
+            className="mt-5"
+            loading={createAddressMutation.isPending}
+            disabled={addressChoice === null}
+            onClick={() =>
+              addressChoice === "new" ? createAddressMutation.mutate() : setStep("vehicle")
+            }
+          >
+            Continue
+          </PrimaryActionButton>
+        </section>
+      ) : null}
 
-        {step === "package" ? (
-          <section>
-            <h1 className="font-display text-[28px] leading-none">Choose your package</h1>
-            <div className="mt-5 flex flex-col gap-2.5">
-              {DETAIL_PACKAGES.map((p) => (
-                <ChoiceCard
-                  key={p.id}
-                  selected={packageId === p.id}
-                  onClick={() => setPackageId(p.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[15px] font-semibold">{p.name}</p>
-                      <p className="text-[13px] text-muted-foreground">
-                        {p.tagline} · {p.durationLabel}
-                      </p>
-                    </div>
-                    <p className="font-display text-xl">£{p.priceBySize[vehicleSize]}</p>
+      {step === "vehicle" ? (
+        <section>
+          <h2 className="font-display text-[28px] leading-none">Which vehicle?</h2>
+          <div className="mt-5 flex flex-col gap-2.5">
+            {(vehicles ?? []).map((v) => (
+              <ChoiceCard
+                key={v.id}
+                selected={vehicleChoice !== "new" && vehicleChoice?.id === v.id}
+                onClick={() => setVehicleChoice(v)}
+              >
+                <div className="flex items-center gap-2">
+                  {vehicleDescription(v) ? (
+                    <p className="text-[14px] font-semibold">{vehicleDescription(v)}</p>
+                  ) : null}
+                  <PlateTag registration={v.registration} />
+                </div>
+              </ChoiceCard>
+            ))}
+            <ChoiceCard selected={vehicleChoice === "new"} onClick={() => setVehicleChoice("new")}>
+              <p className="text-[14px] font-semibold">Add a new vehicle</p>
+            </ChoiceCard>
+          </div>
+
+          {vehicleChoice === "new" ? (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <input
+                value={newVehicle.make}
+                onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
+                placeholder="Make"
+                className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+              />
+              <input
+                value={newVehicle.model}
+                onChange={(e) => setNewVehicle((s) => ({ ...s, model: e.target.value }))}
+                placeholder="Model"
+                className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+              />
+              <input
+                value={newVehicle.registration}
+                onChange={(e) => setNewVehicle((s) => ({ ...s, registration: e.target.value }))}
+                placeholder="Registration"
+                className="col-span-2 min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
+              />
+            </div>
+          ) : null}
+
+          <div className="mt-5">
+            <span className="eyebrow block text-muted-foreground">Vehicle size</span>
+            <VehicleSizePicker className="mt-2" value={vehicleSize} onChange={setVehicleSize} />
+          </div>
+
+          <PrimaryActionButton
+            className="mt-5"
+            disabled={vehicleChoice === null}
+            onClick={() => setStep("package")}
+          >
+            Continue
+          </PrimaryActionButton>
+        </section>
+      ) : null}
+
+      {step === "package" ? (
+        <section>
+          <h2 className="font-display text-[28px] leading-none">Choose your package</h2>
+          <div className="mt-5 flex flex-col gap-2.5">
+            {DETAIL_PACKAGES.map((p) => (
+              <ChoiceCard
+                key={p.id}
+                selected={packageId === p.id}
+                onClick={() => setPackageId(p.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[15px] font-semibold">{p.name}</p>
+                    <p className="text-[13px] text-muted-foreground">
+                      {p.tagline} · {p.durationLabel}
+                    </p>
                   </div>
-                </ChoiceCard>
+                  <p className="font-display text-xl">£{p.priceBySize[vehicleSize]}</p>
+                </div>
+              </ChoiceCard>
+            ))}
+          </div>
+
+          <div className="mt-5">
+            <span className="eyebrow block text-muted-foreground">Add-ons</span>
+            <div className="mt-2 flex flex-col gap-2">
+              {DETAIL_ADDONS.map((a) => (
+                <label
+                  key={a.id}
+                  className="press flex items-center justify-between rounded-xl border border-hairline bg-surface p-3.5"
+                >
+                  <span className="flex items-center gap-2.5 text-[14px] font-medium">
+                    <input
+                      type="checkbox"
+                      checked={addonIds.includes(a.id)}
+                      onChange={(e) =>
+                        setAddonIds((prev) =>
+                          e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
+                        )
+                      }
+                      className="h-4 w-4 rounded border-input accent-[var(--color-signal)]"
+                    />
+                    {a.label}
+                  </span>
+                  <span className="text-[13px] text-muted-foreground">+£{a.price}</span>
+                </label>
               ))}
             </div>
+          </div>
 
-            <div className="mt-5">
-              <span className="eyebrow block text-muted-foreground">Add-ons</span>
-              <div className="mt-2 flex flex-col gap-2">
-                {DETAIL_ADDONS.map((a) => (
-                  <label
-                    key={a.id}
-                    className="press flex items-center justify-between rounded-xl border border-hairline bg-surface p-3.5"
+          <PrimaryActionButton className="mt-5" onClick={() => setStep("schedule")}>
+            Continue · £{totalPrice}
+          </PrimaryActionButton>
+        </section>
+      ) : null}
+
+      {step === "schedule" ? (
+        <section>
+          <h2 className="font-display text-[28px] leading-none">Pick a date and time</h2>
+          <div className="mt-5">
+            <span className="eyebrow block text-muted-foreground">Date</span>
+            <input
+              type="date"
+              value={date}
+              min={ukNow().date}
+              onChange={(e) => {
+                const next = e.target.value;
+                setDate(next);
+                if (next && !isSlotAvailable(next, time)) setTime(firstAvailableSlot(next) ?? "");
+              }}
+              className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
+            />
+          </div>
+          <div className="mt-4">
+            <span className="eyebrow block text-muted-foreground">Time</span>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {TIME_SLOTS.map((t) => {
+                const unavailable = Boolean(date) && !isSlotAvailable(date, t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={unavailable}
+                    aria-pressed={time === t}
+                    onClick={() => setTime(t)}
+                    className={`min-h-11 border text-[13px] font-semibold disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
                   >
-                    <span className="flex items-center gap-2.5 text-[14px] font-medium">
-                      <input
-                        type="checkbox"
-                        checked={addonIds.includes(a.id)}
-                        onChange={(e) =>
-                          setAddonIds((prev) =>
-                            e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
-                          )
-                        }
-                        className="h-4 w-4 rounded border-input accent-[var(--color-signal)]"
-                      />
-                      {a.label}
-                    </span>
-                    <span className="text-[13px] text-muted-foreground">+£{a.price}</span>
-                  </label>
-                ))}
-              </div>
+                    {t}
+                  </button>
+                );
+              })}
             </div>
-
-            <PrimaryActionButton className="mt-5" onClick={() => setStep("schedule")}>
-              Continue · £{totalPrice}
-            </PrimaryActionButton>
-          </section>
-        ) : null}
-
-        {step === "schedule" ? (
-          <section>
-            <h1 className="font-display text-[28px] leading-none">Pick a date and time</h1>
-            <div className="mt-5">
-              <span className="eyebrow block text-muted-foreground">Date</span>
-              <input
-                type="date"
-                value={date}
-                min={ukNow().date}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setDate(next);
-                  if (next && !isSlotAvailable(next, time)) setTime(firstAvailableSlot(next) ?? "");
-                }}
-                className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
-              />
-            </div>
-            <div className="mt-4">
-              <span className="eyebrow block text-muted-foreground">Time</span>
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {TIME_SLOTS.map((t) => {
-                  const unavailable = Boolean(date) && !isSlotAvailable(date, t);
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      disabled={unavailable}
-                      aria-pressed={time === t}
-                      onClick={() => setTime(t)}
-                      className={`min-h-11 border text-[13px] font-semibold disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
-                    >
-                      {t}
-                    </button>
-                  );
-                })}
-              </div>
-              {date && !firstAvailableSlot(date) ? (
-                <p className="mt-2 text-[13px] text-muted-foreground">
-                  No slots left on this day. Please pick another date.
-                </p>
-              ) : null}
-            </div>
-            <div className="mt-4">
-              <span className="eyebrow block text-muted-foreground">
-                Anything we should know? (optional)
-              </span>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
-              />
-            </div>
-            <PrimaryActionButton
-              className="mt-5"
-              disabled={!date || !time || !isSlotAvailable(date, time)}
-              onClick={() => setStep("review")}
-            >
-              Review booking
-            </PrimaryActionButton>
-          </section>
-        ) : null}
-
-        {step === "review" ? (
-          <section>
-            <h1 className="font-display text-[28px] leading-none">Confirm your booking</h1>
-            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-hairline bg-surface p-5">
-              <SummaryRow label="Package">{selectedPackage.name}</SummaryRow>
-              <SummaryRow label="Vehicle">
-                {vehicleChoice === "new"
-                  ? `${newVehicle.make} ${newVehicle.model} (${newVehicle.registration})`
-                  : vehicleChoice
-                    ? `${vehicleDescription(vehicleChoice) ?? ""} (${vehicleChoice.registration})`
-                    : ""}
-              </SummaryRow>
-              <SummaryRow label="Address">
-                {addressChoice === "new"
-                  ? `${newAddress.line1}, ${areaResult?.postcode}`
-                  : addressChoice
-                    ? `${addressChoice.line1}, ${addressChoice.postcode}`
-                    : ""}
-              </SummaryRow>
-              <SummaryRow label="When">
-                {formatBookingDate(date)} · {time}
-              </SummaryRow>
-              {addonIds.length ? (
-                <SummaryRow label="Add-ons">
-                  {DETAIL_ADDONS.filter((a) => addonIds.includes(a.id))
-                    .map((a) => a.label)
-                    .join(", ")}
-                </SummaryRow>
-              ) : null}
-              <div className="mt-2 flex items-center justify-between border-t border-hairline pt-3">
-                <p className="font-display text-lg">Total</p>
-                <p className="font-display text-2xl">£{totalPrice}</p>
-              </div>
-            </div>
-            {submitBooking.isError ? (
-              <p className="mt-3 text-[13px] text-destructive">
-                {submitBooking.error instanceof Error
-                  ? submitBooking.error.message
-                  : "Couldn't create this booking."}
+            {date && !firstAvailableSlot(date) ? (
+              <p className="mt-2 text-[13px] text-muted-foreground">
+                No slots left on this day. Please pick another date.
               </p>
             ) : null}
-            <PrimaryActionButton
-              className="mt-5"
-              loading={submitBooking.isPending}
-              onClick={() => submitBooking.mutate()}
-            >
-              Confirm booking
-            </PrimaryActionButton>
-          </section>
-        ) : null}
-
-        {step === "done" && bookingId ? (
-          <section className="rise-in flex flex-col items-center py-10 text-center">
-            <span className="grid h-16 w-16 place-items-center rounded-full bg-success/12 text-success">
-              <CheckCircle2 className="h-8 w-8" strokeWidth={2.2} />
+          </div>
+          <div className="mt-4">
+            <span className="eyebrow block text-muted-foreground">
+              Anything we should know? (optional)
             </span>
-            <h1 className="mt-5 font-display text-[28px] leading-tight">Booking confirmed</h1>
-            <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">
-              We'll see you on {formatBookingDate(date)} at {time}. Your detailer will come to you,
-              and you can track it all from your account.
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
+            />
+          </div>
+          <PrimaryActionButton
+            className="mt-5"
+            disabled={!date || !time || !isSlotAvailable(date, time)}
+            onClick={() => setStep("review")}
+          >
+            Review booking
+          </PrimaryActionButton>
+        </section>
+      ) : null}
+
+      {step === "review" ? (
+        <section>
+          <h2 className="font-display text-[28px] leading-none">Confirm your booking</h2>
+          <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-hairline bg-surface p-5">
+            <SummaryRow label="Package">{selectedPackage.name}</SummaryRow>
+            <SummaryRow label="Vehicle">
+              {vehicleChoice === "new"
+                ? `${newVehicle.make} ${newVehicle.model} (${newVehicle.registration})`
+                : vehicleChoice
+                  ? `${vehicleDescription(vehicleChoice) ?? ""} (${vehicleChoice.registration})`
+                  : ""}
+            </SummaryRow>
+            <SummaryRow label="Address">
+              {addressChoice === "new"
+                ? `${newAddress.line1}, ${areaResult?.postcode}`
+                : addressChoice
+                  ? `${addressChoice.line1}, ${addressChoice.postcode}`
+                  : ""}
+            </SummaryRow>
+            <SummaryRow label="When">
+              {formatBookingDate(date)} · {time}
+            </SummaryRow>
+            {addonIds.length ? (
+              <SummaryRow label="Add-ons">
+                {DETAIL_ADDONS.filter((a) => addonIds.includes(a.id))
+                  .map((a) => a.label)
+                  .join(", ")}
+              </SummaryRow>
+            ) : null}
+            <div className="mt-2 flex items-center justify-between border-t border-hairline pt-3">
+              <p className="font-display text-lg">Total</p>
+              <p className="font-display text-2xl">£{totalPrice}</p>
+            </div>
+          </div>
+          {submitBooking.isError ? (
+            <p className="mt-3 text-[13px] text-destructive">
+              {submitBooking.error instanceof Error
+                ? submitBooking.error.message
+                : "Couldn't create this booking."}
             </p>
-            <Link to="/account/bookings/$id" params={{ id: bookingId }} className="mt-6">
-              <PrimaryActionButton className="w-auto px-8">View booking</PrimaryActionButton>
-            </Link>
-          </section>
-        ) : null}
-      </div>
-    </main>
+          ) : null}
+          <PrimaryActionButton
+            className="mt-5"
+            loading={submitBooking.isPending}
+            onClick={() => submitBooking.mutate()}
+          >
+            Confirm booking
+          </PrimaryActionButton>
+        </section>
+      ) : null}
+
+      {step === "done" && bookingId ? (
+        <section className="rise-in flex flex-col items-center py-10 text-center">
+          <span className="grid h-16 w-16 place-items-center rounded-full bg-success/12 text-success">
+            <CheckCircle2 className="h-8 w-8" strokeWidth={2.2} />
+          </span>
+          <h2 className="mt-5 font-display text-[28px] leading-tight">Booking confirmed</h2>
+          <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">
+            We'll see you on {formatBookingDate(date)} at {time}. Your detailer will come to you,
+            and you can track it all from your account.
+          </p>
+          <Link to="/account/bookings/$id" params={{ id: bookingId }} className="mt-6">
+            <PrimaryActionButton className="w-auto px-8">View booking</PrimaryActionButton>
+          </Link>
+        </section>
+      ) : null}
+    </AppShell>
   );
 }
 

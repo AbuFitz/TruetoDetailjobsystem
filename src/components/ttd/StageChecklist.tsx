@@ -1,16 +1,15 @@
 import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DETAIL_STAGE_KEYS, DETAIL_STAGE_LABELS, type DetailStageKey } from "@/lib/constants";
+import {
+  DETAIL_STAGE_KEYS,
+  DETAIL_STAGE_LABELS,
+  STAGE_DISPLAY_ORDER,
+  type DetailStageKey,
+} from "@/lib/constants";
 import type { StageProgress } from "@/lib/detailers";
 
 /**
- * The lightweight "Detail in progress" sub-status:
- *   ✓ Initial inspection
- *   ✓ Wheels & pre-wash
- *   ● Exterior wash
- *   ○ Interior
- *   ○ Protection
- *   ○ Final QC
+ * The lightweight "Detailing" sub-status: four ticks, done, current, to do.
  *
  * Read-only (customer dashboard) or interactive (detailer job screen) —
  * same visual language either way, toggling stages just adds tap targets
@@ -29,8 +28,10 @@ export function StageChecklist({
   onToggle?: (stageKey: DetailStageKey, completed: boolean) => void;
   className?: string;
 }) {
-  const byKey = new Map(stages.map((s) => [s.stage_key, s]));
-  const orderedKeys = DETAIL_STAGE_KEYS;
+  const byKey = new Map<string, StageProgress>(stages.map((s) => [s.stage_key, s]));
+  const orderedKeys: string[] = stages.length
+    ? STAGE_DISPLAY_ORDER.filter((k) => byKey.has(k as DetailStageKey))
+    : [...DETAIL_STAGE_KEYS];
   const firstIncompleteIdx = orderedKeys.findIndex((k) => !byKey.get(k)?.completed_at);
 
   return (
@@ -38,8 +39,8 @@ export function StageChecklist({
       {orderedKeys.map((key, i) => {
         const done = Boolean(byKey.get(key)?.completed_at);
         const active = !done && i === firstIncompleteIdx;
-        const pending = pendingStage === key;
-        const label = DETAIL_STAGE_LABELS[key];
+        const pending = (pendingStage as string | null | undefined) === key;
+        const label = DETAIL_STAGE_LABELS[key] ?? key;
 
         const row = (
           <>
@@ -83,7 +84,7 @@ export function StageChecklist({
               <button
                 type="button"
                 disabled={Boolean(pendingStage)}
-                onClick={() => onToggle(key, !done)}
+                onClick={() => onToggle(key as DetailStageKey, !done)}
                 className="press flex w-full items-center gap-2.5 px-1.5 py-1.5 text-left hover:bg-surface-2 disabled:opacity-60"
               >
                 {row}

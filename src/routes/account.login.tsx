@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
 import { z } from "zod";
 import { TtdLogo } from "@/components/ttd/Header";
@@ -153,6 +153,15 @@ function AccountLogin() {
               inputProps={register("password", { required: true })}
             />
 
+            <p className="-mt-1 text-right text-[13px]">
+              <Link
+                to="/account/forgot"
+                className="press text-muted-foreground underline underline-offset-2"
+              >
+                Forgot your password?
+              </Link>
+            </p>
+
             {error ? (
               <p className="flex items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/8 px-3.5 py-3 text-[13px] leading-relaxed text-destructive">
                 <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
@@ -165,24 +174,26 @@ function AccountLogin() {
             </PrimaryActionButton>
           </form>
 
-          {/*
-            No self-service "create account" here on purpose — accounts are
-            created as part of booking, either on the main site or via this
-            popup, not by typing a name/email/password in cold. Anyone
-            without an account yet gets a booking form right here, with the
-            option to set one up straight after submitting.
-          */}
-          <p className="mt-6 text-center text-[13px] text-muted-foreground">
-            Don&rsquo;t have an account yet?{" "}
-            <button
-              type="button"
-              onClick={() => setBookingOpen(true)}
-              className="press underline underline-offset-2"
-            >
-              Book a detail
-            </button>{" "}
-            to get set up.
-          </p>
+          <div className="mt-8 border-t border-hairline pt-6 text-center text-[13px] text-muted-foreground">
+            <p>
+              New here?{" "}
+              <Link
+                to="/account/create"
+                className="press font-semibold text-foreground underline underline-offset-2"
+              >
+                Create an account
+              </Link>{" "}
+              or{" "}
+              <button
+                type="button"
+                onClick={() => setBookingOpen(true)}
+                className="press font-semibold text-foreground underline underline-offset-2"
+              >
+                book a detail
+              </button>
+              .
+            </p>
+          </div>
           <LegalLinks className="mt-3" />
         </div>
       </div>

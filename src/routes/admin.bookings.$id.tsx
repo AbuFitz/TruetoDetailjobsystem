@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CalendarClock, Mail, MapPin, Phone, TriangleAlert } from "lucide-react";
-import { TtdHeader } from "@/components/ttd/Header";
+import { CalendarClock, Check, Link2, Mail, MapPin, Phone, TriangleAlert } from "lucide-react";
+import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { VehicleCard } from "@/components/ttd/VehicleTag";
 import { BookingTimeline, timelineForStatus } from "@/components/ttd/BookingTimeline";
@@ -13,6 +13,7 @@ import { useRequireStaffSession } from "@/hooks/use-session";
 import {
   assignDetailer,
   cancelBooking,
+  confirmRequest,
   getBookingById,
   setTravelTimeMinutes,
   CANCELLATION_REASONS,
@@ -21,7 +22,10 @@ import {
 import { listDetailers } from "@/lib/detailers";
 import { getCustomerById } from "@/lib/customers";
 import { getCheckInForBooking, listCheckInPhotos } from "@/lib/checkin";
-import { formatAppointment } from "@/lib/format";
+import { formatAppointment, formatRelativeUpdate } from "@/lib/format";
+import { sendBookingEmail, type BookingEmailKind } from "@/lib/portal-email";
+import { formatDuration } from "@/lib/progress";
+import { ttdSiteLinks } from "@/lib/constants";
 import { supabase } from "@/lib/supabase";
 import type { StageProgress } from "@/lib/detailers";
 
@@ -77,9 +81,58 @@ function AdminBookingDetail() {
       booking?.status === "completed",
   });
 
+  const { data: sentEmails } = useQuery({
+    queryKey: ["booking-notifications", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_notifications")
+        .select("kind, sent_at")
+        .eq("booking_id", id);
+      if (error) throw error;
+      return (data ?? []) as { kind: BookingEmailKind; sent_at: string }[];
+    },
+    enabled: Boolean(booking),
+    refetchInterval: 15_000,
+  });
+
+  const [emailNote, setEmailNote] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const emailMutation = useMutation({
+    mutationFn: ({ kind, force }: { kind: BookingEmailKind; force?: boolean }) =>
+      sendBookingEmail(id, kind, force ? { force: true } : {}),
+    onSuccess: (res) => {
+      setEmailNote(res.sent ? "Email sent." : `Not sent: ${res.reason ?? "unknown reason"}`);
+      void queryClient.invalidateQueries({ queryKey: ["booking-notifications", id] });
+    },
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: async () => {
+      await confirmRequest(id);
+      return sendBookingEmail(id, "booked_in");
+    },
+    onSuccess: (res) => {
+      setEmailNote(
+        res.sent
+          ? "Confirmed. The customer has been emailed."
+          : `Confirmed. Email not sent: ${res.reason ?? "unknown reason"}`,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
+      void queryClient.invalidateQueries({ queryKey: ["booking-notifications", id] });
+    },
+  });
+
   const assignMutation = useMutation({
-    mutationFn: (detailerId: string) => assignDetailer(id, detailerId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-booking", id] }),
+    mutationFn: async (detailerId: string) => {
+      await assignDetailer(id, detailerId);
+      return sendBookingEmail(id, "assigned");
+    },
+    onSuccess: (res) => {
+      setEmailNote(res.sent ? "Detailer assigned. The customer has been emailed." : null);
+      void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
+      void queryClient.invalidateQueries({ queryKey: ["booking-notifications", id] });
+    },
   });
 
   const travelMutation = useMutation({
@@ -88,15 +141,21 @@ function AdminBookingDetail() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: () => cancelBooking(id, cancelReason),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-booking", id] }),
+    mutationFn: async () => {
+      await cancelBooking(id, cancelReason);
+      return sendBookingEmail(id, "cancelled");
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
+      void queryClient.invalidateQueries({ queryKey: ["booking-notifications", id] });
+    },
   });
 
   if (isLoading || !booking) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <BrandedLoading label="Loading booking" />
-      </main>
+      </div>
     );
   }
 
@@ -105,26 +164,63 @@ function AdminBookingDetail() {
     ? `${window.location.origin}/d/${booking.detailer.link_token}`
     : null;
 
+  const trackUrl = `${ttdSiteLinks.website}/account/track/${booking.tracking_token}`;
+  async function copyTrackLink() {
+    try {
+      await navigator.clipboard.writeText(trackUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      window.prompt("Copy this link", trackUrl);
+    }
+  }
+  const EMAIL_LABELS: Record<BookingEmailKind, string> = {
+    booked_in: "Booked in",
+    assigned: "Detailer assigned",
+    on_the_way: "On the way",
+    completed: "Job complete",
+    cancelled: "Cancelled",
+  };
+  const sentKinds = new Map((sentEmails ?? []).map((e) => [e.kind, e.sent_at]));
+
   return (
-    <main className="min-h-screen bg-background pb-16">
-      <TtdHeader eyebrow="Booking" containerClassName="max-w-2xl" />
+    <AppShell
+      area="admin"
+      eyebrow={booking.booking_reference}
+      title={booking.package_name}
+      back={{ to: "/admin", label: "Today" }}
+      actions={<StatusBadge status={booking.status} />}
+    >
+      {booking.status === "requested" ? (
+        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-warning/40 bg-warning/8 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-display text-[26px] leading-none">NEEDS CONFIRMING</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              This came in from the website. Confirming books it in and emails the customer with
+              their tracking link.
+            </p>
+          </div>
+          <PrimaryActionButton
+            className="w-auto shrink-0 px-6"
+            loading={confirmMutation.isPending}
+            onClick={() => confirmMutation.mutate()}
+          >
+            Confirm booking
+          </PrimaryActionButton>
+        </div>
+      ) : null}
+      {emailNote ? (
+        <p className="mb-4 rounded-xl bg-surface-2 px-4 py-3 text-[13px] font-medium">
+          {emailNote}
+        </p>
+      ) : null}
 
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        <Link
-          to="/admin"
-          className="press inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Dashboard
-        </Link>
-
-        <section className="mt-5 rounded-2xl border border-hairline bg-surface p-5">
+      <div className="lg:columns-2 lg:gap-5">
+        <section className="mb-4 break-inside-avoid rounded-2xl border border-hairline bg-surface p-5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
-              <h1 className="mt-1 font-display text-[28px] leading-none">{booking.package_name}</h1>
             </div>
-            <StatusBadge status={booking.status} size="sm" />
           </div>
 
           <VehicleCard
@@ -171,7 +267,7 @@ function AdminBookingDetail() {
         </section>
 
         {customer ? (
-          <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
+          <section className="mb-4 break-inside-avoid rounded-2xl border border-hairline bg-surface p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="eyebrow text-muted-foreground">Customer</p>
@@ -220,7 +316,7 @@ function AdminBookingDetail() {
           </section>
         ) : null}
 
-        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
+        <section className="mb-4 break-inside-avoid rounded-2xl border border-hairline bg-surface p-5">
           <label htmlFor="assign-detailer" className="eyebrow block text-muted-foreground">
             Detailer
           </label>
@@ -272,14 +368,14 @@ function AdminBookingDetail() {
         </section>
 
         {stages && stages.length > 0 ? (
-          <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
+          <section className="mb-4 break-inside-avoid rounded-2xl border border-hairline bg-surface p-5">
             <p className="eyebrow mb-3 text-muted-foreground">Detail checklist</p>
             <StageChecklist stages={stages} />
           </section>
         ) : null}
 
         {checkIn ? (
-          <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
+          <section className="mb-4 break-inside-avoid rounded-2xl border border-hairline bg-surface p-5">
             <p className="eyebrow mb-3 text-muted-foreground">Check-in record</p>
             <dl className="flex flex-col gap-2 text-[13px]">
               {checkIn.mileage != null ? (
@@ -349,13 +445,73 @@ function AdminBookingDetail() {
           </section>
         ) : null}
 
-        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
+        {booking.status === "en_route" ? (
+          <section className="mb-4 break-inside-avoid rounded-2xl border border-signal/30 bg-signal/8 p-5">
+            <p className="eyebrow text-muted-foreground">Live</p>
+            <p className="mt-1 font-display text-[30px] leading-none">
+              {booking.eta_seconds != null
+                ? `${formatDuration(booking.eta_seconds)} away`
+                : "On the way"}
+            </p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              {booking.eta_updated_at
+                ? `ETA from the detailer's phone, updated ${formatRelativeUpdate(booking.eta_updated_at)}.`
+                : "Waiting for the detailer's phone to share an ETA."}
+            </p>
+          </section>
+        ) : null}
+
+        <section className="mb-4 break-inside-avoid rounded-2xl border border-hairline bg-surface p-5">
+          <p className="eyebrow text-muted-foreground">Customer link and emails</p>
+          <button
+            type="button"
+            onClick={copyTrackLink}
+            className="press mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-hairline bg-surface-2 px-3.5 py-3 text-left text-[13px] font-semibold hover:bg-surface"
+          >
+            <span className="min-w-0 truncate">Copy the customer&rsquo;s tracking link</span>
+            {copied ? (
+              <Check className="h-4 w-4 shrink-0 text-success" />
+            ) : (
+              <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+          </button>
+          <ul className="mt-3 flex flex-col divide-y divide-hairline text-[13px]">
+            {(Object.keys(EMAIL_LABELS) as BookingEmailKind[]).map((kind) => {
+              const at = sentKinds.get(kind);
+              return (
+                <li key={kind} className="flex items-center justify-between gap-3 py-2.5">
+                  <span className="min-w-0">
+                    <span className="block font-medium">{EMAIL_LABELS[kind]}</span>
+                    <span className="block text-[12px] text-muted-foreground">
+                      {at ? `Sent ${formatRelativeUpdate(at)}` : "Not sent"}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    disabled={emailMutation.isPending || !customer?.email}
+                    onClick={() => emailMutation.mutate({ kind, force: Boolean(at) })}
+                    className="press shrink-0 border border-hairline px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2 disabled:opacity-40"
+                  >
+                    {at ? "Resend" : "Send"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {!customer?.email ? (
+            <p className="mt-2 text-[12px] text-muted-foreground">
+              Add an email to this customer to send them updates.
+            </p>
+          ) : null}
+        </section>
+
+        <section className="mb-4 break-inside-avoid rounded-2xl border border-hairline bg-surface p-5">
           <p className="eyebrow text-muted-foreground">Progress</p>
           <BookingTimeline className="mt-4" steps={timelineForStatus(booking.status)} />
         </section>
 
         {booking.status !== "completed" && booking.status !== "cancelled" ? (
-          <section className="mt-4 rounded-2xl border border-destructive/25 bg-destructive/5 p-5">
+          <section className="mb-4 break-inside-avoid rounded-2xl border border-destructive/25 bg-destructive/5 p-5">
             <label htmlFor="cancel-reason" className="eyebrow block text-destructive">
               Cancel booking
             </label>
@@ -382,7 +538,7 @@ function AdminBookingDetail() {
           </section>
         ) : null}
       </div>
-    </main>
+    </AppShell>
   );
 }
 

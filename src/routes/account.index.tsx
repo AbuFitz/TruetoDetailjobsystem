@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { addWeeks, format, isFuture } from "date-fns";
 import { UK_TIME } from "@/lib/uk-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarPlus, Car, ChevronRight, LogOut, MapPin, Sparkles, UserRound } from "lucide-react";
-import { TtdHeader } from "@/components/ttd/Header";
+import { CalendarPlus, Car, ChevronRight, MapPin, Sparkles, UserRound } from "lucide-react";
+import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
@@ -16,7 +16,7 @@ import { listMyBookings, LIVE_JOB_STATUSES, type BookingWithDetailer } from "@/l
 import { listMyVehicles, vehicleDescription } from "@/lib/vehicles";
 import { formatAppointment } from "@/lib/format";
 import { MAINTENANCE_DETAIL_INTERVAL_WEEKS } from "@/lib/constants";
-import { signOut } from "@/lib/auth";
+import { customerHeadline, formatDuration } from "@/lib/progress";
 
 export const Route = createFileRoute("/account/")({
   head: () => ({
@@ -74,7 +74,9 @@ function AccountDashboard() {
     const all = bookings ?? [];
     const live = all.find((b) => LIVE_JOB_STATUSES.includes(b.status)) ?? null;
     const upcoming = all
-      .filter((b) => b.status === "confirmed" || b.status === "assigned")
+      .filter(
+        (b) => b.status === "requested" || b.status === "confirmed" || b.status === "assigned",
+      )
       .sort(
         (a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime(),
       );
@@ -104,219 +106,199 @@ function AccountDashboard() {
 
   if (authLoading || !session) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <BrandedLoading label="Checking session" />
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background pb-16">
-      <TtdHeader
-        homeTo="/account"
-        right={
-          <button
-            type="button"
-            onClick={() => signOut()}
-            aria-label="Sign out"
-            className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 text-[12px] font-medium text-ink-foreground/70 hover:text-ink-foreground"
-          >
-            <LogOut className="h-3.5 w-3.5" strokeWidth={2.2} />
-            <span className="hidden sm:inline">Sign out</span>
-          </button>
-        }
-      />
-
-      <div className="bg-ink py-7 text-ink-foreground">
-        <div className="mx-auto w-full max-w-2xl px-5 sm:px-6">
-          <p className="eyebrow text-ink-foreground/30">
-            {format(new Date(), "EEEE, d MMMM", { in: UK_TIME })}
-          </p>
-          <h1 className="mt-1 font-display text-[40px] leading-[0.9] sm:text-[48px]">
-            {isFirstSignIn ? "WELCOME" : "WELCOME BACK"}
-            {profile?.first_name ? (
-              <span className="text-ink-foreground/40">, {profile.first_name.toUpperCase()}</span>
-            ) : null}
-            <span className="text-signal">.</span>
-          </h1>
-        </div>
-      </div>
-
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        {bookingsLoading ? (
-          <BrandedLoading label="Loading your bookings" className="mt-8" />
-        ) : nextBooking ? (
-          <NextBookingCard booking={nextBooking} live={Boolean(liveBooking)} className="mt-6" />
-        ) : (
-          <EmptyState
-            className="mt-6"
-            icon={Sparkles}
-            title="No upcoming detail"
-            description="Book your next mobile detail and we'll come to you."
-            action={
-              <Link to="/book">
-                <PrimaryActionButton size="md" className="w-auto px-6">
-                  Book a detail
-                </PrimaryActionButton>
-              </Link>
-            }
-          />
-        )}
-
-        {otherUpcoming.length > 0 ? (
-          <Section title="Also Booked">
-            <div className="flex flex-col gap-2">
-              {otherUpcoming.map((b) => {
-                const { dayLabel, timeLabel } = formatAppointment(b.scheduled_start);
-                return (
-                  <Link
-                    key={b.id}
-                    to="/account/bookings/$id"
-                    params={{ id: b.id }}
-                    className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-[14px] font-semibold">{b.package_name}</p>
-                      <p className="text-[12px] text-muted-foreground">
-                        {dayLabel}, {timeLabel} · {b.vehicle_registration}
-                      </p>
-                    </div>
-                    <StatusBadge status={b.status} size="sm" />
-                  </Link>
-                );
-              })}
-            </div>
-          </Section>
-        ) : null}
-
-        <nav aria-label="Account" className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {(
-            [
-              { to: "/book", label: "Book a detail", icon: CalendarPlus },
-              { to: "/account/vehicles", label: "Your garage", icon: Car },
-              { to: "/account/addresses", label: "Addresses", icon: MapPin },
-              { to: "/account/details", label: "Your details", icon: UserRound },
-            ] as const
-          ).map(({ to, label, icon: Icon }) => (
-            <Link
-              key={to}
-              to={to}
-              className="press flex flex-col items-start gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
-            >
-              <Icon className="h-5 w-5 text-signal" strokeWidth={2.2} />
-              <span className="flex w-full items-center justify-between gap-1 text-[13px] font-semibold leading-tight">
-                {label}
-                <ChevronRight
-                  className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
-                  strokeWidth={2.4}
-                />
-              </span>
-            </Link>
-          ))}
-        </nav>
-
-        <Section title="Your Garage">
-          {vehicles && vehicles.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {vehicles.map((v) => (
-                <div
-                  key={v.id}
-                  className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-3.5"
-                >
-                  <div className="min-w-0">
-                    {vehicleDescription(v) ? (
-                      <p className="truncate text-[15px] font-semibold">{vehicleDescription(v)}</p>
-                    ) : null}
-                    <PlateTag registration={v.registration} className="mt-1" />
-                  </div>
-                </div>
-              ))}
-            </div>
+    <AppShell
+      area="customer"
+      eyebrow={format(new Date(), "EEEE, d MMMM", { in: UK_TIME })}
+      title={
+        <>
+          {isFirstSignIn ? "WELCOME" : "WELCOME BACK"}
+          {profile?.first_name ? (
+            <span className="text-ink-foreground/40">, {profile.first_name.toUpperCase()}</span>
+          ) : null}
+          <span className="text-signal">.</span>
+        </>
+      }
+    >
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-8">
+          {bookingsLoading ? (
+            <BrandedLoading label="Loading your bookings" className="mt-8" />
+          ) : nextBooking ? (
+            <NextBookingCard booking={nextBooking} live={Boolean(liveBooking)} />
           ) : (
             <EmptyState
-              icon={Car}
-              title="No vehicles saved yet"
-              description="Add a vehicle from your next booking."
+              icon={Sparkles}
+              title="No upcoming detail"
+              description="Book your next mobile detail and we'll come to you."
+              action={
+                <Link to="/book">
+                  <PrimaryActionButton size="md" className="w-auto px-6">
+                    Book a detail
+                  </PrimaryActionButton>
+                </Link>
+              }
             />
           )}
-          <Link
-            to="/account/vehicles"
-            className="mt-3 inline-block text-[13px] font-semibold text-signal-deep underline underline-offset-2"
-          >
-            Manage garage
-          </Link>
-        </Section>
 
-        <Section title="TTD Rewards">
-          <div className="rounded-xl border border-hairline bg-surface p-4">
-            <div className="flex items-baseline gap-1.5">
-              <p className="font-display text-[44px] leading-none">{qualifyingVisits}</p>
-              <p className="font-display text-xl leading-none text-muted-foreground/50">/ 7</p>
-            </div>
-            <p className="mt-2 text-[13px] text-muted-foreground">
-              qualifying visits toward your next reward
-            </p>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
-              <div
-                className="h-full rounded-full bg-signal"
-                style={{ width: `${Math.min(100, (qualifyingVisits / 7) * 100)}%` }}
-              />
-            </div>
-          </div>
-        </Section>
+          {otherUpcoming.length > 0 ? (
+            <Section title="Also booked">
+              <div className="flex flex-col gap-2">
+                {otherUpcoming.map((b) => (
+                  <BookingRow key={b.id} booking={b} />
+                ))}
+              </div>
+            </Section>
+          ) : null}
 
-        <Section title="Previous Details">
-          {previousBookings.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {previousBookings.map((b) => {
-                const { dayLabel } = formatAppointment(b.scheduled_start);
-                return (
-                  <Link
-                    key={b.id}
-                    to="/account/bookings/$id"
-                    params={{ id: b.id }}
-                    className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-[14px] font-semibold">{b.package_name}</p>
-                      <p className="text-[12px] text-muted-foreground">
-                        {format(new Date(b.scheduled_start), "d MMM yyyy", { in: UK_TIME })} ·{" "}
-                        {dayLabel === "Today"
-                          ? "Today"
-                          : format(new Date(b.scheduled_start), "EEE", { in: UK_TIME })}
-                      </p>
-                    </div>
-                    <StatusBadge status={b.status} size="sm" />
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-[13px] text-muted-foreground">Nothing completed yet.</p>
-          )}
-        </Section>
+          <Section title="Previous details">
+            {previousBookings.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {previousBookings.map((b) => (
+                  <BookingRow key={b.id} booking={b} past />
+                ))}
+              </div>
+            ) : (
+              <p className="text-[13px] text-muted-foreground">Nothing completed yet.</p>
+            )}
+          </Section>
+        </div>
 
-        {recommendedDate ? (
-          <Section title="Recommended">
-            <div className="rounded-xl border border-signal/25 bg-signal/8 p-4">
-              <p className="text-[14px] font-semibold">
-                Maintenance detail due around {format(recommendedDate, "d MMMM", { in: UK_TIME })}
-              </p>
-              <p className="mt-1 text-[13px] text-muted-foreground">
-                {isFuture(recommendedDate)
-                  ? "Keeps your finish looking its best between full details."
-                  : "You're due, book whenever suits."}
-              </p>
-              <Link to="/book" className="mt-3 inline-block">
-                <PrimaryActionButton size="sm" variant="outline" className="w-auto px-4">
-                  Book now
-                </PrimaryActionButton>
+        <div className="flex min-w-0 flex-col gap-8">
+          <nav aria-label="Account" className="grid grid-cols-2 gap-2">
+            {(
+              [
+                { to: "/book", label: "Book a detail", icon: CalendarPlus },
+                { to: "/account/vehicles", label: "Your garage", icon: Car },
+                { to: "/account/addresses", label: "Addresses", icon: MapPin },
+                { to: "/account/details", label: "Your details", icon: UserRound },
+              ] as const
+            ).map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className="press flex flex-col items-start gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+              >
+                <Icon className="h-5 w-5 text-signal" strokeWidth={2.2} />
+                <span className="flex w-full items-center justify-between gap-1 text-[13px] font-semibold leading-tight">
+                  {label}
+                  <ChevronRight
+                    className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                    strokeWidth={2.4}
+                  />
+                </span>
               </Link>
+            ))}
+          </nav>
+
+          <Section title="Rewards">
+            <div className="rounded-xl border border-hairline bg-surface p-4">
+              <div className="flex items-baseline gap-1.5">
+                <p className="font-display text-[44px] leading-none">{qualifyingVisits}</p>
+                <p className="font-display text-xl leading-none text-muted-foreground/50">/ 7</p>
+              </div>
+              <p className="mt-2 text-[13px] text-muted-foreground">
+                qualifying visits toward your next reward
+              </p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
+                <div
+                  className="h-full rounded-full bg-signal"
+                  style={{ width: `${Math.min(100, (qualifyingVisits / 7) * 100)}%` }}
+                />
+              </div>
             </div>
           </Section>
-        ) : null}
+
+          <Section title="Your garage">
+            {vehicles && vehicles.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {vehicles.map((v) => (
+                  <div
+                    key={v.id}
+                    className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-3.5"
+                  >
+                    <div className="min-w-0">
+                      {vehicleDescription(v) ? (
+                        <p className="truncate text-[15px] font-semibold">
+                          {vehicleDescription(v)}
+                        </p>
+                      ) : null}
+                      <PlateTag registration={v.registration} className="mt-1" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Car}
+                title="No vehicles saved yet"
+                description="Add a vehicle from your next booking."
+              />
+            )}
+            <Link
+              to="/account/vehicles"
+              className="mt-3 inline-block text-[13px] font-semibold text-signal-deep underline underline-offset-2"
+            >
+              Manage garage
+            </Link>
+          </Section>
+
+          {recommendedDate ? (
+            <Section title="Recommended">
+              <div className="rounded-xl border border-signal/25 bg-signal/8 p-4">
+                <p className="text-[14px] font-semibold">
+                  Maintenance detail due around {format(recommendedDate, "d MMMM", { in: UK_TIME })}
+                </p>
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  {isFuture(recommendedDate)
+                    ? "Keeps your finish looking its best between full details."
+                    : "You're due, book whenever suits."}
+                </p>
+                <Link to="/book" className="mt-3 inline-block">
+                  <PrimaryActionButton size="sm" variant="outline" className="w-auto px-4">
+                    Book now
+                  </PrimaryActionButton>
+                </Link>
+              </div>
+            </Section>
+          ) : null}
+        </div>
       </div>
-    </main>
+    </AppShell>
+  );
+}
+
+function BookingRow({
+  booking: b,
+  past = false,
+}: {
+  booking: BookingWithDetailer;
+  past?: boolean;
+}) {
+  const { dayLabel, timeLabel } = formatAppointment(b.scheduled_start);
+  return (
+    <Link
+      to="/account/bookings/$id"
+      params={{ id: b.id }}
+      className="press flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3.5 hover:bg-surface-2"
+    >
+      <div className="min-w-0">
+        <p className="truncate text-[14px] font-semibold">{b.package_name}</p>
+        <p className="text-[12px] text-muted-foreground">
+          {past
+            ? format(new Date(b.scheduled_start), "d MMM yyyy", { in: UK_TIME })
+            : `${dayLabel}, ${timeLabel}`}{" "}
+          · {b.vehicle_registration}
+        </p>
+      </div>
+      <StatusBadge status={b.status} size="sm" />
+    </Link>
   );
 }
 
@@ -340,13 +322,18 @@ function NextBookingCard({
       >
         <StatusBadge status={booking.status} size="sm" />
         <p className="mt-3 font-display text-2xl leading-tight">
-          {booking.detailer?.name ?? "Your detailer"} is on the way
+          {customerHeadline(booking.status, booking.detailer?.name?.split(" ")[0])}
         </p>
+        {booking.status === "en_route" && booking.eta_seconds != null ? (
+          <p className="mt-1 text-[15px] font-semibold text-signal">
+            About {formatDuration(booking.eta_seconds)} away
+          </p>
+        ) : null}
         <p className="mt-1 text-[14px] text-ink-foreground/70">
           {booking.package_name} · {booking.vehicle_registration}
         </p>
         <span className="mt-4 inline-flex min-h-11 items-center gap-2 bg-signal px-5 font-sans text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground">
-          View live job
+          {booking.status === "en_route" ? "Watch live" : "View job"}
         </span>
       </Link>
     );
@@ -375,7 +362,7 @@ function NextBookingCard({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-8">
+    <section>
       <div className="mb-3 flex items-center gap-3">
         <h2 className="eyebrow text-muted-foreground">{title}</h2>
         <span className="h-px flex-1 bg-hairline" />

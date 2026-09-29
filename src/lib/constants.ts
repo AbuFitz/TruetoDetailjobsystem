@@ -23,6 +23,30 @@ export const VEHICLE_SIZE_LABELS: Record<VehicleSize, string> = {
   largesuv: "Large SUV / 4×4",
 };
 
+/**
+ * Plain-English size guide with UK body-type names, shown wherever a size is
+ * picked (this app's forms and the website's booking popup, which use the same
+ * wording): hatchbacks and coupes are small, saloons and estates are mid-size,
+ * SUVs, 4x4s and people carriers are large.
+ */
+export const VEHICLE_SIZE_GUIDE: Record<VehicleSize, { body: string; examples: string }> = {
+  small: {
+    body: "Hatchbacks and coupes",
+    examples: "Ford Fiesta, VW Golf, Vauxhall Corsa, Audi TT",
+  },
+  midsize: {
+    body: "Saloons and estates",
+    examples: "BMW 3 Series, Ford Mondeo, Skoda Octavia Estate",
+  },
+  largesuv: {
+    body: "SUVs, 4x4s and people carriers",
+    examples: "Range Rover, Nissan Qashqai, Ford Galaxy",
+  },
+};
+
+export const VEHICLE_SIZE_NOTE =
+  "Not sure? Pick the closest and we will confirm before we arrive. Vans are quoted on our van fleet page.";
+
 export interface DetailPackage {
   id: string;
   name: string;
@@ -77,23 +101,41 @@ export const DETAIL_ADDONS: DetailAddon[] = [
   { id: "steam", label: "Interior Steam Sanitisation", price: 35 },
 ];
 
-/** Detail-in-progress checklist, shown to the customer as a lightweight sub-status under IN_PROGRESS. */
-export const DETAIL_STAGE_KEYS = [
+/**
+ * The detailer's checklist: four ticks, shown to the customer as a light
+ * sub-status while their car is being detailed. Jobs started before the
+ * shorter checklist keep the six older keys, so those stay valid.
+ */
+export const DETAIL_STAGE_KEYS = ["exterior", "interior", "protection", "final_check"] as const;
+export const LEGACY_STAGE_KEYS = [
   "initial_inspection",
   "wheels_prewash",
   "exterior_wash",
+  "final_qc",
+] as const;
+export type DetailStageKey =
+  (typeof DETAIL_STAGE_KEYS)[number] | (typeof LEGACY_STAGE_KEYS)[number];
+
+/** Display order across old and new keys. */
+export const STAGE_DISPLAY_ORDER: string[] = [
+  "initial_inspection",
+  "wheels_prewash",
+  "exterior_wash",
+  "exterior",
   "interior",
   "protection",
   "final_qc",
-] as const;
-export type DetailStageKey = (typeof DETAIL_STAGE_KEYS)[number];
+  "final_check",
+];
 
-export const DETAIL_STAGE_LABELS: Record<DetailStageKey, string> = {
+export const DETAIL_STAGE_LABELS: Record<string, string> = {
+  exterior: "Exterior wash and wheels",
+  interior: "Interior clean",
+  protection: "Protection and finish",
+  final_check: "Final check",
   initial_inspection: "Initial inspection",
   wheels_prewash: "Wheels & pre-wash",
   exterior_wash: "Exterior wash",
-  interior: "Interior",
-  protection: "Protection",
   final_qc: "Final QC",
 };
 

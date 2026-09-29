@@ -1,25 +1,20 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CalendarClock, MapPin } from "lucide-react";
-import { TtdHeader } from "@/components/ttd/Header";
+import { createFileRoute } from "@tanstack/react-router";
+import { CalendarClock, Check, Link2, MapPin } from "lucide-react";
+import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { VehicleCard } from "@/components/ttd/VehicleTag";
-import { DetailerCard } from "@/components/ttd/DetailerCard";
-import { TrackingMap } from "@/components/ttd/TrackingMap";
-import { BookingTimeline, timelineForStatus } from "@/components/ttd/BookingTimeline";
-import { StageChecklist } from "@/components/ttd/StageChecklist";
+import { LiveJobPanel, StepTracker, viewFromBooking } from "@/components/ttd/LiveJob";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { useRequireCustomerSession } from "@/hooks/use-session";
-import {
-  getMyBookingById,
-  getBookingEta,
-  cancelOwnBooking,
-  LIVE_JOB_STATUSES,
-} from "@/lib/bookings";
-import { formatAppointment, getScheduleStatus, getEtaStatus } from "@/lib/format";
+import { getMyBookingById, cancelOwnBooking, LIVE_JOB_STATUSES } from "@/lib/bookings";
+import { formatAppointment } from "@/lib/format";
+import { customerHeadline } from "@/lib/progress";
+import { sendBookingEmail } from "@/lib/portal-email";
 import { supabase } from "@/lib/supabase";
+import { ttdSiteLinks, supportContact } from "@/lib/constants";
 import type { StageProgress } from "@/lib/detailers";
 
 export const Route = createFileRoute("/account/bookings/$id")({
@@ -34,7 +29,9 @@ function BookingDetail() {
   const { id } = Route.useParams();
   const queryClient = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ["my-booking", id],
@@ -43,22 +40,21 @@ function BookingDetail() {
     refetchInterval: 5_000,
   });
 
-  const isLive = booking ? LIVE_JOB_STATUSES.includes(booking.status) : false;
-  const detailerPosition =
-    booking?.current_lat != null && booking?.current_lng != null
-      ? { lat: booking.current_lat, lng: booking.current_lng }
-      : null;
-  const destination =
-    booking?.destination_lat != null && booking?.destination_lng != null
-      ? { lat: booking.destination_lat, lng: booking.destination_lng }
-      : null;
-
-  const { data: eta } = useQuery({
-    queryKey: ["booking-eta", id],
-    queryFn: () => getBookingEta(id),
-    enabled: booking?.status === "en_route" && Boolean(detailerPosition),
-    refetchInterval: 30_000,
-    retry: false,
+  const { data: stages } = useQuery({
+    queryKey: ["booking-stages", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_stage_progress")
+        .select("stage_key, completed_at")
+        .eq("booking_id", id);
+      if (error) throw error;
+      return data as unknown as StageProgress[];
+    },
+    enabled:
+      Boolean(session) &&
+      Boolean(booking) &&
+      ["in_progress", "qc", "handover", "arrived", "check_in"].includes(booking?.status ?? ""),
+    refetchInterval: 10_000,
   });
 
   async function handleCancel() {
@@ -66,8 +62,10 @@ function BookingDetail() {
     setCancelling(true);
     try {
       await cancelOwnBooking(id);
+      void sendBookingEmail(id, "cancelled");
       await queryClient.invalidateQueries({ queryKey: ["my-booking", id] });
       await queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
+      setConfirmCancel(false);
     } catch (err) {
       setCancelError(err instanceof Error ? err.message : "Couldn't cancel this booking.");
     } finally {
@@ -75,167 +73,188 @@ function BookingDetail() {
     }
   }
 
+  async function copyLink() {
+    if (!booking) return;
+    const url = `${ttdSiteLinks.website}/account/track/${booking.tracking_token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      window.prompt("Copy this link", url);
+    }
+  }
+
   if (authLoading || isLoading || !booking) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <BrandedLoading label="Loading your booking" />
-      </main>
+      </div>
     );
   }
 
   const { dayLabel, timeLabel } = formatAppointment(booking.scheduled_start);
-  const schedule = getScheduleStatus(booking.scheduled_start, timeLabel);
-  const etaStatus = eta ? getEtaStatus(eta.durationSeconds, booking.scheduled_start) : null;
+  const view = viewFromBooking(booking, stages ?? []);
+  const live = LIVE_JOB_STATUSES.includes(booking.status) && booking.status !== "assigned";
+  const canCancel = booking.status === "requested" || booking.status === "confirmed";
 
   return (
-    <main className="min-h-screen bg-background pb-16">
-      <TtdHeader eyebrow="Your booking" containerClassName="max-w-2xl" />
+    <AppShell
+      area="customer"
+      width="wide"
+      eyebrow={booking.booking_reference}
+      title={
+        <>
+          {customerHeadline(booking.status, view.detailerFirstName).toUpperCase()}
+          <span className="text-signal">.</span>
+        </>
+      }
+      back={{ to: "/account", label: "My Account" }}
+      actions={<StatusBadge status={booking.status} />}
+    >
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4">
+          {live ? (
+            <LiveJobPanel view={view} showHeadline={false} />
+          ) : (
+            <section className="rounded-2xl border border-hairline bg-surface p-5">
+              <p className="eyebrow text-muted-foreground">Progress</p>
+              <StepTracker status={booking.status} className="mt-5" />
+              {booking.status === "requested" ? (
+                <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
+                  We are checking your slot and will email you as soon as it is confirmed.
+                </p>
+              ) : null}
+              {booking.status === "assigned" && view.detailerName ? (
+                <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
+                  {view.detailerName} will be with you at {timeLabel}. You will get a message when
+                  they set off, with a live map and arrival time.
+                </p>
+              ) : null}
+              {booking.status === "completed" ? (
+                <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
+                  Thank you for booking with us. See you next time.
+                </p>
+              ) : null}
+              {booking.status === "cancelled" ? (
+                <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
+                  {booking.cancellation_reason ? `${booking.cancellation_reason}. ` : ""}To rebook,
+                  use Book a detail or call {supportContact.phone}.
+                </p>
+              ) : null}
+            </section>
+          )}
+        </div>
 
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        <Link
-          to="/account"
-          className="press inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Your account
-        </Link>
-
-        <section className="mt-5 rounded-2xl border border-hairline bg-surface p-5">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-            <div className="min-w-0">
-              <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
-              <h1 className="mt-1 font-display text-[28px] leading-none">{booking.package_name}</h1>
+        <aside className="flex flex-col gap-4">
+          <section className="rounded-2xl border border-hairline bg-surface p-5">
+            <p className="eyebrow text-muted-foreground">Your booking</p>
+            <h2 className="mt-2 text-[28px] leading-none">{booking.package_name}</h2>
+            <VehicleCard
+              className="mt-4 rounded-xl border-0 bg-surface-2 p-3"
+              vehicle={{
+                description: booking.vehicle_description,
+                registration: booking.vehicle_registration,
+              }}
+            />
+            <div className="mt-3 flex flex-col gap-2.5">
+              <Fact icon={CalendarClock} label="When">
+                {dayLabel}, {timeLabel}
+              </Fact>
+              <Fact icon={MapPin} label="Where">
+                {booking.service_address_line1}, {booking.service_postcode}
+              </Fact>
             </div>
-            <StatusBadge status={booking.status} size="sm" />
-          </div>
-
-          <VehicleCard
-            className="mt-4 rounded-xl border-0 bg-surface-2 p-3"
-            vehicle={{
-              description: booking.vehicle_description,
-              registration: booking.vehicle_registration,
-            }}
-          />
-
-          <div className="mt-3 grid grid-cols-2 gap-2.5">
-            <Tile icon={CalendarClock} label="Scheduled">
-              {dayLabel}, {timeLabel}
-            </Tile>
-            <Tile icon={MapPin} label="Address">
-              {booking.service_address_line1}, {booking.service_postcode}
-            </Tile>
-          </div>
-
-          {booking.status === "en_route" ? (
-            <p
-              className={`mt-3 text-[14px] font-medium ${etaStatus ? (etaStatus.tone === "on-track" ? "text-success" : "text-warning-text") : schedule.tone === "on-track" ? "text-success" : "text-muted-foreground"}`}
-            >
-              {etaStatus ? etaStatus.label : schedule.label}
-            </p>
-          ) : null}
-        </section>
-
-        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
-          <p className="eyebrow text-muted-foreground">What&rsquo;s booked</p>
-          <dl className="mt-3 flex flex-col gap-2 text-[14px]">
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Package</dt>
-              <dd className="text-right font-medium">{booking.package_name}</dd>
-            </div>
-            {booking.addon_labels.length > 0 ? (
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Add-ons</dt>
-                <dd className="text-right font-medium">{booking.addon_labels.join(", ")}</dd>
+            <dl className="mt-4 flex flex-col gap-2 border-t border-hairline pt-4 text-[14px]">
+              {booking.addon_labels.length > 0 ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">Add-ons</dt>
+                  <dd className="text-right font-medium">{booking.addon_labels.join(", ")}</dd>
+                </div>
+              ) : null}
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="eyebrow text-foreground">Total</dt>
+                <dd className="font-display text-[28px] leading-none">£{booking.price}</dd>
               </div>
+            </dl>
+            {booking.customer_notes ? (
+              <p className="mt-3 rounded-xl bg-surface-2 px-3.5 py-3 text-[13px] leading-relaxed text-muted-foreground">
+                <span className="font-semibold text-foreground">Your notes: </span>
+                {booking.customer_notes}
+              </p>
             ) : null}
-            <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-hairline pt-3">
-              <dt className="eyebrow text-foreground">Total</dt>
-              <dd className="font-display text-[28px] leading-none">£{booking.price}</dd>
-            </div>
-          </dl>
-          {booking.customer_notes ? (
-            <p className="mt-3 rounded-xl bg-surface-2 px-3.5 py-3 text-[13px] leading-relaxed text-muted-foreground">
-              <span className="font-semibold text-foreground">Your notes: </span>
-              {booking.customer_notes}
+            <p className="mt-3 text-[12px] text-muted-foreground">
+              Paid on the day by card, bank transfer or cash. The price is fixed.
             </p>
-          ) : null}
-          <p className="mt-3 text-[12px] text-muted-foreground">
-            Paid on the day by card, bank transfer or cash. The price is fixed.
-          </p>
-        </section>
-
-        {isLive && (detailerPosition || destination) ? (
-          <TrackingMap
-            className="mt-4 h-[280px] sm:h-[340px]"
-            detailerPosition={detailerPosition}
-            destination={destination}
-            detailerPhotoUrl={booking.detailer?.photo_url ?? null}
-            lastUpdate={booking.location_updated_at}
-          />
-        ) : null}
-
-        {booking.detailer ? (
-          <DetailerCard
-            className="mt-4"
-            detailer={{ name: booking.detailer.name, role: booking.detailer.job_title }}
-            photoUrl={booking.detailer.photo_url}
-            vehicleDescription={booking.detailer.vehicle_description}
-            phone={booking.detailer.phone}
-          />
-        ) : null}
-
-        {booking.status === "in_progress" ? (
-          <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
-            <p className="eyebrow text-muted-foreground">Detail in progress</p>
-            <BookingStages bookingId={booking.id} />
           </section>
-        ) : null}
 
-        <section className="mt-4 rounded-2xl border border-hairline bg-surface p-5">
-          <p className="eyebrow text-muted-foreground">Progress</p>
-          <BookingTimeline className="mt-4" steps={timelineForStatus(booking.status)} />
-        </section>
-
-        {booking.status === "confirmed" ? (
-          <div className="mt-4">
-            {cancelError ? (
-              <p className="mb-2 text-[13px] text-destructive">{cancelError}</p>
-            ) : null}
-            <PrimaryActionButton
-              variant="ghostDestructive"
-              loading={cancelling}
-              onClick={handleCancel}
+          {booking.status !== "cancelled" && booking.status !== "completed" ? (
+            <button
+              type="button"
+              onClick={copyLink}
+              className="press flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-4 text-left hover:bg-surface-2"
             >
-              Cancel this booking
-            </PrimaryActionButton>
-          </div>
-        ) : null}
+              <span>
+                <span className="block text-[14px] font-semibold">Share a live link</span>
+                <span className="block text-[12px] text-muted-foreground">
+                  Let someone else follow this booking without signing in.
+                </span>
+              </span>
+              {copied ? (
+                <Check className="h-5 w-5 shrink-0 text-success" />
+              ) : (
+                <Link2 className="h-5 w-5 shrink-0 text-muted-foreground" />
+              )}
+            </button>
+          ) : null}
+
+          {canCancel ? (
+            <div>
+              {cancelError ? (
+                <p className="mb-2 text-[13px] text-destructive">{cancelError}</p>
+              ) : null}
+              {confirmCancel ? (
+                <div className="rounded-2xl border border-destructive/25 p-4">
+                  <p className="text-[14px] font-semibold">Cancel this booking?</p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">
+                    To change the date instead, call or WhatsApp {supportContact.phone}. We are
+                    happy to move it.
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <PrimaryActionButton
+                      variant="outline"
+                      size="md"
+                      onClick={() => setConfirmCancel(false)}
+                    >
+                      Keep it
+                    </PrimaryActionButton>
+                    <PrimaryActionButton
+                      variant="ghostDestructive"
+                      size="md"
+                      loading={cancelling}
+                      onClick={handleCancel}
+                    >
+                      Yes, cancel
+                    </PrimaryActionButton>
+                  </div>
+                </div>
+              ) : (
+                <PrimaryActionButton
+                  variant="ghostDestructive"
+                  onClick={() => setConfirmCancel(true)}
+                >
+                  Cancel this booking
+                </PrimaryActionButton>
+              )}
+            </div>
+          ) : null}
+        </aside>
       </div>
-    </main>
+    </AppShell>
   );
 }
 
-function BookingStages({ bookingId }: { bookingId: string }) {
-  // Customer-facing checklist reads booking_stage_progress directly (RLS lets
-  // them read their own booking's rows) — no detailer token needed here.
-  const { data } = useQuery({
-    queryKey: ["booking-stages", bookingId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("booking_stage_progress")
-        .select("stage_key, completed_at")
-        .eq("booking_id", bookingId);
-      if (error) throw error;
-      return data as unknown as StageProgress[];
-    },
-    refetchInterval: 10_000,
-  });
-
-  if (!data) return null;
-  return <StageChecklist className="mt-3" stages={data} />;
-}
-
-function Tile({
+function Fact({
   icon: Icon,
   label,
   children,
@@ -245,14 +264,14 @@ function Tile({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-w-0 rounded-xl border border-hairline bg-surface-2 p-3.5">
-      <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
-        <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
-        <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-[0.04em]">
+    <div className="flex items-start gap-3 rounded-xl border border-hairline bg-surface-2 p-3.5">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2.2} />
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
           {label}
-        </span>
-      </span>
-      <p className="mt-1.5 text-[15px] font-semibold leading-tight">{children}</p>
+        </p>
+        <p className="text-[15px] font-semibold leading-tight">{children}</p>
+      </div>
     </div>
   );
 }

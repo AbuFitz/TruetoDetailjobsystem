@@ -1,40 +1,46 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { isToday } from "date-fns";
+import { format, isToday } from "date-fns";
 import { UK_TIME } from "@/lib/uk-time";
 import {
+  BellRing,
   CalendarClock,
+  Check,
   CheckCheck,
-  LogOut,
   Plus,
   Radio,
   Search,
-  UserRound,
-  Users,
   Wrench,
   X,
 } from "lucide-react";
-import { TtdHeader } from "@/components/ttd/Header";
+import { AppShell } from "@/components/ttd/AppShell";
 import { AdminBookingCard } from "@/components/ttd/AdminBookingCard";
 import { ScheduleTimeline } from "@/components/ttd/ScheduleTimeline";
 import { EmptyState } from "@/components/ttd/EmptyState";
 import { ErrorState } from "@/components/ttd/ErrorState";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
+import { StatusBadge } from "@/components/ttd/StatusBadge";
+import { PlateTag } from "@/components/ttd/VehicleTag";
 import { useRequireStaffSession } from "@/hooks/use-session";
-import { listBookings, type BookingStatus, type BookingWithDetailer } from "@/lib/bookings";
-import { signOut } from "@/lib/auth";
+import {
+  cancelBooking,
+  confirmRequest,
+  listBookings,
+  type BookingStatus,
+  type BookingWithDetailer,
+} from "@/lib/bookings";
+import { sendBookingEmail } from "@/lib/portal-email";
+import { formatAppointment } from "@/lib/format";
 
 const STATUS_FILTER_OPTIONS: { value: BookingStatus | "all"; label: string }[] = [
   { value: "all", label: "All statuses" },
+  { value: "requested", label: "Needs confirming" },
   { value: "confirmed", label: "Confirmed" },
   { value: "assigned", label: "Assigned" },
   { value: "en_route", label: "En route" },
   { value: "arrived", label: "Arrived" },
-  { value: "check_in", label: "Checking in" },
-  { value: "in_progress", label: "In progress" },
-  { value: "qc", label: "Final QC" },
-  { value: "handover", label: "Handover" },
+  { value: "in_progress", label: "Detailing" },
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
 ];
@@ -80,15 +86,18 @@ function AdminDashboard() {
 
   if (authLoading || !session || isStaff === null) {
     return (
-      <main className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <BrandedLoading label="Checking session" />
-      </main>
+      </div>
     );
   }
 
   const active = filtered.filter((b) =>
     ["en_route", "arrived", "check_in", "in_progress", "qc", "handover"].includes(b.status),
   );
+  const requests = filtered
+    .filter((b) => b.status === "requested")
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   const unassigned = filtered.filter((b) => b.status === "confirmed");
   // Assigned but not started yet. Without its own section, a job assigned
   // for any day other than today appeared nowhere on this page.
@@ -123,133 +132,108 @@ function AdminDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <TtdHeader
-        homeTo="/admin"
-        eyebrow="Staff console"
-        right={
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Link
-              to="/admin/customers"
-              aria-label="Customers"
-              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[12px] font-medium text-ink-foreground/70 hover:text-ink-foreground sm:px-3"
-            >
-              <Users className="h-3.5 w-3.5" strokeWidth={2.2} />
-              <span className="hidden sm:inline">Customers</span>
-            </Link>
-            <Link
-              to="/admin/detailers"
-              aria-label="Detailers"
-              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[12px] font-medium text-ink-foreground/70 hover:text-ink-foreground sm:px-3"
-            >
-              <UserRound className="h-3.5 w-3.5" strokeWidth={2.2} />
-              <span className="hidden sm:inline">Detailers</span>
-            </Link>
+    <AppShell
+      area="admin"
+      eyebrow={format(new Date(), "EEEE, d MMMM", { in: UK_TIME })}
+      title={
+        <>
+          TODAY<span className="text-signal">.</span>
+        </>
+      }
+      subtitle="Every request, booking and job in one place."
+    >
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat
+          icon={BellRing}
+          label="Needs confirming"
+          value={all.filter((b) => b.status === "requested").length}
+          highlight
+        />
+        <Stat
+          icon={CalendarClock}
+          label="Unassigned"
+          value={all.filter((b) => b.status === "confirmed").length}
+        />
+        <Stat
+          icon={Radio}
+          label="Active now"
+          value={
+            all.filter((b) =>
+              ["en_route", "arrived", "check_in", "in_progress", "qc", "handover"].includes(
+                b.status,
+              ),
+            ).length
+          }
+        />
+        <Stat icon={CheckCheck} label="Completed today" value={completedToday} />
+      </div>
+
+      <div className="mt-8 flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            strokeWidth={2.2}
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by reference, reg, postcode or detailer"
+            className="min-h-11 w-full rounded-xl border border-hairline bg-surface-2 pl-10 pr-9 text-base outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+          />
+          {query ? (
             <button
               type="button"
-              onClick={() => signOut()}
-              aria-label="Sign out"
-              className="press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[12px] font-medium text-ink-foreground/70 hover:text-ink-foreground sm:px-3"
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+              className="press absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:text-foreground"
             >
-              <LogOut className="h-3.5 w-3.5" strokeWidth={2.2} />
-              <span className="hidden sm:inline">Sign out</span>
+              <X className="h-4 w-4" strokeWidth={2.2} />
             </button>
-          </div>
-        }
-      />
+          ) : null}
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as BookingStatus | "all")}
+          aria-label="Filter by status"
+          className="min-h-11 shrink-0 rounded-xl border border-hairline bg-surface-2 pl-3 pr-8 text-[13px] font-medium outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+        >
+          {STATUS_FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <div className="mx-auto w-full max-w-2xl px-5 py-6 sm:px-6">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
+      {isLoading ? (
+        <BrandedLoading label="Loading bookings" className="mt-10" />
+      ) : isError ? (
+        <ErrorState
+          className="mt-8"
+          title="Couldn't load bookings"
+          description={error instanceof Error ? error.message : undefined}
+          onRetry={() => refetch()}
+        />
+      ) : isFiltering && filtered.length === 0 ? (
+        <EmptyState
+          className="mt-8"
+          icon={Search}
+          title="No matches"
+          description="Try a different search or filter."
+        />
+      ) : (
+        <div className="grid gap-x-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           <div className="min-w-0">
-            <h1 className="font-display text-[30px] leading-none">True To Detail</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">Mobile job system</p>
-          </div>
-          <Link
-            to="/admin/bookings/new"
-            className="press inline-flex min-h-11 shrink-0 items-center gap-2 bg-signal px-4 font-sans text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
-          >
-            <Plus className="h-4 w-4" strokeWidth={2.8} />
-            New<span className="hidden sm:inline"> booking</span>
-          </Link>
-        </div>
-
-        <div className="mt-5 grid grid-cols-3 divide-x divide-hairline overflow-hidden rounded-xl border border-hairline bg-surface">
-          <Stat icon={Radio} label="Active" value={active.length} highlight />
-          <Stat icon={CalendarClock} label="Unassigned" value={unassigned.length} />
-          <Stat icon={CheckCheck} label="Completed today" value={completedToday} />
-        </div>
-
-        {byDetailer.size > 0 ? (
-          <Section title="Today's schedule">
-            <div className="flex flex-col gap-6">
-              {Array.from(byDetailer.entries()).map(([detailerId, list]) => (
-                <div key={detailerId}>
-                  <p className="mb-2 text-[13px] font-semibold text-muted-foreground">
-                    {list[0]?.detailer?.name ?? "Detailer"}
-                  </p>
-                  <ScheduleTimeline bookings={list} />
+            {requests.length > 0 ? (
+              <Section title="Needs confirming">
+                <div className="flex flex-col gap-3">
+                  {requests.map((b) => (
+                    <RequestCard key={b.id} booking={b} />
+                  ))}
                 </div>
-              ))}
-            </div>
-          </Section>
-        ) : null}
-
-        <div className="mt-8 flex gap-2">
-          <div className="relative min-w-0 flex-1">
-            <Search
-              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              strokeWidth={2.2}
-            />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search jobs"
-              className="min-h-11 w-full rounded-xl border border-hairline bg-surface-2 pl-10 pr-9 text-base outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
-            />
-            {query ? (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label="Clear search"
-                className="press absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" strokeWidth={2.2} />
-              </button>
+              </Section>
             ) : null}
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as BookingStatus | "all")}
-            aria-label="Filter by status"
-            className="min-h-11 shrink-0 rounded-xl border border-hairline bg-surface-2 pl-3 pr-8 text-[13px] font-medium outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
-          >
-            {STATUS_FILTER_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {isLoading ? (
-          <BrandedLoading label="Loading bookings" className="mt-10" />
-        ) : isError ? (
-          <ErrorState
-            className="mt-8"
-            title="Couldn't load bookings"
-            description={error instanceof Error ? error.message : undefined}
-            onRetry={() => refetch()}
-          />
-        ) : isFiltering && filtered.length === 0 ? (
-          <EmptyState
-            className="mt-8"
-            icon={Search}
-            title="No matches"
-            description="Try a different search or filter."
-          />
-        ) : (
-          <>
             {active.length || !isFiltering ? (
               <Section title="Active jobs">
                 {active.length ? (
@@ -260,11 +244,11 @@ function AdminDashboard() {
               </Section>
             ) : null}
             {unassigned.length || !isFiltering ? (
-              <Section title="Unassigned">
+              <Section title="Confirmed, needs a detailer">
                 {unassigned.length ? (
                   <BookingList bookings={unassigned} />
                 ) : (
-                  <EmptyState icon={CalendarClock} title="Nothing unassigned" />
+                  <EmptyState icon={CalendarClock} title="Nothing waiting for a detailer" />
                 )}
               </Section>
             ) : null}
@@ -273,19 +257,124 @@ function AdminDashboard() {
                 <BookingList bookings={assigned} />
               </Section>
             ) : null}
+          </div>
+
+          <div className="min-w-0">
+            {byDetailer.size > 0 ? (
+              <Section title="Today's schedule">
+                <div className="flex flex-col gap-6">
+                  {Array.from(byDetailer.entries()).map(([detailerId, list]) => (
+                    <div key={detailerId}>
+                      <p className="mb-2 text-[13px] font-semibold text-muted-foreground">
+                        {list[0]?.detailer?.name ?? "Detailer"}
+                      </p>
+                      <ScheduleTimeline bookings={list} />
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            ) : (
+              <Section title="Today's schedule">
+                <EmptyState icon={CalendarClock} title="Nothing scheduled for today" />
+              </Section>
+            )}
             {done.length || !isFiltering ? (
               <Section title="History">
                 {done.length ? (
-                  <BookingList bookings={done} />
+                  <BookingList bookings={done.slice(0, 20)} />
                 ) : (
                   <EmptyState icon={CheckCheck} title="Nothing completed or cancelled yet" />
                 )}
               </Section>
             ) : null}
-          </>
-        )}
+          </div>
+        </div>
+      )}
+    </AppShell>
+  );
+}
+
+/** A website request waiting for staff: confirm it (and the customer is emailed) or decline it. */
+function RequestCard({ booking }: { booking: BookingWithDetailer }) {
+  const queryClient = useQueryClient();
+  const [note, setNote] = useState<string | null>(null);
+  const { dayLabel, timeLabel } = formatAppointment(booking.scheduled_start);
+
+  const confirm = useMutation({
+    mutationFn: async () => {
+      await confirmRequest(booking.id);
+      return sendBookingEmail(booking.id, "booked_in");
+    },
+    onSuccess: (res) => {
+      setNote(
+        res.sent
+          ? "Confirmed. The customer has been emailed."
+          : `Confirmed. Email not sent: ${res.reason ?? "unknown"}`,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+    },
+    onError: (e) => setNote(e instanceof Error ? e.message : "Couldn't confirm this request."),
+  });
+
+  const decline = useMutation({
+    mutationFn: async () => {
+      await cancelBooking(booking.id, "Other");
+      return sendBookingEmail(booking.id, "cancelled");
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }),
+    onError: (e) => setNote(e instanceof Error ? e.message : "Couldn't decline this request."),
+  });
+
+  return (
+    <article className="border border-warning/40 bg-warning/8 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="mono-ref text-muted-foreground">{booking.booking_reference}</p>
+          <p className="mt-1 font-display text-xl leading-tight">{booking.package_name}</p>
+        </div>
+        <StatusBadge status={booking.status} size="sm" />
       </div>
-    </main>
+      <p className="mt-2 text-[14px] font-semibold">
+        {dayLabel}, {timeLabel} · {booking.service_postcode}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-[13px] text-muted-foreground">
+        <PlateTag registration={booking.vehicle_registration} />
+        <span>£{booking.price}</span>
+      </div>
+      {booking.customer_notes ? (
+        <p className="mt-2 text-[13px] text-muted-foreground">Note: {booking.customer_notes}</p>
+      ) : null}
+      {note ? <p className="mt-2 text-[13px] font-medium">{note}</p> : null}
+      <div className="mt-3 grid grid-cols-[1fr_1fr_auto] gap-2">
+        <button
+          type="button"
+          onClick={() => confirm.mutate()}
+          disabled={confirm.isPending || decline.isPending}
+          className="press inline-flex min-h-11 items-center justify-center gap-1.5 bg-signal px-3 font-sans text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep disabled:opacity-50"
+        >
+          <Check className="h-4 w-4" strokeWidth={2.8} /> Confirm
+        </button>
+        <Link
+          to="/admin/bookings/$id"
+          params={{ id: booking.id }}
+          className="press inline-flex min-h-11 items-center justify-center border border-hairline bg-surface px-3 font-sans text-[12px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2"
+        >
+          Open
+        </Link>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm("Decline this request? The customer will be emailed."))
+              decline.mutate();
+          }}
+          disabled={confirm.isPending || decline.isPending}
+          aria-label="Decline request"
+          className="press inline-flex min-h-11 items-center justify-center border border-destructive/25 px-3 text-destructive hover:bg-destructive/8 disabled:opacity-50"
+        >
+          <X className="h-4 w-4" strokeWidth={2.6} />
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -311,17 +400,19 @@ function Stat({
   highlight?: boolean;
 }) {
   return (
-    <div className="min-w-0 px-3.5 py-3">
+    <div
+      className={`min-w-0 rounded-xl border p-4 ${highlight && value > 0 ? "border-warning/40 bg-warning/8" : "border-hairline bg-surface"}`}
+    >
       <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
         <Icon
-          className={`h-3.5 w-3.5 shrink-0 ${highlight ? "text-signal-deep" : ""}`}
+          className={`h-4 w-4 shrink-0 ${highlight ? "text-signal-deep" : ""}`}
           strokeWidth={2.2}
         />
-        <span className="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-[0.04em]">
+        <span className="min-w-0 text-[11px] font-semibold uppercase leading-tight tracking-[0.08em]">
           {label}
         </span>
       </span>
-      <p className="mt-1 font-display text-2xl leading-none">{value}</p>
+      <p className="mt-2 font-display text-[44px] leading-none">{value}</p>
     </div>
   );
 }
