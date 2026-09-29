@@ -547,11 +547,11 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                 <div className="flex flex-col gap-2">
                   {(
                     [
-                      ["Pack", selectedPackage?.name ?? "—"],
-                      ["Vehicle", vehicleSize ? VEHICLE_SIZE_LABELS[vehicleSize] : "—"],
-                      ["Reg", carReg || "—"],
-                      ["Date & Time", date && time ? `${date} · ${time}` : "—"],
-                      ["Postcode", postcode || "—"],
+                      ["Pack", selectedPackage?.name ?? "Not set"],
+                      ["Vehicle", vehicleSize ? VEHICLE_SIZE_LABELS[vehicleSize] : "Not set"],
+                      ["Reg", carReg || "Not set"],
+                      ["Date & Time", date && time ? `${date} · ${time}` : "Not set"],
+                      ["Postcode", postcode || "Not set"],
                     ] as [string, string][]
                   ).map(([k, v]) => (
                     <div key={k} className="flex justify-between gap-4">
@@ -565,7 +565,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                 <div className="mt-3.5 flex items-baseline justify-between border-t border-hairline pt-3.5">
                   <span className="eyebrow text-foreground">Total</span>
                   <span className="font-display text-[28px] text-foreground">
-                    {totalPrice !== null ? `£${totalPrice}` : "—"}
+                    {totalPrice !== null ? `£${totalPrice}` : "£0"}
                   </span>
                 </div>
               </div>

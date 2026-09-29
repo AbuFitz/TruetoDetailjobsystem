@@ -67,7 +67,7 @@ function NewDetailer() {
           <div className="mt-5 rounded-2xl border border-success/30 bg-success/8 p-5 text-center">
             <p className="font-display text-lg">Detailer created</p>
             <p className="mt-1 text-[13px] text-muted-foreground">
-              Send them their persistent job link — no login needed.
+              Send them their persistent job link. No login needed.
             </p>
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-hairline bg-surface p-2.5">
               <p className="min-w-0 flex-1 truncate text-[13px]">{link}</p>

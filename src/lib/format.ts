@@ -128,7 +128,7 @@ export function getScheduleStatus(
   if (lateBy <= SCHEDULE_SIGNIFICANT_DELAY_MS) {
     return { tone: "behind", label: "Running a little behind schedule" };
   }
-  return { tone: "behind", label: "Running well behind schedule — thanks for your patience" };
+  return { tone: "behind", label: "Running well behind schedule. Thanks for your patience." };
 }
 
 /**

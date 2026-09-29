@@ -31,7 +31,7 @@ export function useCopyToClipboard(resetMs = 2000) {
           el.remove();
           if (!ok) throw new Error("execCommand copy failed");
         } catch {
-          setError("Couldn't copy automatically — select and copy the link manually.");
+          setError("Couldn't copy automatically. Select and copy the link manually.");
           return;
         }
       }

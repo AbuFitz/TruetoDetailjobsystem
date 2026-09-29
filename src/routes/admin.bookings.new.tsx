@@ -279,7 +279,7 @@ function NewBooking() {
               ) : (
                 <div className="mt-2 flex flex-col gap-2">
                   <p className="text-[12px] text-muted-foreground">
-                    No account needed — this creates a customer record staff can book against. If
+                    No account needed. This creates a customer record staff can book against. If
                     they sign up later with the same email, their history carries over
                     automatically.
                   </p>

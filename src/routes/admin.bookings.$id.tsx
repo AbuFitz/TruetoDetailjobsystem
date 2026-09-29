@@ -300,13 +300,13 @@ function AdminBookingDetail() {
               {checkIn.access_notes ? <Row label="Access">{checkIn.access_notes}</Row> : null}
               <Row label="Water / electric">
                 {checkIn.water_available == null
-                  ? "—"
+                  ? "Water: not recorded"
                   : checkIn.water_available
                     ? "Water: yes"
                     : "Water: no"}{" "}
                 ·{" "}
                 {checkIn.electric_available == null
-                  ? "—"
+                  ? "Electric: not recorded"
                   : checkIn.electric_available
                     ? "Electric: yes"
                     : "Electric: no"}
