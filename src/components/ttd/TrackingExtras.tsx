@@ -21,6 +21,7 @@ import { useOnlineStatus } from "@/hooks/use-online-status";
 import { useNow } from "@/hooks/use-now";
 import {
   alertPermission,
+  type AlertPermission,
   alertsEnabled,
   disableAlerts,
   enableAlerts,
@@ -176,13 +177,14 @@ export function FinishPanel({
 
 /** Turn on browser alerts for the big moments. Says what it can and cannot do. */
 export function AlertsToggle({ className }: { className?: string }) {
-  const [permission, setPermission] = useState(alertPermission());
+  // Read the browser only after mounting, so the server and first client render agree.
+  const [permission, setPermission] = useState<AlertPermission | null>(null);
   const [on, setOn] = useState(false);
   useEffect(() => {
     setPermission(alertPermission());
     setOn(alertsEnabled());
   }, []);
-  if (permission === "unsupported") return null;
+  if (permission === null || permission === "unsupported") return null;
 
   const denied = permission === "denied";
   return (
