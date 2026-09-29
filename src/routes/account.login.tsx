@@ -29,7 +29,7 @@ function LoginField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/40">
+      <label htmlFor={id} className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/60">
         {label}
       </label>
       <input
@@ -115,7 +115,7 @@ function AccountLogin() {
         <a href={ttdSiteLinks.website} className="press inline-block">
           <TtdLogo size="lg" tone="light" />
         </a>
-        <p className="eyebrow mt-10 text-ink-foreground/30">Your account</p>
+        <p className="eyebrow mt-10 text-ink-foreground/55">Your account</p>
         <h1 className="mt-2 font-display text-[56px] leading-[0.88] sm:text-[72px]">
           {returning ? (
             <>

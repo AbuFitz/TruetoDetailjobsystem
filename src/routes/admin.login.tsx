@@ -65,7 +65,7 @@ function AdminLogin() {
         <a href={ttdSiteLinks.website} className="press inline-block">
           <TtdLogo size="lg" tone="light" />
         </a>
-        <p className="eyebrow mt-10 text-ink-foreground/30">Internal</p>
+        <p className="eyebrow mt-10 text-ink-foreground/55">Internal</p>
         <h1 className="mt-2 font-display text-[56px] leading-[0.88] sm:text-[72px]">
           STAFF
           <br />

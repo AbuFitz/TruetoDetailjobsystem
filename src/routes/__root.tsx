@@ -10,6 +10,8 @@ import {
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import bebasNeueUrl from "../assets/fonts/bebas-neue-400.woff2?url";
+import dmSansUrl from "../assets/fonts/dm-sans-variable.woff2?url";
 
 function NotFoundComponent() {
   return (
@@ -97,12 +99,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap",
-      },
+      // Preload the two fonts used above the fold so text paints in brand type.
+      { rel: "preload", href: bebasNeueUrl, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", href: dmSansUrl, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
     ],
