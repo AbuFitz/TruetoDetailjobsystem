@@ -68,8 +68,17 @@ export function firstAvailableSlot(date: string, now: Date = new Date()): string
  * "2026-10-10" + "2:00 PM" -> "2026-10-10T13:00:00.000Z" (BST).
  */
 export function ukSlotToIso(date: string, slot: string): string {
+  return ukMinutesToIso(date, slotMinutes(slot));
+}
+
+/** Same as ukSlotToIso for a 24-hour "HH:MM" time, as a time input gives. */
+export function ukTimeToIso(date: string, time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  return ukMinutesToIso(date, (h ?? 10) * 60 + (m ?? 0));
+}
+
+function ukMinutesToIso(date: string, mins: number): string {
   const [y, mo, d] = date.split("-").map(Number) as [number, number, number];
-  const mins = slotMinutes(slot);
   const guess = Date.UTC(y, mo - 1, d, Math.floor(mins / 60), mins % 60);
   // How far UK time is ahead of UTC at that moment (0 in winter, 60 min in summer).
   const p = ukParts(new Date(guess));

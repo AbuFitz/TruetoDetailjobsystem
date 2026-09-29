@@ -26,6 +26,7 @@ import {
   type VehicleSize,
 } from "@/lib/constants";
 import { useRequireStaffSession } from "@/hooks/use-session";
+import { ukTimeToIso } from "@/lib/slots";
 
 export const Route = createFileRoute("/admin/bookings/new")({
   head: () => ({
@@ -160,9 +161,6 @@ function NewBooking() {
       if (!customer) throw new Error("Select a customer first.");
       if (!selectedAddress) throw new Error("Select a service address.");
       if (!selectedVehicle) throw new Error("Select a vehicle.");
-      const scheduledStart = new Date(date);
-      const [h, m] = time.split(":").map(Number);
-      scheduledStart.setHours(h ?? 10, m ?? 0, 0, 0);
 
       return createBookingForCustomer({
         customer_id: customer.id,
@@ -182,7 +180,7 @@ function NewBooking() {
         addon_ids: addonIds,
         addon_labels: DETAIL_ADDONS.filter((a) => addonIds.includes(a.id)).map((a) => a.label),
         price: totalPrice,
-        scheduled_start: scheduledStart.toISOString(),
+        scheduled_start: ukTimeToIso(date, time),
         estimated_duration_minutes: selectedPackage.durationMinutes,
         internal_notes: internalNotes.trim() || undefined,
       });

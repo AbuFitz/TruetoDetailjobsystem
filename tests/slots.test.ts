@@ -6,6 +6,7 @@ import {
   slotMinutes,
   ukNow,
   ukSlotToIso,
+  ukTimeToIso,
 } from "@/lib/slots";
 
 describe("slot rules", () => {
@@ -61,6 +62,11 @@ describe("ukSlotToIso", () => {
     expect(ukSlotToIso("2026-10-24", "10:00 AM")).toBe("2026-10-24T09:00:00.000Z");
     expect(ukSlotToIso("2026-10-25", "10:00 AM")).toBe("2026-10-25T10:00:00.000Z");
     expect(ukSlotToIso("2027-03-28", "10:00 AM")).toBe("2027-03-28T09:00:00.000Z");
+  });
+
+  test("24-hour times from the admin form", () => {
+    expect(ukTimeToIso("2026-07-15", "09:45")).toBe("2026-07-15T08:45:00.000Z");
+    expect(ukTimeToIso("2026-12-01", "17:30")).toBe("2026-12-01T17:30:00.000Z");
   });
 });
 
