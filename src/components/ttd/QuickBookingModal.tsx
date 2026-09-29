@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { X, Check, Loader2 } from "lucide-react";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
+import { useDialogFocus } from "@/hooks/use-dialog-focus";
 import { signUpCustomer, getSession } from "@/lib/auth";
 import {
   DETAIL_ADDONS,
@@ -183,6 +184,11 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
     }
   }
 
+  // Focus moves into the panel, Tab stays inside, the page stops scrolling,
+  // and focus returns to the "Book a detail" button on close.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(panelRef, open);
+
   // Escape closes the popup, like every other dialog on the site.
   useEffect(() => {
     if (!open) return;
@@ -206,7 +212,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
     >
       <div className="absolute inset-0 bg-ink/80 backdrop-blur-[3px]" onClick={handleClose} />
 
-      <div className="relative flex h-dvh w-full max-w-[520px] flex-col overflow-hidden bg-background animate-in slide-in-from-right duration-300">
+      <div
+        ref={panelRef}
+        className="relative flex h-dvh w-full max-w-[520px] flex-col overflow-hidden bg-background animate-in slide-in-from-right duration-300"
+      >
         {/* Header */}
         <div className="flex-shrink-0 bg-ink px-8 pb-5 pt-6 text-ink-foreground">
           <div className="mb-5 flex items-start justify-between">
