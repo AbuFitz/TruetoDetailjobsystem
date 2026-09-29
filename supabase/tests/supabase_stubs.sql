@@ -16,12 +16,30 @@ grant usage on schema public, extensions to anon, authenticated, service_role;
 create schema auth;
 grant usage on schema auth to anon, authenticated;
 create table auth.users (
+  instance_id uuid,
   id uuid primary key default gen_random_uuid(),
+  aud varchar, role varchar,
   email text,
+  encrypted_password text,
+  raw_app_meta_data jsonb default '{}'::jsonb,
   raw_user_meta_data jsonb default '{}'::jsonb,
   email_confirmed_at timestamptz,
-  created_at timestamptz default now()
+  confirmation_token varchar, recovery_token varchar, email_change_token_new varchar, email_change varchar,
+  email_change_token_current varchar default '', phone_change text default '', phone_change_token varchar default '',
+  reauthentication_token varchar default '',
+  is_sso_user boolean not null default false, is_anonymous boolean not null default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
+create table auth.identities (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  provider_id text not null, provider text not null, identity_data jsonb not null,
+  last_sign_in_at timestamptz, created_at timestamptz, updated_at timestamptz,
+  email text generated always as (lower(identity_data ->> 'email')) stored
+);
+create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade);
+
 -- Tests set the signed-in user with: set local request.jwt.claim.sub = '<uuid>'
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
