@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { addWeeks, format, isFuture } from "date-fns";
+import { UK_TIME } from "@/lib/uk-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarPlus, Car, ChevronRight, LogOut, MapPin, Sparkles, UserRound } from "lucide-react";
 import { TtdHeader } from "@/components/ttd/Header";
@@ -128,7 +129,9 @@ function AccountDashboard() {
 
       <div className="bg-ink py-7 text-ink-foreground">
         <div className="mx-auto w-full max-w-2xl px-5 sm:px-6">
-          <p className="eyebrow text-ink-foreground/30">{format(new Date(), "EEEE, d MMMM")}</p>
+          <p className="eyebrow text-ink-foreground/30">
+            {format(new Date(), "EEEE, d MMMM", { in: UK_TIME })}
+          </p>
           <h1 className="mt-1 font-display text-[40px] leading-[0.9] sm:text-[48px]">
             {isFirstSignIn ? "WELCOME" : "WELCOME BACK"}
             {profile?.first_name ? (
@@ -277,10 +280,10 @@ function AccountDashboard() {
                     <div className="min-w-0">
                       <p className="truncate text-[14px] font-semibold">{b.package_name}</p>
                       <p className="text-[12px] text-muted-foreground">
-                        {format(new Date(b.scheduled_start), "d MMM yyyy")} ·{" "}
+                        {format(new Date(b.scheduled_start), "d MMM yyyy", { in: UK_TIME })} ·{" "}
                         {dayLabel === "Today"
                           ? "Today"
-                          : format(new Date(b.scheduled_start), "EEE")}
+                          : format(new Date(b.scheduled_start), "EEE", { in: UK_TIME })}
                       </p>
                     </div>
                     <StatusBadge status={b.status} size="sm" />
@@ -297,7 +300,7 @@ function AccountDashboard() {
           <Section title="Recommended">
             <div className="rounded-xl border border-signal/25 bg-signal/8 p-4">
               <p className="text-[14px] font-semibold">
-                Maintenance detail due around {format(recommendedDate, "d MMMM")}
+                Maintenance detail due around {format(recommendedDate, "d MMMM", { in: UK_TIME })}
               </p>
               <p className="mt-1 text-[13px] text-muted-foreground">
                 {isFuture(recommendedDate)

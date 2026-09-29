@@ -1,14 +1,15 @@
 import { format, formatDistanceToNowStrict, isToday, isTomorrow } from "date-fns";
+import { UK_TIME } from "@/lib/uk-time";
 
 /** "Today"/"Tomorrow"/"Mon 12 Aug" + "6:30 PM", derived from a real timestamp. */
 export function formatAppointment(iso: string): { dayLabel: string; timeLabel: string } {
   const date = new Date(iso);
-  const dayLabel = isToday(date)
+  const dayLabel = isToday(date, { in: UK_TIME })
     ? "Today"
-    : isTomorrow(date)
+    : isTomorrow(date, { in: UK_TIME })
       ? "Tomorrow"
-      : format(date, "EEE d MMM");
-  return { dayLabel, timeLabel: format(date, "h:mm a") };
+      : format(date, "EEE d MMM", { in: UK_TIME });
+  return { dayLabel, timeLabel: format(date, "h:mm a", { in: UK_TIME }) };
 }
 
 /**
@@ -21,7 +22,7 @@ export function formatEtaArrival(durationSeconds: number, now: number = Date.now
   const arrival = new Date(now + durationSeconds * 1000);
   const minutes = Math.max(1, Math.round(durationSeconds / 60));
   const minutesLabel = minutes === 1 ? "1 min" : `${minutes} min`;
-  return `Arriving around ${format(arrival, "h:mm a")} (about ${minutesLabel} away)`;
+  return `Arriving around ${format(arrival, "h:mm a", { in: UK_TIME })} (about ${minutesLabel} away)`;
 }
 
 export interface EtaStatus {
@@ -57,7 +58,7 @@ export function getEtaStatus(
   if (lateBy <= ETA_GRACE_MS) {
     return { tone: "on-track", label: arrivalLabel };
   }
-  const appointmentTimeLabel = format(new Date(appointmentAtIso), "h:mm a");
+  const appointmentTimeLabel = format(new Date(appointmentAtIso), "h:mm a", { in: UK_TIME });
   if (lateBy <= ETA_SIGNIFICANT_DELAY_MS) {
     return {
       tone: "behind",

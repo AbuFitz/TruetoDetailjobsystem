@@ -1,6 +1,7 @@
 import { ArrowDown, TriangleAlert } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { UK_TIME } from "@/lib/uk-time";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "./StatusBadge";
 import { PlateTag } from "./VehicleTag";
@@ -40,9 +41,11 @@ export function ScheduleTimeline({
             >
               <div className="w-[74px] shrink-0 pt-0.5 text-right">
                 <p className="font-display text-base font-bold leading-none">
-                  {format(start, "HH:mm")}
+                  {format(start, "HH:mm", { in: UK_TIME })}
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{format(end, "HH:mm")}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {format(end, "HH:mm", { in: UK_TIME })}
+                </p>
               </div>
               <div className="min-w-0 flex-1 border-l border-hairline pl-3.5">
                 <div className="flex items-start justify-between gap-2">

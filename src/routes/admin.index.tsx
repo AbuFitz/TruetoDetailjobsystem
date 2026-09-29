@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { isToday } from "date-fns";
+import { UK_TIME } from "@/lib/uk-time";
 import {
   CalendarClock,
   CheckCheck,
@@ -96,13 +97,18 @@ function AdminDashboard() {
     .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime());
   const done = filtered.filter((b) => b.status === "completed" || b.status === "cancelled");
   const completedToday = all.filter(
-    (b) => b.status === "completed" && b.completed_at && isToday(new Date(b.completed_at)),
+    (b) =>
+      b.status === "completed" &&
+      b.completed_at &&
+      isToday(new Date(b.completed_at), { in: UK_TIME }),
   ).length;
   const isFiltering = query.trim().length > 0 || statusFilter !== "all";
 
   const todaysAssigned = all.filter(
     (b) =>
-      isToday(new Date(b.scheduled_start)) && b.assigned_detailer_id && b.status !== "cancelled",
+      isToday(new Date(b.scheduled_start), { in: UK_TIME }) &&
+      b.assigned_detailer_id &&
+      b.status !== "cancelled",
   );
   const byDetailer = new Map<string, BookingWithDetailer[]>();
   for (const b of todaysAssigned) {
