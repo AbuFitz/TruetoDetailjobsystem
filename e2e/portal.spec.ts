@@ -440,3 +440,92 @@ test("the staff sign in has no register option", async ({ page }) => {
   await expect(page.getByRole("tab")).toHaveCount(0);
   await expect(page.getByText(/register|create an account|sign up/i)).toHaveCount(0);
 });
+
+/** Distance from the top of the viewport to the top of an element, or null when it is not on screen. */
+async function topOf(page: Page, locator: ReturnType<Page["locator"]>) {
+  return locator.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return r.bottom < 0 || r.top > window.innerHeight ? null : Math.round(r.top);
+  });
+}
+
+for (const [label, size] of [
+  ["phone", { width: 390, height: 700 }],
+  ["desktop", { width: 1280, height: 720 }],
+] as const) {
+  test(`${label}: the booking popup guides to the next part after each choice`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await fakeSupabase(page.context());
+    await page.goto("/account/login?mode=register", { waitUntil: "networkidle" });
+    await page.waitForTimeout(400);
+    await page.getByRole("button", { name: "Book a detail" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // Step 1: size, then package, then add-ons come into view without scrolling by hand.
+    await dialog.getByRole("radio").nth(1).click();
+    await page.waitForTimeout(900);
+    const pack = dialog.getByText("Choose your package");
+    expect(
+      await topOf(page, pack),
+      "package section is in view after picking a size",
+    ).not.toBeNull();
+    await dialog
+      .getByRole("button", { name: /full valet/i })
+      .first()
+      .click();
+    await page.waitForTimeout(900);
+    const extras = dialog.getByText("Optional extras");
+    expect(await topOf(page, extras), "add-ons are in view after picking a package").not.toBeNull();
+    if (size.width < 500) {
+      expect((await topOf(page, extras))!, "add-ons were scrolled up to the top area").toBeLessThan(
+        400,
+      );
+    }
+
+    // Step 2: date, then time, then location.
+    await dialog
+      .getByRole("button", { name: /next: schedule|next/i })
+      .first()
+      .click();
+    await dialog.locator('input[type="date"]').fill("2030-01-15");
+    await page.waitForTimeout(900);
+    const slot = dialog.getByRole("button", { name: "10:00 AM", exact: true });
+    expect(await topOf(page, slot), "time slots are in view after the date").not.toBeNull();
+    await slot.click();
+    await page.waitForTimeout(900);
+    const postcode = dialog.getByPlaceholder("Enter your postcode");
+    expect(await topOf(page, postcode), "postcode is in view after the time").not.toBeNull();
+    if (size.width < 500) {
+      expect((await topOf(page, postcode))!).toBeLessThan(450);
+    }
+  });
+}
+
+test("phone: the signed-in booking page guides from vehicle to size to package", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 700 });
+  await fakeSupabase(page.context());
+  await page.context().addCookies([sessionCookie]);
+  await page.goto("/book", { waitUntil: "networkidle" });
+  await page.getByRole("heading", { name: /vehicle and package/i }).waitFor();
+  await page.locator("button", { hasText: "AB12CDE" }).first().click();
+  await page.waitForTimeout(900);
+  const size = page.getByText("Vehicle size", { exact: true });
+  expect(await topOf(page, size)).not.toBeNull();
+  await page.getByRole("radio").nth(2).click();
+  await page.waitForTimeout(900);
+  const pack = page.getByText("Package", { exact: true }).first();
+  expect(await topOf(page, pack), "package heading in view after picking a size").not.toBeNull();
+  expect((await topOf(page, pack))!).toBeLessThan(300);
+  await page
+    .getByRole("button", { name: /full valet/i })
+    .first()
+    .click();
+  await page.waitForTimeout(900);
+  const addons = page.getByText("Add-ons", { exact: true });
+  expect((await topOf(page, addons))!).toBeLessThan(400);
+});

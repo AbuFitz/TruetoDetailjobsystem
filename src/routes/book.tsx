@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, CheckCircle2, ChevronLeft, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { sendBookingEmail } from "@/lib/portal-email";
+import { guideTo } from "@/lib/guide";
 import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -46,6 +47,14 @@ function BookingFlow() {
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState<Step>("vehicle");
+  const sizeRef = useRef<HTMLDivElement>(null);
+  const newVehicleRef = useRef<HTMLDivElement>(null);
+  const packageRef = useRef<HTMLDivElement>(null);
+  const addonsRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef<HTMLDivElement>(null);
+  const whereRef = useRef<HTMLDivElement>(null);
+  const newAddressRef = useRef<HTMLDivElement>(null);
+  const nextRef = useRef<HTMLDivElement>(null);
   const [postcode, setPostcode] = useState("");
   const [areaResult, setAreaResult] = useState<ServiceAreaResult | null>(null);
   const [checkingArea, setCheckingArea] = useState(false);
@@ -231,7 +240,10 @@ function BookingFlow() {
                   <ChoiceCard
                     key={v.id}
                     selected={vehicleChoice !== "new" && vehicleChoice?.id === v.id}
-                    onClick={() => setVehicleChoice(v)}
+                    onClick={() => {
+                      setVehicleChoice(v);
+                      guideTo(sizeRef.current);
+                    }}
                   >
                     <div className="flex items-center gap-2">
                       {vehicleDescription(v) ? (
@@ -243,14 +255,17 @@ function BookingFlow() {
                 ))}
                 <ChoiceCard
                   selected={vehicleChoice === "new"}
-                  onClick={() => setVehicleChoice("new")}
+                  onClick={() => {
+                    setVehicleChoice("new");
+                    guideTo(newVehicleRef.current);
+                  }}
                 >
                   <p className="text-[14px] font-semibold">Add a new vehicle</p>
                 </ChoiceCard>
               </div>
 
               {vehicleChoice === "new" ? (
-                <div className="mt-4 grid grid-cols-2 gap-2">
+                <div ref={newVehicleRef} className="mt-4 grid grid-cols-2 gap-2">
                   <input
                     value={newVehicle.make}
                     onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
@@ -272,19 +287,29 @@ function BookingFlow() {
                 </div>
               ) : null}
 
-              <div className="mt-5">
+              <div ref={sizeRef} className="mt-5">
                 <span className="eyebrow block text-muted-foreground">Vehicle size</span>
-                <VehicleSizePicker className="mt-2" value={vehicleSize} onChange={setVehicleSize} />
+                <VehicleSizePicker
+                  className="mt-2"
+                  value={vehicleSize}
+                  onChange={(size) => {
+                    setVehicleSize(size);
+                    guideTo(packageRef.current);
+                  }}
+                />
               </div>
             </div>
-            <div>
+            <div ref={packageRef}>
               <p className="eyebrow text-muted-foreground">Package</p>
               <div className="mt-3 flex flex-col gap-2.5">
                 {DETAIL_PACKAGES.map((p) => (
                   <ChoiceCard
                     key={p.id}
                     selected={packageId === p.id}
-                    onClick={() => setPackageId(p.id)}
+                    onClick={() => {
+                      setPackageId(p.id);
+                      guideTo(addonsRef.current);
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -299,7 +324,7 @@ function BookingFlow() {
                 ))}
               </div>
 
-              <div className="mt-5">
+              <div ref={addonsRef} className="mt-5">
                 <span className="eyebrow block text-muted-foreground">Add-ons</span>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   {DETAIL_ADDONS.map((a) => (
@@ -327,6 +352,7 @@ function BookingFlow() {
               </div>
             </div>
           </div>
+          <div ref={nextRef} />
           <PrimaryActionButton
             className="mt-6"
             disabled={
@@ -356,11 +382,12 @@ function BookingFlow() {
                     setDate(next);
                     if (next && !isSlotAvailable(next, time))
                       setTime(firstAvailableSlot(next) ?? "");
+                    if (next) guideTo(timeRef.current);
                   }}
                   className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
                 />
               </div>
-              <div className="mt-4">
+              <div ref={timeRef} className="mt-4">
                 <span className="eyebrow block text-muted-foreground">Time</span>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {TIME_SLOTS.map((t) => {
@@ -371,7 +398,10 @@ function BookingFlow() {
                         type="button"
                         disabled={unavailable}
                         aria-pressed={time === t}
-                        onClick={() => setTime(t)}
+                        onClick={() => {
+                          setTime(t);
+                          guideTo(addressChoice ? nextRef.current : whereRef.current);
+                        }}
                         className={`min-h-11 border text-[13px] font-semibold disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
                       >
                         {t}
@@ -386,14 +416,17 @@ function BookingFlow() {
                 ) : null}
               </div>
             </div>
-            <div>
+            <div ref={whereRef}>
               <p className="eyebrow text-muted-foreground">Where should we come?</p>
               <div className="mt-3 flex flex-col gap-2.5">
                 {(addresses ?? []).map((a) => (
                   <ChoiceCard
                     key={a.id}
                     selected={addressChoice !== "new" && addressChoice?.id === a.id}
-                    onClick={() => setAddressChoice(a)}
+                    onClick={() => {
+                      setAddressChoice(a);
+                      guideTo(nextRef.current);
+                    }}
                   >
                     <p className="text-[14px] font-semibold">{a.label}</p>
                     <p className="text-[13px] text-muted-foreground">
@@ -403,7 +436,10 @@ function BookingFlow() {
                 ))}
                 <ChoiceCard
                   selected={addressChoice === "new"}
-                  onClick={() => setAddressChoice("new")}
+                  onClick={() => {
+                    setAddressChoice("new");
+                    guideTo(newAddressRef.current);
+                  }}
                 >
                   <p className="text-[14px] font-semibold">Another address</p>
                   <p className="text-[13px] text-muted-foreground">
@@ -412,7 +448,7 @@ function BookingFlow() {
                 </ChoiceCard>
               </div>
               {addressChoice === "new" ? (
-                <div className="mt-4">
+                <div ref={newAddressRef} className="mt-4">
                   <p className="text-[14px] text-muted-foreground">
                     Enter the postcode and we'll check we cover your area.
                   </p>
@@ -478,6 +514,7 @@ function BookingFlow() {
               ) : null}
             </div>
           </div>
+          <div ref={nextRef} />
           <PrimaryActionButton
             className="mt-6"
             loading={createAddressMutation.isPending}

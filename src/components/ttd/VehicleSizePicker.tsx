@@ -42,7 +42,7 @@ export function VehicleSizePicker({
                   ? tone === "ink"
                     ? "border-ink bg-ink text-ink-foreground"
                     : "border-signal bg-signal text-signal-foreground"
-                  : "border-input bg-surface-2 hover:bg-surface",
+                  : "border-input bg-surface-2 text-foreground hover:bg-surface",
               )}
             >
               <span className="text-[12px] font-semibold leading-tight">

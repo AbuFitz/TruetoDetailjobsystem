@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { X, Check, Loader2 } from "lucide-react";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
+import { guideTo } from "@/lib/guide";
 import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
 import { useDialogFocus } from "@/hooks/use-dialog-focus";
 import { signUpCustomer, getSession } from "@/lib/auth";
@@ -192,6 +193,12 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
   // Focus moves into the panel, Tab stays inside, the page stops scrolling,
   // and focus returns to the "Book a detail" button on close.
   const panelRef = useRef<HTMLDivElement>(null);
+  // Sections the form guides the customer to as they make each choice.
+  const packageRef = useRef<HTMLDivElement>(null);
+  const addonsRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef<HTMLDivElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
+  const regRef = useRef<HTMLDivElement>(null);
   useDialogFocus(panelRef, open);
 
   // Escape closes the popup, like every other dialog on the site.
@@ -313,10 +320,17 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                   Vehicle
                 </p>
                 <p className="eyebrow mb-2.5 text-muted-foreground">What size is your vehicle?</p>
-                <VehicleSizePicker tone="ink" value={vehicleSize} onChange={setVehicleSize} />
+                <VehicleSizePicker
+                  tone="ink"
+                  value={vehicleSize}
+                  onChange={(size) => {
+                    setVehicleSize(size);
+                    guideTo(packageId ? addonsRef.current : packageRef.current);
+                  }}
+                />
               </div>
 
-              <div>
+              <div ref={packageRef}>
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-signal">
                   Package
                 </p>
@@ -326,7 +340,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => setPackageId(p.id)}
+                      onClick={() => {
+                        setPackageId(p.id);
+                        guideTo(addonsRef.current);
+                      }}
                       className={`flex w-full items-center justify-between rounded-xl border px-4.5 py-4 text-left transition-colors ${
                         packageId === p.id
                           ? "border-ink bg-ink text-ink-foreground"
@@ -357,7 +374,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                 </div>
               </div>
 
-              <div>
+              <div ref={addonsRef}>
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-signal">
                   Add-ons
                 </p>
@@ -439,11 +456,12 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                         const next = e.target.value;
                         setDate(next);
                         if (time && next && !isSlotAvailable(next, time)) setTime("");
+                        if (next) guideTo(timeRef.current);
                       }}
                       className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
                     />
                   </div>
-                  <div>
+                  <div ref={timeRef}>
                     <label className="eyebrow block text-muted-foreground">
                       Preferred Time Slot
                     </label>
@@ -454,7 +472,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                           type="button"
                           disabled={Boolean(date) && !isSlotAvailable(date, t)}
                           aria-pressed={time === t}
-                          onClick={() => setTime(t)}
+                          onClick={() => {
+                            setTime(t);
+                            guideTo(locationRef.current);
+                          }}
                           className={`rounded-xl border px-2 py-3 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${
                             time === t
                               ? "border-ink bg-ink text-ink-foreground"
@@ -469,7 +490,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                 </div>
               </div>
 
-              <div className="border-t border-hairline pt-6">
+              <div ref={locationRef} className="border-t border-hairline pt-6">
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-wide text-signal">
                   Location &amp; Vehicle
                 </p>
@@ -479,7 +500,10 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                     <input
                       value={postcode}
                       onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-                      onBlur={() => setTouched((t) => ({ ...t, postcode: true }))}
+                      onBlur={() => {
+                        setTouched((t) => ({ ...t, postcode: true }));
+                        if (postcodeValid && !carReg) guideTo(regRef.current, { highlight: false });
+                      }}
                       placeholder="Enter your postcode"
                       maxLength={8}
                       className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase tracking-wide outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
@@ -490,7 +514,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                       </p>
                     ) : null}
                   </div>
-                  <div>
+                  <div ref={regRef}>
                     <label className="eyebrow block text-muted-foreground">
                       Vehicle Registration
                     </label>
