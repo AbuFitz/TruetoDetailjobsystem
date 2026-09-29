@@ -173,8 +173,9 @@
   --muted-foreground: #a8a69f;
   --accent: #242420;
   --accent-foreground: #fafaf8;
-  --destructive: #e5484d;
-  --destructive-foreground: #fafaf8;
+  /* Lighter red on dark surfaces, with dark text on solid red, so both pass 4.5:1. */
+  --destructive: #f26b6f;
+  --destructive-foreground: #0c0c0c;
   --warning: #d97706;
   --warning-foreground: #2b1a00;
   --warning-text: #f59e0b;
