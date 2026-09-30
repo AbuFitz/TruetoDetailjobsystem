@@ -1,10 +1,11 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { UK_TIME } from "@/lib/uk-time";
 import { cn } from "@/lib/utils";
-import { useCountUp } from "@/hooks/use-motion";
+import { useCountUp, usePrefersReducedMotion } from "@/hooks/use-motion";
+import { Car, CarOverlay, CAR_H, CAR_W } from "@/components/ttd/RewardsCar";
 import {
   celebrationFor,
   readLastSeen,
@@ -19,17 +20,6 @@ export interface RewardVisit {
   package_name: string;
 }
 
-/*
- * The car, drawn once and painted twice. Facing right, on a 280 x 100 grid, so
- * seven equal columns cut it into seven passes.
- */
-const BODY =
-  "M6 80 L6 62 C6 56 10 54 18 52 L56 48 C72 26 96 14 132 14 L166 14 C190 14 206 28 224 46 L258 54 C270 56 274 62 274 70 L274 80 Z";
-const GLASS = [
-  "M64 46 C78 30 98 20 130 20 L147 20 L147 46 Z",
-  "M155 20 L166 20 C184 20 197 31 210 45 L155 45 Z",
-];
-const WHEELS = [72, 214];
 const EMPTY = -5;
 /** Where the finish edge sits for a given fraction. Past the nose at 1, so the whole car is covered. */
 const edge = (f: number) => (f >= 1 ? 104 : f <= 0 ? EMPTY : f * 100);
@@ -63,6 +53,35 @@ export function RewardsCard({
   const [clip, setClip] = useState({ p: EMPTY, animate: false });
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const reduced = usePrefersReducedMotion();
+  const stage = useRef<HTMLDivElement>(null);
+  const graphic = useRef<HTMLDivElement>(null);
+  const frame = useRef(0);
+
+  // The inspection torch: a pool of light that follows a finger or cursor over the
+  // paint, like a detailer checking a panel. Purely decorative, so it is off for
+  // anyone who asks for less motion, and it moves transform-free attributes on
+  // three small elements at most once a frame.
+  const aim = (e: React.PointerEvent) => {
+    const g = graphic.current;
+    const host = stage.current;
+    if (reduced || !g || !host) return;
+    const r = g.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * CAR_W;
+    const y = 8 + ((e.clientY - r.top) / r.height) * CAR_H;
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(() => {
+      g.querySelectorAll("[data-torch-xy]").forEach((el) => {
+        el.setAttribute("cx", x.toFixed(1));
+        el.setAttribute("cy", y.toFixed(1));
+      });
+      host.dataset["torch"] = "on";
+    });
+  };
+  const stow = () => {
+    cancelAnimationFrame(frame.current);
+    if (stage.current) delete stage.current.dataset["torch"];
+  };
 
   // Work out what is new since this device last looked, then let the finish
   // edge travel from there to where the customer is now.
@@ -131,18 +150,28 @@ export function RewardsCard({
       </div>
 
       {/* The car runs edge to edge so each of the seven columns is a comfortable tap. */}
-      <div className="relative -mx-5 mb-4 mt-3 pb-8 sm:mx-auto sm:max-w-[440px]">
+      <div
+        ref={stage}
+        onPointerMove={aim}
+        onPointerDown={aim}
+        onPointerLeave={stow}
+        onPointerUp={stow}
+        onPointerCancel={stow}
+        className="relative -mx-5 mb-4 mt-3 touch-pan-y pb-8 sm:mx-auto sm:max-w-[440px]"
+      >
         <div
+          ref={graphic}
           role="img"
           aria-label={`${view.earned} of ${required} qualifying visits`}
-          className="relative aspect-[280/100] w-full"
+          className="relative w-full"
+          style={{ aspectRatio: `${CAR_W} / ${CAR_H}` }}
         >
           <Car finished={false} />
           {/* The stretch of road under the chosen visit lights up, and slides as the choice changes. */}
           {focus !== null ? (
             <span
               aria-hidden
-              className="absolute bottom-[3.5%] left-0 h-[3px] bg-signal"
+              className="absolute bottom-[1.5%] left-0 h-[3px] bg-signal"
               style={{
                 width: `${100 / required}%`,
                 transform: `translateX(${(focus - 1) * 100}%)`,
@@ -159,6 +188,11 @@ export function RewardsCard({
           >
             <Car finished />
           </div>
+          <CarOverlay
+            edgeX={clip.p * (CAR_W / 100)}
+            showEdge={clip.p > 0 && clip.p < 100}
+            animate={clip.animate}
+          />
         </div>
 
         <ol
@@ -257,102 +291,5 @@ export function RewardsCard({
         </Link>
       ) : null}
     </section>
-  );
-}
-
-/**
- * One painting of the car. Unfinished is a dashed primer outline on the card's
- * own surface; finished is deep gloss with a glass line, the orange pin-stripe
- * and a single light-pass that runs once and stays off under reduced motion.
- */
-function Car({ finished }: { finished: boolean }) {
-  const uid = useId().replace(/:/g, "");
-  const body = `body-${uid}`;
-  const paint = `paint-${uid}`;
-  const glass = `glass-${uid}`;
-  const rim = "rgb(255 255 255 / 0.26)";
-  // The unfinished car must still read as a car, on white and on dark.
-  const primer = "color-mix(in srgb, var(--muted-foreground) 55%, transparent)";
-
-  return (
-    <svg viewBox="0 0 280 100" className="absolute inset-0 h-full w-full" aria-hidden>
-      {finished ? (
-        <defs>
-          <linearGradient id={paint} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#3b3b40" />
-            <stop offset="0.55" stopColor="#17171a" />
-            <stop offset="1" stopColor="#0c0c0c" />
-          </linearGradient>
-          <linearGradient id={glass} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#7d8e9e" />
-            <stop offset="1" stopColor="#1c242c" />
-          </linearGradient>
-          <clipPath id={body}>
-            <path d={BODY} />
-          </clipPath>
-        </defs>
-      ) : (
-        <line x1="0" x2="280" y1="95.5" y2="95.5" stroke="var(--hairline)" strokeWidth="1" />
-      )}
-
-      <path
-        d={BODY}
-        fill={finished ? `url(#${paint})` : "var(--surface-2)"}
-        stroke={finished ? rim : primer}
-        strokeWidth="1.5"
-        strokeDasharray={finished ? undefined : "3 3"}
-        strokeLinejoin="round"
-      />
-      {finished ? (
-        <>
-          <path d="M10 66 L270 69" stroke="var(--signal)" strokeWidth="1.6" fill="none" />
-          <g clipPath={`url(#${body})`}>
-            <path d="M14 55 L252 57" stroke="#fff" strokeOpacity="0.28" strokeWidth="1.4" />
-            <path
-              className="car-pass"
-              d="M0 0 L30 0 L10 100 L-20 100 Z"
-              fill="#fff"
-              fillOpacity="0.34"
-            />
-          </g>
-        </>
-      ) : null}
-      {GLASS.map((d) => (
-        <path
-          key={d}
-          d={d}
-          fill={finished ? `url(#${glass})` : "var(--surface)"}
-          stroke={finished ? rim : primer}
-          strokeWidth="1"
-          strokeLinejoin="round"
-        />
-      ))}
-      {WHEELS.map((cx) => (
-        <g key={cx}>
-          <circle cx={cx} cy="80" r="20" fill="var(--surface)" />
-          <circle
-            cx={cx}
-            cy="80"
-            r="15"
-            fill={finished ? "#0c0c0c" : "var(--surface-2)"}
-            stroke={finished ? rim : primer}
-            strokeWidth="1.5"
-          />
-          <circle
-            cx={cx}
-            cy="80"
-            r="6"
-            fill={finished ? "#6a6a70" : "var(--surface)"}
-            stroke={finished ? undefined : primer}
-          />
-        </g>
-      ))}
-      {finished ? (
-        <>
-          <rect x="264" y="60" width="9" height="5" rx="2" fill="var(--signal)" />
-          <rect x="6" y="58" width="4" height="8" rx="1.5" fill="var(--signal-deep)" />
-        </>
-      ) : null}
-    </svg>
   );
 }

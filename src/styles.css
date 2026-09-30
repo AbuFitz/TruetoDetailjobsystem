@@ -388,13 +388,13 @@
   }
 }
 
-/* One pass of light across the finished paint. Units are the car's own 280 x 100 grid. */
+/* One pass of light across the finished paint. Units are the car's own 400 unit grid. */
 @keyframes ttd-pass {
   from {
     transform: translateX(-60px);
   }
   to {
-    transform: translateX(340px);
+    transform: translateX(470px);
   }
 }
 
@@ -567,6 +567,15 @@
     opacity var(--dur-base) var(--ease-out);
 }
 
+/* The inspection torch: visible only while a finger or cursor is on the paint. */
+.torch {
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+[data-torch="on"] .torch {
+  opacity: 1;
+}
+
 /* People who ask their device for less motion get none: no entrances, no
    loops, no shimmer. State still changes, it just does not travel. */
 @media (prefers-reduced-motion: reduce) {
@@ -593,7 +602,8 @@
     transform: scale(1.4);
   }
   .burst-dot,
-  .car-pass {
+  .car-pass,
+  .torch {
     display: none;
   }
   .draw-in {

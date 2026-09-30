@@ -763,6 +763,57 @@ test("customer dashboard: when bookings fail to load it says so, offers a retry,
   await expect(page.getByText(/finished details will collect here/i)).toHaveCount(0);
 });
 
+test("rewards: the inspection torch follows the pointer over the paint, and is off with reduced motion", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2, width: 390 });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  const stage = card.locator("div.touch-pan-y");
+  const car = card.getByRole("img", { name: /qualifying visits/ });
+  await car.scrollIntoViewIfNeeded();
+  const box = (await car.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.5, { steps: 4 });
+  await expect(stage).toHaveAttribute("data-torch", "on");
+  expect(Number(await card.locator("circle.torch").getAttribute("cx"))).toBeGreaterThan(200);
+  await page.mouse.move(2, 2);
+  await expect(stage).not.toHaveAttribute("data-torch", "on");
+
+  await rewardsPage(page, { extra: 2, width: 390, reduce: true });
+  const car2 = card.getByRole("img", { name: /qualifying visits/ });
+  await car2.scrollIntoViewIfNeeded();
+  const box2 = (await car2.boundingBox())!;
+  await page.mouse.move(box2.x + box2.width * 0.7, box2.y + box2.height * 0.5, { steps: 4 });
+  await expect(stage).not.toHaveAttribute("data-torch", "on");
+});
+
+test("rewards: the car is always fully drawn, hazy before and glossy after, so an empty card still shows a car", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await fakeSupabase(page.context());
+  await page.context().addCookies([sessionCookie]);
+  await page.context().route(/\/rest\/v1\/bookings/, (r) =>
+    r.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: "[]",
+    }),
+  );
+  await page.goto("/account", { waitUntil: "networkidle" });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  // The unfinished painting is a solid body, not an outline that could vanish on a pale card.
+  const bodyFill = await card
+    .getByRole("img", { name: /qualifying visits/ })
+    .locator("svg")
+    .first()
+    .locator('path[fill^="url("]')
+    .first()
+    .evaluate((p) => getComputedStyle(p).fill);
+  expect(bodyFill).toMatch(/^url\(|^rgb/);
+  await expect(card.getByRole("img", { name: "0 of 7 qualifying visits" })).toBeVisible();
+});
+
 test("rewards: nothing is remembered or celebrated while bookings are still loading", async ({
   page,
 }) => {
