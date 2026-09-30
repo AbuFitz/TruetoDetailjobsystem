@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { X, Check, Loader2 } from "lucide-react";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { guideTo } from "@/lib/guide";
+import { SuccessMark } from "@/components/ttd/SuccessMark";
 import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
 import { useDialogFocus } from "@/hooks/use-dialog-focus";
 import { signUpCustomer, getSession } from "@/lib/auth";
@@ -640,9 +641,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
 
           {view === "success" ? (
             <div className="pt-2 text-center">
-              <div className="mx-auto mb-6 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-signal">
-                <Check className="h-7 w-7 text-signal-foreground" strokeWidth={2.5} />
-              </div>
+              <SuccessMark className="mx-auto mb-6" />
               <h3 className="font-display mb-3 text-[36px] leading-none">REQUEST SENT.</h3>
               {bookingId ? (
                 <p className="eyebrow mb-4 text-muted-foreground/70">Ref: {bookingId}</p>

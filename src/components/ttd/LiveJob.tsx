@@ -138,6 +138,12 @@ export function useDrivingRoute(
 /** Five steps, one line. The current step is highlighted; on a phone the labels stay under the dots. */
 export function StepTracker({ status, className }: { status: BookingStatus; className?: string }) {
   const idx = customerStepIndex(status);
+  // Steps fill in one after another when the tracker first appears, then follow status changes.
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   if (idx === -1) return null;
   return (
     <ol className={cn("grid grid-cols-5 gap-1", className)} aria-label="Progress">
@@ -149,18 +155,23 @@ export function StepTracker({ status, className }: { status: BookingStatus; clas
             <span className="relative flex w-full items-center justify-center">
               {i > 0 ? (
                 <span
-                  className={cn(
-                    "absolute right-1/2 top-1/2 h-[2px] w-full -translate-y-1/2",
-                    i <= idx ? "bg-signal" : "bg-hairline",
-                  )}
+                  className="absolute right-1/2 top-1/2 h-[2px] w-full -translate-y-1/2 overflow-hidden bg-hairline"
                   aria-hidden
-                />
+                >
+                  <span
+                    className="block h-full origin-left bg-signal transition-transform duration-500 ease-out"
+                    style={{
+                      transform: `scaleX(${ready && i <= idx ? 1 : 0})`,
+                      transitionDelay: `${i * 90}ms`,
+                    }}
+                  />
+                </span>
               ) : null}
               <span
                 className={cn(
-                  "relative z-10 grid h-7 w-7 place-items-center rounded-full border-2 transition-colors",
+                  "state-transition relative z-10 grid h-7 w-7 place-items-center rounded-full border-2",
                   done && "border-signal bg-signal text-signal-foreground",
-                  active && "border-signal bg-surface text-signal",
+                  active && "glow-next border-signal bg-surface text-signal",
                   !done && !active && "border-hairline bg-surface text-transparent",
                 )}
                 aria-current={active ? "step" : undefined}
@@ -229,7 +240,10 @@ export function EtaPanel({
       </p>
       {hasEta && arrival ? (
         <>
-          <p className="mt-3 font-display text-[52px] leading-none">
+          <p
+            key={formatDuration(remaining)}
+            className="fade-in mt-3 font-display text-[52px] leading-none"
+          >
             {formatDuration(remaining)}
             <span className="ml-2 text-[22px] text-ink-foreground/45">away</span>
           </p>

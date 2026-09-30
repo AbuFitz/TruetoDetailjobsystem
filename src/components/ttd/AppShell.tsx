@@ -222,7 +222,7 @@ export function AppShell({
       <main className="flex-1 rounded-t-[28px] bg-background pb-28 text-foreground lg:pb-16">
         <div
           className={cn(
-            "mx-auto w-full px-5 pt-7 sm:px-8 sm:pt-9",
+            "page-in mx-auto w-full px-5 pt-7 sm:px-8 sm:pt-9",
             width === "narrow" ? "max-w-3xl" : width === "medium" ? "max-w-5xl" : "max-w-6xl",
           )}
         >

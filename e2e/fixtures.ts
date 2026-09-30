@@ -219,6 +219,8 @@ export const tracked = (status: string, hasAccount = false) => ({
 export interface FakeOptions {
   staff?: boolean;
   trackedStatus?: string;
+  /** Extra completed visits for the rewards card. */
+  extraCompleted?: number;
   hasAccount?: boolean;
   mustChangePassword?: boolean;
 }
@@ -315,7 +317,18 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
         const b = bookings.find((x) => `eq.${x.id}` === id) ?? bookings[0]!;
         return json(wantsObject ? b : [b]);
       }
-      return json(wantsObject ? bookings[0] : bookings);
+      const extra = Array.from({ length: opts.extraCompleted ?? 0 }, (_, i) =>
+        booking({
+          id: `bx${i}`,
+          booking_reference: `TTD-EXTRA${i}`,
+          status: "completed",
+          tracking_active: false,
+          eta_seconds: null,
+          scheduled_start: iso(now - (20 + i * 30) * 86400e3),
+          completed_at: iso(now - (20 + i * 30) * 86400e3),
+        }),
+      );
+      return json(wantsObject ? bookings[0] : [...bookings, ...extra]);
     }
     if (p.includes("/rest/v1/vehicles"))
       return json([

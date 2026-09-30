@@ -5,7 +5,12 @@ import { Check, Link2 } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { BookingSummary } from "@/components/ttd/BookingSummary";
-import { AlertsToggle, JourneyLog, PrepList } from "@/components/ttd/TrackingExtras";
+import {
+  AlertsToggle,
+  JourneyLog,
+  PrepList,
+  useTrackingAlerts,
+} from "@/components/ttd/TrackingExtras";
 import { journeyEvents } from "@/lib/journey";
 import { LiveJobPanel, StepTracker, viewFromBooking } from "@/components/ttd/LiveJob";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
@@ -82,6 +87,9 @@ function BookingDetail() {
     setCopied(ok);
     if (ok) setTimeout(() => setCopied(false), 2500);
   }
+
+  // Say so in the page when the detailer sets off, arrives or finishes while it is open.
+  useTrackingAlerts(booking?.status, booking?.detailer?.name?.split(" ")[0] ?? null, null);
 
   if (authLoading || isLoading || !booking) {
     return (

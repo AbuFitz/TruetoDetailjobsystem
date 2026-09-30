@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarClock, Check, Link2, Mail, MapPin, Phone, TriangleAlert } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { VehicleCard } from "@/components/ttd/VehicleTag";
@@ -119,6 +120,7 @@ function AdminBookingDetail() {
       return sendBookingEmail(id, "booked_in");
     },
     onSuccess: (res) => {
+      toast.success("Booking confirmed");
       setEmailNote(
         res.sent
           ? "Confirmed. The customer has been emailed."
@@ -176,6 +178,7 @@ function AdminBookingDetail() {
     },
     onSuccess: (note) => {
       setEmailNote(note);
+      toast.success(pickDetailer ? "Confirmed and assigned" : "Booking confirmed");
       void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
       void queryClient.invalidateQueries({ queryKey: ["booking-notifications", id] });
     },
@@ -187,6 +190,7 @@ function AdminBookingDetail() {
       return sendBookingEmail(id, "assigned");
     },
     onSuccess: (res) => {
+      toast.success("Detailer assigned");
       setEmailNote(res.sent ? "Detailer assigned. The customer has been emailed." : null);
       void queryClient.invalidateQueries({ queryKey: ["admin-booking", id] });
       void queryClient.invalidateQueries({ queryKey: ["booking-notifications", id] });

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Car, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/ttd/AppShell";
 import { Field } from "@/components/ttd/FormField";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -53,12 +54,16 @@ function VehiclesPage() {
       queryClient.invalidateQueries({ queryKey: ["my-vehicles"] });
       reset();
       setShowForm(false);
+      toast.success("Car saved to your garage");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteVehicle,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-vehicles"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-vehicles"] });
+      toast.success("Car removed");
+    },
   });
 
   if (authLoading) {

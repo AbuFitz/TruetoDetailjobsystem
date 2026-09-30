@@ -570,3 +570,151 @@ test("phone: the detailer sees where and what on each job, and the job page is o
   const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   expect(over).toBeLessThanOrEqual(1);
 });
+
+const CUSTOMER_UID = "22222222-2222-4222-8222-222222222222";
+
+async function rewardsPage(
+  page: Page,
+  o: { extra: number; seen?: number; reduce?: boolean; width?: number },
+) {
+  await page.setViewportSize({ width: o.width ?? 1280, height: 900 });
+  if (o.reduce) await page.emulateMedia({ reducedMotion: "reduce" });
+  await fakeSupabase(page.context(), { extraCompleted: o.extra });
+  await page.context().addCookies([sessionCookie]);
+  if (o.seen !== undefined) {
+    await page.context().addInitScript(
+      // Seed the "last seen" count only the first time, as a real earlier visit would have.
+      ([k, v]) => {
+        if (localStorage.getItem(k!) === null) localStorage.setItem(k!, v!);
+      },
+      [`ttd_rewards_seen:${CUSTOMER_UID}`, String(o.seen)],
+    );
+  }
+  await page.goto("/account", { waitUntil: "networkidle" });
+  await page.waitForTimeout(500);
+}
+
+test("rewards: the stamp card is made of real visits and tells you which one each stamp is", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2 });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByRole("img", { name: "3 of 7 qualifying visits" })).toBeVisible();
+  await expect(card.getByText("4 MORE VISITS")).toBeVisible();
+  await expect(card.getByRole("listitem")).toHaveCount(7);
+  await card.getByRole("button", { name: /^Stamp 2, earned/ }).click();
+  await expect(
+    card.getByText(/^Stamp 2: Full Valet Car Detail, \d{1,2} \w{3} \d{4}$/),
+  ).toBeVisible();
+  await card.getByRole("button", { name: "Stamp 4, next" }).click();
+  await expect(card.getByText(/Stamp 4 is next/)).toBeVisible();
+  await card.getByRole("button", { name: "Stamp 6, not yet earned" }).click();
+  await expect(card.getByText("Stamp 6 is 3 visits away.")).toBeVisible();
+  // First look on a device never celebrates.
+  await expect(card.getByRole("status")).toHaveCount(0);
+});
+
+test("rewards: a newly counted visit gets an earned moment once, then not again", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2, seen: 2 });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByText("New stamp earned. That is visit 3 of 7.")).toBeVisible();
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(card.getByText(/New stamp earned/)).toHaveCount(0);
+});
+
+test("rewards: reaching the goal is a milestone", async ({ page }) => {
+  await rewardsPage(page, { extra: 6, seen: 6 });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByText("Milestone reached").first()).toBeVisible();
+  await expect(card.getByText("YOU ARE THERE")).toBeVisible();
+  await expect(card.getByText("That is visit 7. Milestone reached.")).toBeVisible();
+});
+
+test("rewards: with reduced motion the state is complete and nothing flies around", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 6, seen: 6, reduce: true });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByText("YOU ARE THERE")).toBeVisible();
+  const dots = await card
+    .locator(".burst-dot")
+    .evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== "none").length);
+  expect(dots).toBe(0);
+  const dash = await card
+    .locator("svg circle")
+    .nth(1)
+    .evaluate((c) => Number((c as SVGCircleElement).style.strokeDashoffset));
+  expect(dash).toBeLessThan(1);
+});
+
+test("rewards: a phone shows all seven stamps without sideways scroll", async ({ page }) => {
+  await rewardsPage(page, { extra: 2, width: 360 });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByRole("listitem")).toHaveCount(7);
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(over).toBeLessThanOrEqual(1);
+});
+
+test("rewards: nothing is remembered or celebrated while bookings are still loading", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await fakeSupabase(page.context(), { extraCompleted: 2 });
+  await page.context().addCookies([sessionCookie]);
+  await page
+    .context()
+    .addInitScript(
+      ([k, v]) => localStorage.setItem(k!, v!),
+      [`ttd_rewards_seen:${CUSTOMER_UID}`, "2"],
+    );
+  // Answer the bookings request slowly so the card would have rendered early if it could.
+  await page.route("**/rest/v1/bookings*", async (route) => {
+    await new Promise((r) => setTimeout(r, 1200));
+    await route.fallback();
+  });
+  await page.goto("/account");
+  await page.waitForTimeout(400);
+  expect(
+    await page.evaluate((k) => localStorage.getItem(k), `ttd_rewards_seen:${CUSTOMER_UID}`),
+  ).toBe("2");
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByText("New stamp earned. That is visit 3 of 7.")).toBeVisible({
+    timeout: 8000,
+  });
+  expect(
+    await page.evaluate((k) => localStorage.getItem(k), `ttd_rewards_seen:${CUSTOMER_UID}`),
+  ).toBe("3");
+});
+
+test("reduced motion: page entrances, loops and skeleton shimmer are switched off across the portal", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await fakeSupabase(page.context(), { trackedStatus: "en_route" });
+  await page.goto("/account/track/tok_abcdef123456", { waitUntil: "networkidle" });
+  const running = await page.evaluate(
+    () =>
+      Array.from(document.querySelectorAll("*")).filter((el) => {
+        const cs = getComputedStyle(el);
+        const dur = parseFloat(cs.animationDuration);
+        const infinite = cs.animationIterationCount === "infinite";
+        return cs.animationName !== "none" && (infinite || dur > 0.05);
+      }).length,
+  );
+  expect(running, "no animation runs longer than a blink under reduced motion").toBe(0);
+});
+
+test("motion: with no preference, entrances and the live pulse do run", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await fakeSupabase(page.context(), { trackedStatus: "en_route" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/account/track/tok_abcdef123456", { waitUntil: "networkidle" });
+  const names = await page.evaluate(() => [
+    ...new Set(
+      Array.from(document.querySelectorAll("*")).map((el) => getComputedStyle(el).animationName),
+    ),
+  ]);
+  expect(names.some((n) => n !== "none")).toBe(true);
+});

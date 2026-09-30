@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, isToday } from "date-fns";
@@ -20,6 +20,9 @@ import { ScheduleTimeline } from "@/components/ttd/ScheduleTimeline";
 import { EmptyState } from "@/components/ttd/EmptyState";
 import { ErrorState } from "@/components/ttd/ErrorState";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
+import { ListSkeleton } from "@/components/ttd/Skeleton";
+import { useCountUp } from "@/hooks/use-motion";
+import { toast } from "sonner";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { useRequireStaffSession } from "@/hooks/use-session";
@@ -55,6 +58,19 @@ export const Route = createFileRoute("/admin/")({
 function AdminDashboard() {
   const { session, loading: authLoading, isStaff } = useRequireStaffSession();
   const [query, setQuery] = useState("");
+  // "/" jumps to the search box, the way it does in most work tools.
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
 
   const {
@@ -175,7 +191,9 @@ function AdminDashboard() {
             strokeWidth={2.2}
           />
           <input
+            ref={searchRef}
             type="search"
+            aria-keyshortcuts="/"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search bookings"
@@ -208,7 +226,9 @@ function AdminDashboard() {
       </div>
 
       {isLoading ? (
-        <BrandedLoading label="Loading bookings" className="mt-10" />
+        <div className="mt-8">
+          <ListSkeleton rows={3} />
+        </div>
       ) : isError ? (
         <ErrorState
           className="mt-8"
@@ -312,6 +332,9 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
           ? "Confirmed. The customer has been emailed."
           : `Confirmed. Email not sent: ${res.reason ?? "unknown"}`,
       );
+      // The card leaves the list once it refetches, so say it in a toast that outlives it.
+      if (res.sent) toast.success(`${booking.booking_reference} confirmed. Customer emailed.`);
+      else toast.warning(`${booking.booking_reference} confirmed. Email not sent.`);
       void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
     },
     onError: (e) => setNote(e instanceof Error ? e.message : "Couldn't confirm this request."),
@@ -322,7 +345,10 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
       await cancelBooking(booking.id, "Other");
       return sendBookingEmail(booking.id, "cancelled");
     },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }),
+    onSuccess: () => {
+      toast(`${booking.booking_reference} declined. Customer emailed.`);
+      void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+    },
     onError: (e) => setNote(e instanceof Error ? e.message : "Couldn't decline this request."),
   });
 
@@ -400,6 +426,7 @@ function Stat({
   value: number;
   highlight?: boolean;
 }) {
+  const shown = useCountUp(value, { durationMs: 550 });
   return (
     <div
       className={`min-w-0 rounded-xl border p-4 ${highlight && value > 0 ? "border-warning/40 bg-warning/8" : "border-hairline bg-surface"}`}
@@ -413,7 +440,7 @@ function Stat({
           {label}
         </span>
       </span>
-      <p className="mt-2 font-display text-[44px] leading-none">{value}</p>
+      <p className="mt-2 font-display text-[44px] leading-none tabular-nums">{shown}</p>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Check } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/ttd/AppShell";
 import { Field } from "@/components/ttd/FormField";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -69,6 +70,7 @@ function DetailsPage() {
     onSuccess: (updated) => {
       queryClient.setQueryData(["my-profile"], updated);
       setProfileSaved(true);
+      toast.success("Details saved");
     },
   });
 

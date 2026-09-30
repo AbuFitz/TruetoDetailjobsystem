@@ -15,7 +15,9 @@ import { getMyProfile } from "@/lib/customers";
 import { listMyBookings, LIVE_JOB_STATUSES, type BookingWithDetailer } from "@/lib/bookings";
 import { listMyVehicles, vehicleDescription } from "@/lib/vehicles";
 import { daysUntilLabel, formatAppointment } from "@/lib/format";
-import { MAINTENANCE_DETAIL_INTERVAL_WEEKS } from "@/lib/constants";
+import { MAINTENANCE_DETAIL_INTERVAL_WEEKS, REWARD_VISITS_REQUIRED } from "@/lib/constants";
+import { DashboardSkeleton, Skeleton } from "@/components/ttd/Skeleton";
+import { RewardsCard } from "@/components/ttd/RewardsCard";
 import { customerHeadline, formatDuration } from "@/lib/progress";
 
 export const Route = createFileRoute("/account/")({
@@ -68,7 +70,7 @@ function AccountDashboard() {
     nextBooking,
     otherUpcoming,
     previousBookings,
-    qualifyingVisits,
+    completedVisits,
     recommendedDate,
   } = useMemo(() => {
     const all = bookings ?? [];
@@ -85,7 +87,6 @@ function AccountDashboard() {
       .sort(
         (a, b) => new Date(b.scheduled_start).getTime() - new Date(a.scheduled_start).getTime(),
       );
-    const visits = previous.length;
     const lastCompleted = previous[0];
     const recommended = lastCompleted
       ? addWeeks(new Date(lastCompleted.scheduled_start), MAINTENANCE_DETAIL_INTERVAL_WEEKS)
@@ -98,7 +99,12 @@ function AccountDashboard() {
       // this list a second upcoming detail was invisible on the dashboard.
       otherUpcoming: upcoming.filter((b) => b.id !== next?.id),
       previousBookings: previous.slice(0, 5),
-      qualifyingVisits: visits,
+      // Oldest first, so stamp 1 is the first visit.
+      completedVisits: [...previous].reverse().map((b) => ({
+        id: b.id,
+        scheduled_start: b.scheduled_start,
+        package_name: b.package_name,
+      })),
       // No "you're due" nudge when a detail is already booked.
       recommendedDate: live || upcoming.length > 0 ? null : recommended,
     };
@@ -111,9 +117,6 @@ function AccountDashboard() {
       </div>
     );
   }
-
-  const REWARD_VISITS = 7;
-  const toReward = Math.max(0, REWARD_VISITS - qualifyingVisits);
 
   return (
     <AppShell
@@ -132,7 +135,7 @@ function AccountDashboard() {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-8">
           {bookingsLoading ? (
-            <BrandedLoading label="Loading your bookings" className="mt-8" />
+            <DashboardSkeleton />
           ) : nextBooking ? (
             <NextVisitCard booking={nextBooking} live={Boolean(liveBooking)} />
           ) : (
@@ -174,46 +177,16 @@ function AccountDashboard() {
             </Link>
           </div>
 
-          <Section title="Rewards">
-            <div className="rounded-2xl border border-hairline bg-surface p-5 shadow-card">
-              <div className="flex items-end justify-between gap-4">
-                <p className="font-display text-[56px] leading-[0.8]">
-                  {Math.min(qualifyingVisits, REWARD_VISITS)}
-                  <span className="text-[28px] text-muted-foreground/50"> / {REWARD_VISITS}</span>
-                </p>
-                <p className="max-w-[9rem] text-right text-[13px] leading-snug text-muted-foreground">
-                  {toReward === 0
-                    ? "Reward unlocked. Ask us on your next visit."
-                    : `${toReward} more ${toReward === 1 ? "visit" : "visits"} to your reward`}
-                </p>
-              </div>
-              <ol className="mt-5 grid grid-cols-7 gap-1.5" aria-label="Reward stamps">
-                {Array.from({ length: REWARD_VISITS }, (_, i) => {
-                  const done = i < qualifyingVisits;
-                  const last = i === REWARD_VISITS - 1;
-                  return (
-                    <li
-                      key={i}
-                      className={cn(
-                        "grid aspect-square place-items-center rounded-full border-2",
-                        done
-                          ? "border-signal bg-signal text-signal-foreground"
-                          : last
-                            ? "border-dashed border-signal/60 text-signal-deep"
-                            : "border-hairline text-transparent",
-                      )}
-                    >
-                      {done ? (
-                        <Check className="h-3.5 w-3.5" strokeWidth={3.2} />
-                      ) : last ? (
-                        <Gift className="h-3.5 w-3.5" strokeWidth={2.4} />
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          </Section>
+          {/* Only once the real bookings are known: a count of zero while loading would be remembered as "nothing earned". */}
+          {bookings ? (
+            <RewardsCard
+              visits={completedVisits}
+              required={REWARD_VISITS_REQUIRED}
+              storageKey={session.user.id}
+            />
+          ) : (
+            <Skeleton className="h-[330px] w-full" />
+          )}
 
           <Section title="Your garage">
             <div className="overflow-hidden rounded-2xl border border-hairline bg-surface">

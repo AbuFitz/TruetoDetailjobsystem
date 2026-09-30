@@ -141,3 +141,10 @@ export const DETAIL_STAGE_LABELS: Record<string, string> = {
 
 /** Recommended re-detail interval, used to power the customer dashboard's "Recommended" card. */
 export const MAINTENANCE_DETAIL_INTERVAL_WEEKS = 6;
+
+/**
+ * The number of qualifying (completed) visits the dashboard has always counted
+ * toward TTD Rewards. What the reward itself is has not been defined in the
+ * project, so nothing in the interface describes it.
+ */
+export const REWARD_VISITS_REQUIRED = 7;

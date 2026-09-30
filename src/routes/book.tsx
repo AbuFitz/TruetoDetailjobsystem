@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, CheckCircle2, ChevronLeft, TriangleAlert } from "lucide-react";
+import { Check, ChevronLeft, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { sendBookingEmail } from "@/lib/portal-email";
 import { guideTo } from "@/lib/guide";
+import { SuccessMark } from "@/components/ttd/SuccessMark";
 import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -599,9 +600,7 @@ function BookingFlow() {
 
       {step === "done" && bookingId ? (
         <section className="rise-in flex flex-col items-center py-10 text-center">
-          <span className="grid h-16 w-16 place-items-center rounded-full bg-success/12 text-success">
-            <CheckCircle2 className="h-8 w-8" strokeWidth={2.2} />
-          </span>
+          <SuccessMark tone="success" />
           <h2 className="mt-5 font-display text-[28px] leading-tight">Booking confirmed</h2>
           <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">
             We'll see you on {formatBookingDate(date)} at {time}. Your detailer will come to you,

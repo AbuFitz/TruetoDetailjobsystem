@@ -14,6 +14,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { UK_TIME } from "@/lib/uk-time";
 import { cn } from "@/lib/utils";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
@@ -246,7 +247,11 @@ export function useTrackingAlerts(
     if (!status) return;
     if (previous.current && previous.current !== status) {
       const a = statusAlert(status, detailerFirstName);
-      if (a) showAlert(a.title, a.body);
+      if (a) {
+        // In the page (always) and as a browser notification (if the person turned them on).
+        toast(a.title, { description: a.body });
+        showAlert(a.title, a.body);
+      }
     }
     previous.current = status;
   }, [status, detailerFirstName]);

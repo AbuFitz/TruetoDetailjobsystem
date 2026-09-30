@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { MapPin, Plus, Star, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/ttd/AppShell";
 import { Field } from "@/components/ttd/FormField";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -70,6 +71,7 @@ function AddressesPage() {
       reset();
       setShowForm(false);
       setFormError(null);
+      toast.success("Address saved");
     },
     onError: (err) =>
       setFormError(err instanceof Error ? err.message : "Couldn't save this address."),
@@ -77,12 +79,18 @@ function AddressesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteAddress,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-addresses"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-addresses"] });
+      toast.success("Address removed");
+    },
   });
 
   const setDefaultMutation = useMutation({
     mutationFn: (id: string) => updateAddress(id, { is_default: true }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-addresses"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-addresses"] });
+      toast.success("Default address updated");
+    },
   });
 
   if (authLoading) {

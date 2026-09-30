@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { EmptyState } from "@/components/ttd/EmptyState";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
+import { ListSkeleton } from "@/components/ttd/Skeleton";
 import { formatAppointment, formatCountdownToAppointment } from "@/lib/format";
 import { getDetailerJobHistory, getDetailerJobs, getDetailerProfile } from "@/lib/detailers";
 import { supportContact, ttdSiteLinks } from "@/lib/constants";
@@ -86,7 +87,7 @@ function DetailerQueue() {
 
       <div className="mx-auto w-full max-w-md px-5 py-6 sm:max-w-2xl sm:px-6">
         {jobsLoading ? (
-          <BrandedLoading label="Loading your jobs" />
+          <ListSkeleton rows={2} />
         ) : isError ? (
           <EmptyState
             icon={Wrench}
@@ -95,14 +96,15 @@ function DetailerQueue() {
           />
         ) : jobs && jobs.length > 0 ? (
           <div className="grid gap-3 sm:grid-cols-2">
-            {jobs.map((job) => {
+            {jobs.map((job, i) => {
               const { dayLabel, timeLabel } = formatAppointment(job.scheduled_start);
               return (
                 <Link
                   key={job.id}
+                  style={{ animationDelay: `${Math.min(i, 5) * 60}ms` }}
                   to="/d/$token/$bookingId"
                   params={{ token, bookingId: job.id }}
-                  className="press relative overflow-hidden rounded-xl border border-hairline bg-surface p-4"
+                  className="press rise-in relative overflow-hidden rounded-xl border border-hairline bg-surface p-4"
                 >
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">

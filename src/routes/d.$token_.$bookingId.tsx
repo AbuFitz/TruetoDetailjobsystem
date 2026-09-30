@@ -17,6 +17,9 @@ import { TtdLogo } from "@/components/ttd/Header";
 import { Check } from "lucide-react";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
+import { StepTracker } from "@/components/ttd/LiveJob";
+import { ListSkeleton } from "@/components/ttd/Skeleton";
+import { toast } from "sonner";
 import { ContactActions } from "@/components/ttd/ContactActions";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -111,6 +114,7 @@ function DetailerJob() {
       if (eta != null) await detailerUpdateLocation(token, bookingId, pos, eta).catch(() => {});
       // Tell the customer their detailer is on the way (once; best effort).
       void sendBookingEmail(bookingId, "on_the_way", { detailerToken: token });
+      toast.success("Journey started");
       await refetch();
     },
     onUpdate: async (pos) => {
@@ -143,6 +147,7 @@ function DetailerJob() {
     setTransitioning(true);
     try {
       await detailerMarkArrived(token, job.id);
+      toast.success("Marked as arrived");
       await refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Couldn't mark this job as arrived.");
@@ -172,6 +177,8 @@ function DetailerJob() {
     try {
       await detailerFinishJob(token, job.id, handedTo);
       void sendBookingEmail(job.id, "completed", { detailerToken: token });
+      // A clear "that's done" before the list takes over.
+      toast.success(`${job.customer_first_name}'s car is finished. Nice work.`);
       navigate({ to: "/d/$token", params: { token } });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Couldn't finish this job.");
@@ -182,7 +189,9 @@ function DetailerJob() {
   if (isLoading || !job) {
     return (
       <div className="min-h-screen bg-background">
-        <BrandedLoading label="Loading job" />
+        <div className="mx-auto w-full max-w-md px-5 py-8 sm:max-w-lg sm:px-6">
+          <ListSkeleton rows={2} />
+        </div>
       </div>
     );
   }
@@ -232,6 +241,8 @@ function DetailerJob() {
             </div>
             <StatusBadge status={job.status} size="sm" />
           </div>
+
+          <StepTracker status={job.status} className="mt-5" />
 
           <dl className="mt-4 divide-y divide-hairline border-y border-hairline text-[14px]">
             <div className="flex items-start gap-3 py-3">

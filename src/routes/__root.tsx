@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 import bebasNeueUrl from "../assets/fonts/bebas-neue-400.woff2?url";
@@ -160,6 +161,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {/* Short confirmations for actions (confirmed, saved, copied) that do not change the page. */}
+      <Toaster position="top-center" duration={2600} />
     </QueryClientProvider>
   );
 }
