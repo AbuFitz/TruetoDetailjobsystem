@@ -223,6 +223,10 @@ export interface FakeOptions {
   extraCompleted?: number;
   hasAccount?: boolean;
   mustChangePassword?: boolean;
+  /** Puts the first booking (b1) in this status, for the live job screens. */
+  bookingStatus?: string;
+  /** How many of the four detailing stages are ticked on b1. */
+  stagesDone?: number;
 }
 
 export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) {
@@ -313,8 +317,10 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
     }
     if (p.includes("/rest/v1/bookings")) {
       const id = url.searchParams.get("id");
+      const asStatus = <T extends { id: string; status: string }>(b: T): T =>
+        opts.bookingStatus && b.id === "b1" ? { ...b, status: opts.bookingStatus } : b;
       if (id) {
-        const b = bookings.find((x) => `eq.${x.id}` === id) ?? bookings[0]!;
+        const b = asStatus(bookings.find((x) => `eq.${x.id}` === id) ?? bookings[0]!);
         return json(wantsObject ? b : [b]);
       }
       const extra = Array.from({ length: opts.extraCompleted ?? 0 }, (_, i) =>
@@ -328,7 +334,9 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
           completed_at: iso(now - (20 + i * 30) * 86400e3),
         }),
       );
-      return json(wantsObject ? bookings[0] : [...bookings, ...extra]);
+      return json(
+        wantsObject ? asStatus(bookings[0]!) : [...bookings, ...extra].map((b) => asStatus(b)),
+      );
     }
     if (p.includes("/rest/v1/vehicles"))
       return json([
@@ -337,7 +345,18 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
     if (p.includes("/rest/v1/detailers")) return json([detailer]);
     if (p.includes("/rest/v1/booking_notifications"))
       return json([{ kind: "booked_in", sent_at: iso(now - 3600e3) }]);
-    if (p.includes("/rest/v1/booking_stage_progress")) return json([]);
+    if (p.includes("/rest/v1/booking_stage_progress")) {
+      const keys = ["exterior", "interior", "protection", "final_check"];
+      const done = opts.stagesDone ?? 0;
+      return json(
+        done > 0
+          ? keys.map((k, i) => ({
+              stage_key: k,
+              completed_at: i < done ? iso(now - (60 - i) * 60e3) : null,
+            }))
+          : [],
+      );
+    }
     return json([]);
   });
   // The map tiles and routing are not part of these checks.

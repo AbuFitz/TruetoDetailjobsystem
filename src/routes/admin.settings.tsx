@@ -2,12 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ExternalLink, Globe } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
-import {
-  AppearanceSection,
-  PasswordSection,
-  SettingsCard,
-  SignOutSection,
-} from "@/components/ttd/SettingsSections";
+import { PasswordSection, SettingsCard, SignOutSection } from "@/components/ttd/SettingsSections";
 import { useRequireStaffSession } from "@/hooks/use-session";
 import { ttdSiteLinks } from "@/lib/constants";
 
@@ -41,7 +36,6 @@ function AdminSettings() {
     >
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
-          <AppearanceSection />
           <SettingsCard title="Links" description="Handy places outside the console.">
             <a
               href={ttdSiteLinks.website}

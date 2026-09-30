@@ -152,8 +152,14 @@ function AccountLogin() {
           <div
             role="tablist"
             aria-label="Sign in or register"
-            className="mb-6 grid grid-cols-2 border border-black/12 bg-surface-2 p-1"
+            className="relative mb-6 grid grid-cols-2 rounded-full border border-black/12 bg-surface-2 p-1"
           >
+            {/* The thumb slides to the chosen side, so the switch feels physical. */}
+            <span
+              aria-hidden
+              className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-ink ring-1 ring-white/10 transition-transform duration-300 ease-out"
+              style={{ transform: mode === "register" ? "translateX(100%)" : "translateX(0)" }}
+            />
             {(
               [
                 ["signin", "Sign in"],
@@ -168,9 +174,9 @@ function AccountLogin() {
                 aria-selected={mode === key}
                 aria-controls={`panel-${key}`}
                 onClick={() => setMode(key)}
-                className={`press min-h-11 text-[12px] font-bold uppercase tracking-[0.14em] transition-colors ${
+                className={`press relative z-10 min-h-11 rounded-full text-[12px] font-bold uppercase tracking-[0.14em] transition-colors ${
                   mode === key
-                    ? "bg-ink text-ink-foreground"
+                    ? "text-ink-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >

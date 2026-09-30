@@ -3,7 +3,6 @@ import { Car, MapPin, UserRound } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import {
-  AppearanceSection,
   HelpSection,
   PasswordSection,
   SettingsCard,
@@ -64,7 +63,6 @@ function AccountSettings() {
               />
             </div>
           </SettingsCard>
-          <AppearanceSection />
           <HelpSection />
         </div>
         <div className="flex flex-col gap-4">

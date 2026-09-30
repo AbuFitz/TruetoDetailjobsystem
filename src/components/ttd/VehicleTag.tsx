@@ -46,13 +46,22 @@ export function VehicleCard({
  * font with a little tracking so it reads like the real thing and like the
  * rest of the website's type.
  */
+const PLATE_SIZES = {
+  md: { band: "w-[15px] text-[6px]", text: "text-[19px]" },
+  lg: { band: "w-[22px] text-[8px]", text: "text-[30px]" },
+  xl: { band: "w-[30px] text-[10px]", text: "text-[42px]" },
+} as const;
+
 export function PlateTag({
   registration,
   className,
+  size = "md",
 }: {
   registration: string;
   className?: string;
+  size?: keyof typeof PLATE_SIZES;
 }) {
+  const sz = PLATE_SIZES[size];
   return (
     <span
       className={cn(
@@ -61,12 +70,20 @@ export function PlateTag({
       )}
     >
       <span
-        className="grid w-[15px] place-items-center bg-[#0B3EA8] text-[6px] font-semibold leading-none tracking-wide text-white"
+        className={cn(
+          "grid place-items-center bg-[#0B3EA8] font-semibold leading-none tracking-wide text-white",
+          sz.band,
+        )}
         aria-hidden
       >
         GB
       </span>
-      <span className="px-2 pb-[0.095em] pt-[0.22em] font-display text-[19px] uppercase leading-[1.05] tracking-[0.1em] text-ink">
+      <span
+        className={cn(
+          "px-2 pb-[0.095em] pt-[0.22em] font-display uppercase leading-[1.05] tracking-[0.1em] text-ink",
+          sz.text,
+        )}
+      >
         {registration}
       </span>
     </span>

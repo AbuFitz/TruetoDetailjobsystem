@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, Link2 } from "lucide-react";
@@ -11,18 +11,24 @@ import {
   PrepList,
   useTrackingAlerts,
 } from "@/components/ttd/TrackingExtras";
-import { journeyEvents } from "@/lib/journey";
+import { journeyEvents, timeOnSiteMinutes } from "@/lib/journey";
 import { LiveJobPanel, StepTracker, viewFromBooking } from "@/components/ttd/LiveJob";
+import { JobHero } from "@/components/ttd/JobHero";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { useRequireCustomerSession } from "@/hooks/use-session";
-import { getMyBookingById, cancelOwnBooking, LIVE_JOB_STATUSES } from "@/lib/bookings";
+import {
+  getMyBookingById,
+  cancelOwnBooking,
+  listMyBookings,
+  LIVE_JOB_STATUSES,
+} from "@/lib/bookings";
 import { formatAppointment } from "@/lib/format";
 import { customerHeadline } from "@/lib/progress";
 import { sendBookingEmail } from "@/lib/portal-email";
 import { copyText } from "@/lib/clipboard";
 import { supabase } from "@/lib/supabase";
-import { ttdSiteLinks, supportContact } from "@/lib/constants";
+import { ttdSiteLinks, supportContact, REWARD_VISITS_REQUIRED } from "@/lib/constants";
 import type { StageProgress } from "@/lib/detailers";
 
 export const Route = createFileRoute("/account/bookings/$id")({
@@ -64,6 +70,34 @@ function BookingDetail() {
       ["in_progress", "qc", "handover", "arrived", "check_in"].includes(booking?.status ?? ""),
     refetchInterval: 10_000,
   });
+
+  // Which counted visit this is once it is done, from the same list the account home reads.
+  const { data: allBookings } = useQuery({
+    queryKey: ["my-bookings"],
+    queryFn: listMyBookings,
+    enabled: Boolean(session),
+  });
+  const visitNumber = useMemo(() => {
+    if (!allBookings || booking?.status !== "completed") return null;
+    const done = allBookings
+      .filter((b) => b.status === "completed")
+      .sort(
+        (a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime(),
+      );
+    const i = done.findIndex((b) => b.id === id);
+    return i >= 0 ? i + 1 : null;
+  }, [allBookings, booking?.status, id]);
+
+  // A job that finishes while this page is open gets its moment: the finish arrives with a pass of light.
+  const lastStatus = useRef<string | null>(null);
+  const [finishedLive, setFinishedLive] = useState(false);
+  useEffect(() => {
+    const now = booking?.status ?? null;
+    if (lastStatus.current && lastStatus.current !== "completed" && now === "completed") {
+      setFinishedLive(true);
+    }
+    lastStatus.current = now;
+  }, [booking?.status]);
 
   async function handleCancel() {
     setCancelError(null);
@@ -127,11 +161,31 @@ function BookingDetail() {
       }
       back={{ to: "/account", label: "My Account" }}
       actions={<StatusBadge status={booking.status} />}
+      stage={
+        booking.status === "cancelled" ? undefined : (
+          <JobHero
+            bookingId={booking.id}
+            view={view}
+            appointment={`${dayLabel}, ${timeLabel}`}
+            where={`${booking.service_address_line1}, ${booking.service_postcode}`}
+            visitNumber={visitNumber}
+            required={REWARD_VISITS_REQUIRED}
+            timeOnSiteMinutes={timeOnSiteMinutes(booking)}
+            justFinished={finishedLive}
+          />
+        )
+      }
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-4">
           {live ? (
-            <LiveJobPanel view={view} showHeadline={false} />
+            <LiveJobPanel
+              view={view}
+              showHeadline={false}
+              showEta={false}
+              showFinish={false}
+              showChecklist={false}
+            />
           ) : (
             <section className="rounded-2xl border border-hairline bg-surface p-5">
               <p className="eyebrow text-muted-foreground">Progress</p>

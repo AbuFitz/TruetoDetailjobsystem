@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { TtdLogo } from "@/components/ttd/Header";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
+import { ThemeToggle } from "@/components/ttd/ThemeToggle";
 import { signOut } from "@/lib/auth";
 import { ttdSiteLinks } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -90,6 +91,11 @@ interface AppShellProps {
   back?: { to: string; label: string; params?: Record<string, string> };
   /** "narrow" for forms and single records, "wide" (default) for dashboards and lists. */
   width?: "narrow" | "medium" | "wide";
+  /**
+   * A living surface behind the hero (the customer portal's paint). It fills the
+   * hero, which then keeps a fixed height so the page does not jump when it loads.
+   */
+  stage?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -101,6 +107,7 @@ export function AppShell({
   actions,
   back,
   width = "wide",
+  stage,
   children,
 }: AppShellProps) {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -165,6 +172,7 @@ export function AppShell({
                 Book now
               </Link>
             )}
+            <ThemeToggle className="border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
             <Link
               to={settings.to}
               aria-label="Settings"
@@ -188,8 +196,21 @@ export function AppShell({
         </div>
       </header>
 
-      <div className="text-ink-foreground">
-        <div className="mx-auto w-full max-w-6xl px-5 pb-12 pt-7 sm:px-8 sm:pb-14 sm:pt-10">
+      <div
+        className={cn(
+          "relative text-ink-foreground",
+          stage !== undefined && "min-h-[404px] sm:min-h-[384px]",
+        )}
+      >
+        {stage}
+        <div
+          className={cn(
+            "relative mx-auto w-full max-w-6xl px-5 pb-12 pt-7 sm:px-8 sm:pb-14 sm:pt-10",
+            // Over a stage the words must not block the surface's own controls or torch.
+            stage !== undefined &&
+              "pointer-events-none pb-4 sm:pb-4 [&_a]:pointer-events-auto [&_button]:pointer-events-auto",
+          )}
+        >
           {back ? (
             <Link
               to={back.to}

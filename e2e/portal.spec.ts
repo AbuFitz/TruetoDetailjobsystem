@@ -294,7 +294,7 @@ test("sign in and forgot password are prefilled from the link", async ({ page })
   await expect(page.locator("#email")).toHaveValue("sam@example.com");
 });
 
-test("settings hold the password, appearance, help and sign out, and no page footer shows the company phone number", async ({
+test("settings hold the password, help and sign out, appearance is a header toggle, and no page footer shows the company phone number", async ({
   page,
 }) => {
   await open(page, {
@@ -306,7 +306,12 @@ test("settings hold the password, appearance, help and sign out, and no page foo
   });
   await expect(page.getByText("Password", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /sign out/i }).first()).toBeVisible();
-  await expect(page.getByRole("radio", { name: /dark/i })).toBeVisible();
+  // Appearance is one tap in the header, not a setting to hunt for.
+  await expect(page.getByText("Appearance")).toHaveCount(0);
+  const toggle = page.getByRole("button", { name: /switch to dark mode/i });
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
   await page.setViewportSize({ width: 1440, height: 900 });
   const footer = page.locator("footer");
   await expect(footer).toContainText("truetodetail.co.uk");
@@ -632,20 +637,6 @@ test("rewards: reaching the goal is a milestone", async ({ page }) => {
   await expect(card.getByText("That is visit 7. Milestone reached.")).toBeVisible();
 });
 
-test("rewards: with reduced motion the state is complete and nothing flies around", async ({
-  page,
-}) => {
-  await rewardsPage(page, { extra: 6, seen: 6, reduce: true });
-  const card = page.getByRole("region", { name: "TTD Rewards" });
-  await expect(card.getByText("YOU ARE THERE")).toBeVisible();
-  // The car is fully finished straight away and the light-pass never runs.
-  await expect(card.locator("[style*='clip-path']")).toHaveAttribute("style", /108%/);
-  const pass = await card
-    .locator(".car-pass")
-    .evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== "none").length);
-  expect(pass).toBe(0);
-});
-
 test("rewards: a phone shows all seven visits without sideways scroll", async ({ page }) => {
   await rewardsPage(page, { extra: 2, width: 360 });
   const card = page.getByRole("region", { name: "TTD Rewards" });
@@ -654,40 +645,174 @@ test("rewards: a phone shows all seven visits without sideways scroll", async ({
   expect(over).toBeLessThanOrEqual(1);
 });
 
-test("rewards: past visits name the counted visit they are, and a phone gets a shortcut that keeps reading order", async ({
-  page,
-}) => {
-  await rewardsPage(page, { extra: 2, width: 390 });
-  const history = page.locator("section", { hasText: "Previous details" });
-  await expect(history.getByText("Visit 3")).toBeVisible();
-  await expect(history.getByText("Visit 1")).toBeVisible();
-  const shortcut = page.getByRole("link", { name: /TTD Rewards: 3 of 7/ });
-  await expect(shortcut).toBeVisible();
-  // The shortcut is up top, the card itself stays where the page order puts it.
-  const y = async (l: ReturnType<typeof page.locator>) => (await l.boundingBox())!.y;
-  expect(await y(shortcut)).toBeLessThan(await y(history));
-  await shortcut.click();
-  await expect(page).toHaveURL(/#ttd-rewards$/);
-  await expect(page.getByRole("region", { name: "TTD Rewards" })).toBeInViewport();
-});
-
-test("rewards: the shortcut is phone only, and keyboard order follows the page", async ({
+test("rewards: the visit rail names the counted visit each booking is, and choosing a visit in the hero lights its row", async ({
   page,
 }) => {
   await rewardsPage(page, { extra: 2, width: 1280 });
-  await expect(page.getByRole("link", { name: /TTD Rewards: 3 of 7/ })).toBeHidden();
+  const rail = page.getByRole("region", { name: "Your visits" });
+  await expect(rail.getByText("Visit 3")).toBeVisible();
+  await expect(rail.getByText("Visit 1")).toBeVisible();
+  const hero = page.getByRole("region", { name: "TTD Rewards" });
+  await hero.getByRole("button", { name: /^Visit 2,/ }).click();
+  await expect(rail.locator('a[aria-current="true"]')).toContainText("Visit 2");
 });
 
-test("rewards: on a desktop the card stays in the side column, beside the next visit", async ({
+test("rewards: with reduced motion the surface is a still poster at the right level and all the numbers are there", async ({
   page,
 }) => {
-  await rewardsPage(page, { extra: 2, width: 1280 });
-  const rewards = await page.getByRole("region", { name: "TTD Rewards" }).boundingBox();
-  const history = await page.locator("section", { hasText: "Previous details" }).boundingBox();
-  expect(rewards!.x).toBeGreaterThan(history!.x + history!.width - 1);
+  await rewardsPage(page, { extra: 6, seen: 6, reduce: true });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByText("YOU ARE THERE")).toBeVisible();
+  const stage = page.locator("[data-stage]").first();
+  await expect(stage).toHaveAttribute("data-stage", "fallback");
+  await expect(stage).toHaveAttribute("data-reason", "reduced-motion");
+  await expect(stage.locator("img").first()).toHaveAttribute("src", /f100-/);
 });
 
-test("rewards: every visit column is a comfortable tap: 44px at 360, and at 320 no smaller than 38px (accepted, above the 24px AA minimum)", async ({
+test("surface: normally it goes live, and the poster is the level's own frame until then", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2, seen: 3, width: 1280 });
+  const stage = page.locator("[data-stage]").first();
+  await expect(stage).toHaveAttribute("data-stage", "live");
+  await expect(stage.locator("canvas")).toHaveCount(1);
+  await expect(stage.locator("source").first()).toHaveAttribute("srcset", /f43-wide/);
+  await expect(stage.locator("img").first()).toHaveAttribute("src", /f43-narrow/);
+});
+
+test("surface: with WebGL unavailable the page falls back to the poster and nothing is lost", async ({
+  page,
+}) => {
+  await page.context().addInitScript(() => {
+    const orig = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type: string, ...rest: unknown[]) {
+      if (type === "webgl" || type === "webgl2" || type === "experimental-webgl") return null;
+      return (orig as (...a: unknown[]) => unknown).call(this, type, ...rest);
+    } as typeof orig;
+  });
+  await rewardsPage(page, { extra: 2, seen: 3, width: 390 });
+  const stage = page.locator("[data-stage]").first();
+  await expect(stage).toHaveAttribute("data-stage", "fallback");
+  await expect(stage).toHaveAttribute("data-reason", "no-webgl");
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByText("4 MORE VISITS")).toBeVisible();
+  await card.getByRole("button", { name: /^Visit 2,/ }).click();
+  await expect(card.getByText(/^Visit 2: Full Valet Car Detail/)).toBeVisible();
+});
+
+test("surface: a slow poster never holds the page back", async ({ page }) => {
+  await page.context().route(/\/finish\/.*\.webp/, async (r) => {
+    await new Promise((res) => setTimeout(res, 4000));
+    await r.continue();
+  });
+  await page.setViewportSize({ width: 390, height: 900 });
+  await fakeSupabase(page.context(), { extraCompleted: 2 });
+  await page.context().addCookies([sessionCookie]);
+  const started = Date.now();
+  await page.goto("/account", { waitUntil: "domcontentloaded" });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByText("4 MORE VISITS")).toBeVisible({ timeout: 3500 });
+  expect(Date.now() - started).toBeLessThan(3600);
+});
+
+test("surface: the inspection torch really changes the paint, and stays off with reduced motion", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2, seen: 3, width: 1280 });
+  const stage = page.locator("[data-stage]").first();
+  await expect(stage).toHaveAttribute("data-stage", "live");
+  const box = (await stage.boundingBox())!;
+  const clip = { x: box.x, y: box.y + 110, width: box.width, height: 150 };
+  const before = await page.screenshot({ clip });
+  await page.mouse.move(box.x + box.width * 0.75, box.y + 200, { steps: 6 });
+  await expect(stage).toHaveAttribute("data-torch", "on");
+  await page.waitForTimeout(700);
+  const during = await page.screenshot({ clip });
+  expect(before.equals(during)).toBe(false);
+  await page.mouse.move(2, 2);
+  await expect(stage).not.toHaveAttribute("data-torch", "on");
+
+  await rewardsPage(page, { extra: 2, seen: 3, width: 1280, reduce: true });
+  const still = page.locator("[data-stage]").first();
+  const b2 = (await still.boundingBox())!;
+  await page.mouse.move(b2.x + b2.width * 0.75, b2.y + 200, { steps: 6 });
+  await expect(still).not.toHaveAttribute("data-torch", "on");
+});
+
+test("live job: the surface shows the detailer's real stage ticks and what is happening now", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await fakeSupabase(page.context(), { bookingStatus: "in_progress", stagesDone: 2 });
+  await page.context().addCookies([sessionCookie]);
+  await page.goto("/account/bookings/b1", { waitUntil: "networkidle" });
+  const hero = page.getByRole("region", { name: "Job progress" });
+  await expect(hero.getByText("Now: Protection and finish. 2 of 4 steps done.")).toBeVisible();
+  const steps = hero.getByRole("list", { name: "Detailing steps" }).getByRole("listitem");
+  await expect(steps).toHaveCount(4);
+  await expect(hero.locator("[data-stage]")).toHaveCount(0);
+  await expect(page.locator("[data-stage]").first().locator("img").first()).toHaveAttribute(
+    "src",
+    /f50-/,
+  );
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(over).toBeLessThanOrEqual(1);
+});
+
+test("live job: a finished visit says which visit it was and links to the finish", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await fakeSupabase(page.context(), { extraCompleted: 2 });
+  await page.context().addCookies([sessionCookie]);
+  await page.goto("/account/bookings/b4", { waitUntil: "networkidle" });
+  const hero = page.getByRole("region", { name: "Job progress" });
+  await expect(hero.getByText(/That is visit 3 of 7\./)).toBeVisible();
+  await hero.getByRole("link", { name: /see your finish/i }).click();
+  await expect(page).toHaveURL(/\/account$/);
+});
+
+test("live job: on the way shows the live arrival estimate in the hero", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await fakeSupabase(page.context());
+  await page.context().addCookies([sessionCookie]);
+  await page.goto("/account/bookings/b1", { waitUntil: "networkidle" });
+  await expect(
+    page.getByRole("region", { name: "Job progress" }).getByText(/MIN\s*AWAY/i),
+  ).toBeVisible();
+});
+
+test("the sign in and register switch is a round pill with a thumb that slides", async ({
+  page,
+}) => {
+  await page.goto("/account/login", { waitUntil: "networkidle" });
+  const tabs = page.getByRole("tablist", { name: /sign in or register/i });
+  const radius = await tabs.evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius));
+  expect(radius).toBeGreaterThan(20);
+  const thumb = tabs.locator("span[aria-hidden]").first();
+  const x0 = (await thumb.boundingBox())!.x;
+  await page.getByRole("tab", { name: "Register" }).click();
+  await page.waitForTimeout(450);
+  expect((await thumb.boundingBox())!.x).toBeGreaterThan(x0 + 50);
+});
+
+test("garage: each car is its plate with its real history, and removing asks first", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await fakeSupabase(page.context(), { extraCompleted: 2 });
+  await page.context().addCookies([sessionCookie]);
+  await page.goto("/account/vehicles", { waitUntil: "networkidle" });
+  await expect(page.getByText(/3 details with us/)).toBeVisible();
+  await page.getByRole("button", { name: "Remove vehicle" }).click();
+  await expect(page.getByText("Remove this car?")).toBeVisible();
+  await page.getByRole("button", { name: "Keep it" }).click();
+  await expect(page.getByText("Remove this car?")).toHaveCount(0);
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(over).toBeLessThanOrEqual(1);
+});
+
+test("rewards: every visit column is a full 44px tap target, at 360 and at 320", async ({
   page,
 }) => {
   for (const width of [360, 320]) {
@@ -696,7 +821,7 @@ test("rewards: every visit column is a comfortable tap: 44px at 360, and at 320 
     for (const b of await card.getByRole("button", { name: /^Visit \d/ }).all()) {
       const box = (await b.boundingBox())!;
       expect(box.height, `column height at ${width}`).toBeGreaterThanOrEqual(44);
-      expect(box.width, `column width at ${width}`).toBeGreaterThanOrEqual(width === 360 ? 44 : 38);
+      expect(box.width, `column width at ${width}`).toBeGreaterThanOrEqual(44);
     }
     const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     expect(over).toBeLessThanOrEqual(1);
@@ -719,29 +844,6 @@ test("rewards: the keyboard reaches each visit in order and the choice is announ
   await expect(card.getByText(/^Visit 2: Full Valet Car Detail/)).toBeVisible();
 });
 
-test("rewards: with no completed visits the car is all primer and says the first visit finishes the first section", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 900 });
-  await fakeSupabase(page.context());
-  await page.context().addCookies([sessionCookie]);
-  await page.context().route(/\/rest\/v1\/bookings/, (r) =>
-    r.fulfill({
-      status: 200,
-      contentType: "application/json",
-      headers: { "access-control-allow-origin": "*" },
-      body: "[]",
-    }),
-  );
-  await page.goto("/account", { waitUntil: "networkidle" });
-  const card = page.getByRole("region", { name: "TTD Rewards" });
-  await expect(card.getByText("7 MORE VISITS")).toBeVisible();
-  await expect(
-    card.getByText("Your first completed visit finishes the first section."),
-  ).toBeVisible();
-  await expect(card.getByRole("img", { name: "0 of 7 qualifying visits" })).toBeVisible();
-});
-
 test("customer dashboard: when bookings fail to load it says so, offers a retry, and never claims nothing is booked", async ({
   page,
 }) => {
@@ -761,57 +863,6 @@ test("customer dashboard: when bookings fail to load it says so, offers a retry,
   await expect(page.getByRole("button", { name: /try again/i })).toBeVisible();
   await expect(page.getByText(/nothing booked/i)).toHaveCount(0);
   await expect(page.getByText(/finished details will collect here/i)).toHaveCount(0);
-});
-
-test("rewards: the inspection torch follows the pointer over the paint, and is off with reduced motion", async ({
-  page,
-}) => {
-  await rewardsPage(page, { extra: 2, width: 390 });
-  const card = page.getByRole("region", { name: "TTD Rewards" });
-  const stage = card.locator("div.touch-pan-y");
-  const car = card.getByRole("img", { name: /qualifying visits/ });
-  await car.scrollIntoViewIfNeeded();
-  const box = (await car.boundingBox())!;
-  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.5, { steps: 4 });
-  await expect(stage).toHaveAttribute("data-torch", "on");
-  expect(Number(await card.locator("circle.torch").getAttribute("cx"))).toBeGreaterThan(200);
-  await page.mouse.move(2, 2);
-  await expect(stage).not.toHaveAttribute("data-torch", "on");
-
-  await rewardsPage(page, { extra: 2, width: 390, reduce: true });
-  const car2 = card.getByRole("img", { name: /qualifying visits/ });
-  await car2.scrollIntoViewIfNeeded();
-  const box2 = (await car2.boundingBox())!;
-  await page.mouse.move(box2.x + box2.width * 0.7, box2.y + box2.height * 0.5, { steps: 4 });
-  await expect(stage).not.toHaveAttribute("data-torch", "on");
-});
-
-test("rewards: the car is always fully drawn, hazy before and glossy after, so an empty card still shows a car", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 900 });
-  await fakeSupabase(page.context());
-  await page.context().addCookies([sessionCookie]);
-  await page.context().route(/\/rest\/v1\/bookings/, (r) =>
-    r.fulfill({
-      status: 200,
-      contentType: "application/json",
-      headers: { "access-control-allow-origin": "*" },
-      body: "[]",
-    }),
-  );
-  await page.goto("/account", { waitUntil: "networkidle" });
-  const card = page.getByRole("region", { name: "TTD Rewards" });
-  // The unfinished painting is a solid body, not an outline that could vanish on a pale card.
-  const bodyFill = await card
-    .getByRole("img", { name: /qualifying visits/ })
-    .locator("svg")
-    .first()
-    .locator('path[fill^="url("]')
-    .first()
-    .evaluate((p) => getComputedStyle(p).fill);
-  expect(bodyFill).toMatch(/^url\(|^rgb/);
-  await expect(card.getByRole("img", { name: "0 of 7 qualifying visits" })).toBeVisible();
 });
 
 test("rewards: nothing is remembered or celebrated while bookings are still loading", async ({

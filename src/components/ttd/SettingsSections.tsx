@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, ChevronRight, LogOut, Mail, MessageCircle, Moon, Phone, Sun } from "lucide-react";
+import { Check, ChevronRight, LogOut, Mail, MessageCircle, Phone } from "lucide-react";
 import { NewPasswordFields, passwordProblems } from "@/components/ttd/PasswordFields";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
-import { useTheme } from "@/hooks/use-theme";
 import { changeMyPassword, signOut } from "@/lib/auth";
 import { confirmPasswordChanged } from "@/lib/accounts";
 import { AuthField } from "@/components/ttd/PublicShell";
@@ -58,44 +57,6 @@ export function SettingsLink({
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2.4} />
     </Link>
-  );
-}
-
-export function AppearanceSection() {
-  const { theme, toggleTheme } = useTheme();
-  const options = [
-    { key: "light", label: "Light", icon: Sun },
-    { key: "dark", label: "Dark", icon: Moon },
-  ] as const;
-  return (
-    <SettingsCard
-      title="Appearance"
-      description="Light matches the website. Dark is easier on the eyes at night."
-    >
-      <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-2">
-        {options.map(({ key, label, icon: Icon }) => {
-          const active = theme === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => (active ? undefined : toggleTheme())}
-              className={cn(
-                "press flex min-h-12 items-center justify-center gap-2 rounded-xl border text-[13px] font-semibold",
-                active
-                  ? "border-signal bg-signal text-signal-foreground"
-                  : "border-input bg-surface-2 hover:bg-surface",
-              )}
-            >
-              <Icon className="h-4 w-4" strokeWidth={2.2} />
-              {label}
-            </button>
-          );
-        })}
-      </div>
-    </SettingsCard>
   );
 }
 

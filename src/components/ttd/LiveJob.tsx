@@ -200,17 +200,10 @@ export function StepTracker({ status, className }: { status: BookingStatus; clas
   );
 }
 
-/** The big "Arriving in 12 min" card, driven by the detailer's phone (routing ETA), never a guess. */
-export function EtaPanel({
-  view,
-  distanceMeters,
-}: {
-  view: JobView;
-  distanceMeters?: number | null;
-}) {
+/** The live arrival estimate, from the detailer's phone (routing ETA), never a guess. */
+export function useEta(view: JobView) {
   const now = useNow();
   if (view.status !== "en_route") return null;
-
   const hasEta = view.etaSeconds != null && view.etaUpdatedAt != null;
   let remaining = 0;
   let arrival: Date | null = null;
@@ -224,6 +217,20 @@ export function EtaPanel({
   const fresh = view.locationUpdatedAt
     ? Math.round((now - new Date(view.locationUpdatedAt).getTime()) / 1000)
     : null;
+  return { hasEta, remaining, arrival, slot, lateMs, fresh };
+}
+
+/** The big "Arriving in 12 min" card, driven by the detailer's phone (routing ETA), never a guess. */
+export function EtaPanel({
+  view,
+  distanceMeters,
+}: {
+  view: JobView;
+  distanceMeters?: number | null;
+}) {
+  const eta = useEta(view);
+  if (!eta) return null;
+  const { hasEta, remaining, arrival, slot, lateMs, fresh } = eta;
 
   return (
     <div
@@ -281,11 +288,18 @@ export function LiveJobPanel({
   className,
   showSteps = true,
   showHeadline = true,
+  showEta = true,
+  showFinish = true,
+  showChecklist = true,
 }: {
   view: JobView;
   className?: string;
   showSteps?: boolean;
   showHeadline?: boolean;
+  /** The signed-in page shows these in its hero instead. */
+  showEta?: boolean;
+  showFinish?: boolean;
+  showChecklist?: boolean;
 }) {
   const detailing = ["arrived", "check_in", "in_progress", "qc", "handover"].includes(view.status);
   const route = useDrivingRoute(view.position, view.destination, view.status === "en_route");
@@ -317,9 +331,9 @@ export function LiveJobPanel({
         ) : null}
       </div>
 
-      <EtaPanel view={view} distanceMeters={route?.meters ?? null} />
+      {showEta ? <EtaPanel view={view} distanceMeters={route?.meters ?? null} /> : null}
 
-      {detailing ? <FinishPanel stages={checklist} finish={finish} /> : null}
+      {detailing && showFinish ? <FinishPanel stages={checklist} finish={finish} /> : null}
 
       {view.status === "en_route" && (view.position || view.destination) ? (
         <TrackingMap
@@ -348,7 +362,7 @@ export function LiveJobPanel({
         />
       ) : null}
 
-      {detailing && view.stages.length > 0 ? (
+      {showChecklist && detailing && view.stages.length > 0 ? (
         <section className="rounded-2xl border border-hairline bg-surface p-5">
           <p className="eyebrow text-muted-foreground">Detailing checklist</p>
           <StageChecklist className="mt-3" stages={view.stages} />
