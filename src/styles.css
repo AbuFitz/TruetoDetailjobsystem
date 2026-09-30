@@ -388,6 +388,21 @@
   }
 }
 
+@keyframes ttd-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.7) rotate(-8deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.9) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
 @keyframes ttd-draw {
   to {
     stroke-dashoffset: 0;
@@ -468,6 +483,11 @@
 
 @utility slide-down {
   animation: ttd-slide-down 320ms var(--ease-out) both;
+}
+
+/* A new stamp landing on the card: it comes down large and settles. */
+@utility stamp-in {
+  animation: ttd-stamp 480ms var(--ease-out) both;
 }
 
 /* A stroke that draws itself. Give the path pathLength="1". */

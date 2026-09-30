@@ -13,6 +13,7 @@ import {
   Search,
   Wrench,
   X,
+  Loader2,
 } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { AdminBookingCard } from "@/components/ttd/AdminBookingCard";
@@ -371,15 +372,32 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
       {booking.customer_notes ? (
         <p className="mt-2 text-[13px] text-muted-foreground">Note: {booking.customer_notes}</p>
       ) : null}
-      {note ? <p className="mt-2 text-[13px] font-medium">{note}</p> : null}
+      {note ? (
+        <p role="status" className="slide-down mt-2 text-[13px] font-medium">
+          {note}
+        </p>
+      ) : null}
       <div className="mt-3 grid grid-cols-[1fr_1fr_auto] gap-2">
         <button
           type="button"
           onClick={() => confirm.mutate()}
-          disabled={confirm.isPending || decline.isPending}
-          className="press inline-flex min-h-11 items-center justify-center gap-1.5 bg-signal px-3 font-sans text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep disabled:opacity-50"
+          disabled={confirm.isPending || confirm.isSuccess || decline.isPending}
+          aria-busy={confirm.isPending}
+          className="press state-transition inline-flex min-h-11 items-center justify-center gap-1.5 bg-signal px-3 font-sans text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep disabled:opacity-50"
         >
-          <Check className="h-4 w-4" strokeWidth={2.8} /> Confirm
+          {confirm.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Confirming
+            </>
+          ) : confirm.isSuccess ? (
+            <>
+              <Check className="pop-in h-4 w-4" strokeWidth={2.8} /> Confirmed
+            </>
+          ) : (
+            <>
+              <Check className="h-4 w-4" strokeWidth={2.8} /> Confirm
+            </>
+          )}
         </button>
         <Link
           to="/admin/bookings/$id"
@@ -408,8 +426,10 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
 function BookingList({ bookings }: { bookings: BookingWithDetailer[] }) {
   return (
     <div className="flex flex-col gap-3">
-      {bookings.map((b) => (
-        <AdminBookingCard key={b.id} booking={b} />
+      {bookings.map((b, i) => (
+        <div key={b.id} className="rise-in" style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}>
+          <AdminBookingCard booking={b} />
+        </div>
       ))}
     </div>
   );
@@ -429,7 +449,7 @@ function Stat({
   const shown = useCountUp(value, { durationMs: 550 });
   return (
     <div
-      className={`min-w-0 rounded-xl border p-4 ${highlight && value > 0 ? "border-warning/40 bg-warning/8" : "border-hairline bg-surface"}`}
+      className={`rise-in min-w-0 rounded-xl border p-4 ${highlight && value > 0 ? "border-warning/40 bg-warning/8" : "border-hairline bg-surface"}`}
     >
       <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
         <Icon

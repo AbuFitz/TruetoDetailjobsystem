@@ -657,6 +657,28 @@ test("rewards: a phone shows all seven stamps without sideways scroll", async ({
   expect(over).toBeLessThanOrEqual(1);
 });
 
+test("rewards: past visits name the stamp they earned, and the card sits under the next visit on a phone", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2, width: 390 });
+  const history = page.locator("section", { hasText: "Previous details" });
+  await expect(history.getByText("Stamp 3")).toBeVisible();
+  await expect(history.getByText("Stamp 1")).toBeVisible();
+  const box = async (sel: ReturnType<typeof page.locator>) => (await sel.boundingBox())!.y;
+  const rewardsY = await box(page.getByRole("region", { name: "TTD Rewards" }));
+  const historyY = await box(history);
+  expect(rewardsY).toBeLessThan(historyY);
+});
+
+test("rewards: on a desktop the card stays in the side column, beside the next visit", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2, width: 1280 });
+  const rewards = await page.getByRole("region", { name: "TTD Rewards" }).boundingBox();
+  const history = await page.locator("section", { hasText: "Previous details" }).boundingBox();
+  expect(rewards!.x).toBeGreaterThan(history!.x + history!.width - 1);
+});
+
 test("rewards: nothing is remembered or celebrated while bookings are still loading", async ({
   page,
 }) => {

@@ -82,8 +82,15 @@ export function RewardsCard({
   return (
     <section
       aria-label="TTD Rewards"
-      className="relative overflow-hidden rounded-2xl border border-hairline bg-surface p-5 shadow-card"
+      className={cn(
+        "relative overflow-hidden rounded-2xl border bg-surface p-5 shadow-card",
+        view.reached ? "border-signal/50" : "border-hairline",
+      )}
     >
+      {/* Once the goal is reached the card keeps a signal edge, so it reads as different from one still in progress. */}
+      {view.reached ? (
+        <span className="absolute inset-x-0 top-0 h-1 bg-signal" aria-hidden />
+      ) : null}
       {celebration?.milestone ? <Burst count={18} spread={120} /> : null}
 
       <div className="flex items-center justify-between gap-3">
@@ -160,63 +167,87 @@ export function RewardsCard({
         </p>
       ) : null}
 
-      <ol className="mt-5 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${required}, 1fr)` }}>
-        {stamps.map((n) => {
-          const earned = n <= total;
-          const next = n === total + 1;
-          const last = n === required;
-          const fresh = isNew(n);
-          const label = earned
-            ? `Stamp ${n}, earned ${format(new Date(visits[n - 1]!.scheduled_start), "d MMMM yyyy", { in: UK_TIME })}`
-            : next
-              ? `Stamp ${n}, next`
-              : `Stamp ${n}, not yet earned`;
-          return (
-            <li key={n} className="relative">
-              {fresh ? <Burst count={10} spread={46} delay={n * 30} /> : null}
-              <button
-                type="button"
-                aria-label={label}
-                aria-pressed={focus === n}
-                onClick={() => setSelected(n)}
-                style={
-                  earned
-                    ? ({
-                        "--sheen-delay": `${300 + n * 110}ms`,
-                        animationDelay: `${n * 70}ms`,
-                      } as React.CSSProperties)
-                    : undefined
-                }
-                className={cn(
-                  "press relative grid aspect-square w-full place-items-center rounded-full border-2 text-[11px] font-bold",
-                  earned &&
-                    cn(
-                      "sheen border-signal bg-signal text-signal-foreground",
-                      fresh ? "pop-in" : "fade-in",
-                    ),
-                  !earned &&
-                    (next
-                      ? "glow-next border-signal/70 text-signal-deep"
-                      : "border-dashed border-hairline text-muted-foreground/55"),
-                  focus === n && "ring-2 ring-foreground/70 ring-offset-2 ring-offset-surface",
-                )}
-              >
-                {earned ? (
-                  last ? (
-                    <Gift className="h-3.5 w-3.5" strokeWidth={2.6} />
+      <div className="relative mt-5">
+        {/* A track behind the stamps: the gaps between them show how far along the card is. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 h-0.5 -translate-y-1/2 bg-hairline"
+          style={{ left: `${50 / required}%`, right: `${50 / required}%` }}
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 h-0.5 origin-left -translate-y-1/2 bg-signal"
+          style={{
+            left: `${50 / required}%`,
+            right: `${50 / required}%`,
+            transform: `translateY(-50%) scaleX(${
+              ringFraction > 0 && required > 1 ? Math.min(1, (total - 1) / (required - 1)) : 0
+            })`,
+            transition: "transform 900ms var(--ease-out)",
+          }}
+        />
+        <ol
+          className="relative grid gap-1.5"
+          style={{ gridTemplateColumns: `repeat(${required}, 1fr)` }}
+        >
+          {stamps.map((n) => {
+            const earned = n <= total;
+            const next = n === total + 1;
+            const last = n === required;
+            const fresh = isNew(n);
+            const label = earned
+              ? `Stamp ${n}, earned ${format(new Date(visits[n - 1]!.scheduled_start), "d MMMM yyyy", { in: UK_TIME })}`
+              : next
+                ? `Stamp ${n}, next`
+                : `Stamp ${n}, not yet earned`;
+            return (
+              <li key={n} className="relative">
+                {fresh ? <Burst count={10} spread={46} delay={n * 30} /> : null}
+                <button
+                  type="button"
+                  aria-label={label}
+                  aria-pressed={focus === n}
+                  onClick={() => setSelected(n)}
+                  style={
+                    earned
+                      ? ({
+                          "--sheen-delay": `${300 + n * 110}ms`,
+                          animationDelay: `${n * 70}ms`,
+                        } as React.CSSProperties)
+                      : undefined
+                  }
+                  className={cn(
+                    "press relative grid aspect-square w-full place-items-center rounded-full border-2 text-[11px] font-bold",
+                    earned &&
+                      cn(
+                        "sheen border-signal bg-signal text-signal-foreground",
+                        fresh ? "stamp-in" : "fade-in",
+                      ),
+                    !earned &&
+                      (next
+                        ? "glow-next border-signal/70 text-signal-deep"
+                        : "border-dashed border-hairline text-muted-foreground/55"),
+                    !earned && "bg-surface",
+                    focus === n && "ring-2 ring-foreground/70 ring-offset-2 ring-offset-surface",
+                  )}
+                >
+                  {earned ? (
+                    last ? (
+                      <Gift className="h-3.5 w-3.5" strokeWidth={2.6} />
+                    ) : (
+                      <Check className="h-3.5 w-3.5" strokeWidth={3.2} />
+                    )
+                  ) : last ? (
+                    <Gift className="h-3.5 w-3.5" strokeWidth={2.2} />
                   ) : (
-                    <Check className="h-3.5 w-3.5" strokeWidth={3.2} />
-                  )
-                ) : last ? (
-                  <Gift className="h-3.5 w-3.5" strokeWidth={2.2} />
-                ) : (
-                  n
-                )}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+                    n
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
 
       <p aria-live="polite" className="mt-4 min-h-[20px] text-[13px] text-muted-foreground">
         {detail}

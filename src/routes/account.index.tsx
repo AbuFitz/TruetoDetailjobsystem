@@ -70,6 +70,7 @@ function AccountDashboard() {
     nextBooking,
     otherUpcoming,
     previousBookings,
+    stampByBooking,
     completedVisits,
     recommendedDate,
   } = useMemo(() => {
@@ -99,6 +100,10 @@ function AccountDashboard() {
       // this list a second upcoming detail was invisible on the dashboard.
       otherUpcoming: upcoming.filter((b) => b.id !== next?.id),
       previousBookings: previous.slice(0, 5),
+      // Which stamp each completed visit earned (1 is the oldest visit).
+      stampByBooking: new Map(
+        [...previous].reverse().map((b, i) => [b.id, i + 1 <= REWARD_VISITS_REQUIRED ? i + 1 : 0]),
+      ),
       // Oldest first, so stamp 1 is the first visit.
       completedVisits: [...previous].reverse().map((b) => ({
         id: b.id,
@@ -133,24 +138,28 @@ function AccountDashboard() {
       }
     >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-8">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-8">
           {bookingsLoading ? (
             <DashboardSkeleton />
           ) : nextBooking ? (
-            <NextVisitCard booking={nextBooking} live={Boolean(liveBooking)} />
+            <div className="order-1 lg:order-none">
+              <NextVisitCard booking={nextBooking} live={Boolean(liveBooking)} />
+            </div>
           ) : (
-            <BookNextCard lastVisit={previousBookings[0] ?? null} />
+            <div className="order-1 lg:order-none">
+              <BookNextCard lastVisit={previousBookings[0] ?? null} />
+            </div>
           )}
 
           {otherUpcoming.length > 0 ? (
-            <Section title="Also booked">
+            <Section title="Also booked" className="order-3 lg:order-none">
               <VisitList bookings={otherUpcoming} />
             </Section>
           ) : null}
 
-          <Section title="Previous details">
+          <Section title="Previous details" className="order-4 lg:order-none">
             {previousBookings.length > 0 ? (
-              <VisitList bookings={previousBookings} past />
+              <VisitList bookings={previousBookings} past stamps={stampByBooking} />
             ) : (
               <p className="rounded-2xl border border-dashed border-hairline px-5 py-6 text-center text-[14px] text-muted-foreground">
                 Your finished details will collect here, with the date, car and what we did.
@@ -159,8 +168,8 @@ function AccountDashboard() {
           </Section>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-8">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-8">
+          <div className="order-5 grid grid-cols-2 gap-2 lg:order-none">
             <Link
               to="/book"
               className="press col-span-2 inline-flex min-h-12 items-center justify-between bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep sm:col-span-1 lg:col-span-2"
@@ -178,17 +187,19 @@ function AccountDashboard() {
           </div>
 
           {/* Only once the real bookings are known: a count of zero while loading would be remembered as "nothing earned". */}
-          {bookings ? (
-            <RewardsCard
-              visits={completedVisits}
-              required={REWARD_VISITS_REQUIRED}
-              storageKey={session.user.id}
-            />
-          ) : (
-            <Skeleton className="h-[330px] w-full" />
-          )}
+          <div className="order-2 lg:order-none">
+            {bookings ? (
+              <RewardsCard
+                visits={completedVisits}
+                required={REWARD_VISITS_REQUIRED}
+                storageKey={session.user.id}
+              />
+            ) : (
+              <Skeleton className="h-[330px] w-full" />
+            )}
+          </div>
 
-          <Section title="Your garage">
+          <Section title="Your garage" className="order-6 lg:order-none">
             <div className="overflow-hidden rounded-2xl border border-hairline bg-surface">
               {vehicles && vehicles.length > 0 ? (
                 <ul className="divide-y divide-hairline">
@@ -222,7 +233,7 @@ function AccountDashboard() {
           </Section>
 
           {recommendedDate ? (
-            <div className="rounded-2xl border border-signal/30 bg-signal/8 p-5">
+            <div className="order-7 rounded-2xl border border-signal/30 bg-signal/8 p-5 lg:order-none">
               <p className="eyebrow text-signal-deep">Recommended</p>
               <p className="mt-2 font-display text-[28px] leading-[0.95]">
                 MAINTENANCE DETAIL DUE AROUND{" "}
@@ -276,16 +287,20 @@ function DateBlock({ iso, tone = "light" }: { iso: string; tone?: "light" | "dar
 function VisitList({
   bookings,
   past = false,
+  stamps,
 }: {
   bookings: BookingWithDetailer[];
   past?: boolean;
+  /** Booking id to the stamp it earned (0 for none), so history and rewards read as one thing. */
+  stamps?: Map<string, number>;
 }) {
   return (
     <ul className="divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline bg-surface">
-      {bookings.map((b) => {
+      {bookings.map((b, i) => {
         const { dayLabel, timeLabel } = formatAppointment(b.scheduled_start);
+        const stamp = past ? (stamps?.get(b.id) ?? 0) : 0;
         return (
-          <li key={b.id}>
+          <li key={b.id} className="rise-in" style={{ animationDelay: `${i * 45}ms` }}>
             <Link
               to="/account/bookings/$id"
               params={{ id: b.id }}
@@ -303,6 +318,12 @@ function VisitList({
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <PlateTag registration={b.vehicle_registration} className="text-[13px]" />
+                  {stamp > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.1em] text-signal-deep">
+                      <Check className="h-3 w-3" strokeWidth={3.2} />
+                      Stamp {stamp}
+                    </span>
+                  ) : null}
                   <span className="sm:hidden">
                     <StatusBadge status={b.status} size="sm" />
                   </span>
@@ -440,9 +461,17 @@ function BookNextCard({ lastVisit }: { lastVisit: BookingWithDetailer | null }) 
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <section>
+    <section className={className}>
       <div className="mb-3 flex items-center gap-3">
         <h2 className="eyebrow text-muted-foreground">{title}</h2>
         <span className="h-px flex-1 bg-hairline" />
