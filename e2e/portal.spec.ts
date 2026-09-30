@@ -800,9 +800,53 @@ test("admin: the tiles are one-tap filters, rows open the job from anywhere on t
   const row = page.getByRole("link", { name: /Open TTD-9A3E7220/ });
   await expect(row).toBeVisible();
   // Dense: a row is a fraction of the old card.
-  expect((await row.boundingBox())!.height).toBeLessThan(110);
+  expect((await row.boundingBox())!.height).toBeLessThan(150);
   await page.getByRole("button", { name: /^Active now: 1/ }).click();
   await expect(page.getByRole("link", { name: /Open TTD-33334444/ })).toHaveCount(0);
+});
+
+test("admin: at a desktop width no row is squashed, cut off or overlapping", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await fakeSupabase(page.context(), { staff: true });
+  await page.context().addCookies([sessionCookie]);
+  await page.goto("/admin", { waitUntil: "networkidle" });
+  const cut = await page
+    .locator("article p.font-display, article a span")
+    .evaluateAll(
+      (els) =>
+        els.filter(
+          (e) =>
+            e.scrollWidth > e.clientWidth + 1 || getComputedStyle(e).textOverflow === "ellipsis",
+        ).length,
+    );
+  expect(cut, "nothing in a row is cut off").toBe(0);
+  const rows = page.getByRole("link", { name: /^Open TTD-/ });
+  for (const row of await rows.all()) {
+    const boxes = await row
+      .locator("span.inline-flex, p, span.font-medium")
+      .evaluateAll((els) =>
+        els.map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0),
+      );
+    for (let i = 0; i < boxes.length; i++)
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i]!;
+        const b = boxes[j]!;
+        const overlap =
+          Math.min(a.right, b.right) - Math.max(a.left, b.left) > 2 &&
+          Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 2;
+        // Nested elements legitimately overlap their parents; two siblings must not.
+        const nested =
+          (a.left <= b.left + 1 &&
+            a.right >= b.right - 1 &&
+            a.top <= b.top + 1 &&
+            a.bottom >= b.bottom - 1) ||
+          (b.left <= a.left + 1 &&
+            b.right >= a.right - 1 &&
+            b.top <= a.top + 1 &&
+            b.bottom >= a.bottom - 1);
+        expect(overlap && !nested, "two pieces of a row overlap").toBe(false);
+      }
+  }
 });
 
 test("detailer: the queue marks the live job, and each stage row is a full tap target", async ({

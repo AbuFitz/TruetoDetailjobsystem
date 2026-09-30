@@ -34,7 +34,8 @@ for (const [name, [w, h]] of Object.entries(SIZES)) {
           const o = gl.createShader(t)!;
           gl.shaderSource(o, s);
           gl.compileShader(o);
-          if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o) ?? "shader");
+          if (!gl.getShaderParameter(o, gl.COMPILE_STATUS))
+            throw new Error(gl.getShaderInfoLog(o) ?? "shader");
           return o;
         };
         const p = gl.createProgram()!;
@@ -44,7 +45,11 @@ for (const [name, [w, h]] of Object.entries(SIZES)) {
         gl.useProgram(p);
         const b = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, b);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+          gl.STATIC_DRAW,
+        );
         const a = gl.getAttribLocation(p, "a");
         gl.enableVertexAttribArray(a);
         gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);

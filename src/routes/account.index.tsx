@@ -11,7 +11,7 @@ import { PlateTag } from "@/components/ttd/VehicleTag";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { ErrorState } from "@/components/ttd/ErrorState";
 import { Avatar } from "@/components/ttd/Avatar";
-import { StepTracker } from "@/components/ttd/LiveJob";
+import { StepTracker } from "@/components/ttd/StepTracker";
 import { VisitHero } from "@/components/ttd/VisitHero";
 import { DashboardSkeleton } from "@/components/ttd/Skeleton";
 import { useRequireCustomerSession } from "@/hooks/use-session";

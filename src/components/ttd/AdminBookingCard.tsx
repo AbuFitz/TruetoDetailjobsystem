@@ -40,59 +40,52 @@ export function AdminBookingCard({
         to="/admin/bookings/$id"
         params={{ id: booking.id }}
         aria-label={`Open ${booking.booking_reference}, ${booking.package_name}`}
-        className="press block min-h-[72px] py-3 pl-5 pr-3 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center md:gap-x-5"
+        className="press block min-h-[72px] py-3 pl-5 pr-3"
       >
-        <div className="min-w-0">
-          <div className="flex items-center justify-between gap-2 md:justify-start">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="mono-ref truncate text-muted-foreground">{booking.booking_reference}</p>
-            <span className="md:hidden">
-              <StatusBadge status={booking.status} size="sm" />
-            </span>
+            <p className="mt-0.5 break-words font-display text-[22px] leading-[1.05]">
+              {booking.package_name}
+            </p>
           </div>
-          <p className="mt-0.5 break-words font-display text-[22px] leading-[1.05] md:truncate">
-            {booking.package_name}
-          </p>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <StatusBadge status={booking.status} size="sm" />
+            <ChevronRight
+              className="hidden h-4 w-4 text-muted-foreground sm:block"
+              strokeWidth={2.4}
+            />
+          </div>
         </div>
 
-        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 md:mt-0">
+        {/* Wraps by itself, so the row reads well in a narrow column as much as a wide one. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-muted-foreground">
           <PlateTag registration={booking.vehicle_registration} />
           {booking.vehicle_description ? (
-            <span className="truncate text-[13px] font-medium">{booking.vehicle_description}</span>
+            <span className="font-medium text-foreground">{booking.vehicle_description}</span>
           ) : null}
-        </div>
-
-        <div className="mt-2 min-w-0 text-[13px] text-muted-foreground md:mt-0">
-          <p className="flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
-            <span className="truncate">
-              {dayLabel}, {timeLabel} · {booking.service_postcode}
+            {dayLabel}, {timeLabel} · {booking.service_postcode}
+          </span>
+          {booking.detailer ? (
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <Avatar
+                name={booking.detailer.name}
+                photoUrl={booking.detailer.photo_url}
+                size="sm"
+              />
+              {booking.detailer.name}
             </span>
-          </p>
-          <p className="mt-1 flex items-center gap-2">
-            {booking.detailer ? (
-              <>
-                <Avatar
-                  name={booking.detailer.name}
-                  photoUrl={booking.detailer.photo_url}
-                  size="sm"
-                />
-                <span className="truncate font-medium">{booking.detailer.name}</span>
-              </>
-            ) : (
-              <span className="font-medium text-warning-text">Unassigned</span>
-            )}
-            {live && booking.location_updated_at ? (
-              <span className="inline-flex shrink-0 items-center gap-1 text-signal-deep">
-                <Radio className="h-3.5 w-3.5" strokeWidth={2.4} />
-                {formatRelativeUpdate(booking.location_updated_at)}
-              </span>
-            ) : null}
-          </p>
-        </div>
-
-        <div className="hidden items-center gap-2 md:flex">
-          <StatusBadge status={booking.status} size="sm" />
-          <ChevronRight className="h-4 w-4 text-muted-foreground" strokeWidth={2.4} />
+          ) : (
+            <span className="font-medium text-warning-text">Unassigned</span>
+          )}
+          {live && booking.location_updated_at ? (
+            <span className="inline-flex items-center gap-1 text-signal-deep">
+              <Radio className="h-3.5 w-3.5" strokeWidth={2.4} />
+              {formatRelativeUpdate(booking.location_updated_at)}
+            </span>
+          ) : null}
         </div>
       </Link>
     </article>
