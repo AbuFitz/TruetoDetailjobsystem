@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarClock, Clock3, Mail, MapPin, Phone, Wrench } from "lucide-react";
+import { CalendarClock, ChevronRight, Clock3, Mail, MapPin, Phone, Wrench } from "lucide-react";
 import { TtdLogo } from "@/components/ttd/Header";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
@@ -10,6 +10,16 @@ import { ListSkeleton } from "@/components/ttd/Skeleton";
 import { formatAppointment, formatCountdownToAppointment } from "@/lib/format";
 import { getDetailerJobHistory, getDetailerJobs, getDetailerProfile } from "@/lib/detailers";
 import { supportContact, ttdSiteLinks } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+
+const LIVE_STATUSES: string[] = [
+  "en_route",
+  "arrived",
+  "check_in",
+  "in_progress",
+  "qc",
+  "handover",
+];
 
 export const Route = createFileRoute("/d/$token")({
   head: () => ({
@@ -104,7 +114,11 @@ function DetailerQueue() {
                   style={{ animationDelay: `${Math.min(i, 5) * 60}ms` }}
                   to="/d/$token/$bookingId"
                   params={{ token, bookingId: job.id }}
-                  className="press rise-in relative overflow-hidden rounded-xl border border-hairline bg-surface p-4"
+                  className={cn(
+                    "press rise-in relative overflow-hidden rounded-xl border border-hairline bg-surface p-4",
+                    // A job you are in the middle of stands out from the ones still to come.
+                    LIVE_STATUSES.includes(job.status) && "border-l-4 border-l-signal",
+                  )}
                 >
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">
@@ -141,6 +155,10 @@ function DetailerQueue() {
                     </span>
                     <span>{job.package_name}</span>
                   </div>
+                  <p className="mt-3 flex min-h-8 items-center justify-end gap-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-deep">
+                    {LIVE_STATUSES.includes(job.status) ? "Continue job" : "Open job"}
+                    <ChevronRight className="h-4 w-4" strokeWidth={2.6} />
+                  </p>
                 </Link>
               );
             })}

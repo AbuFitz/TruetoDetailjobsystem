@@ -91,7 +91,7 @@ export function VisitHero({
         {/* A calm ground for the numbers and ticks, so they never fight the reflections. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/55 to-transparent"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgb(12_12_12/0.78)_0%,rgb(12_12_12/0.35)_38%,transparent_70%),linear-gradient(to_right,rgb(12_12_12/0.62)_0%,rgb(12_12_12/0.2)_42%,transparent_68%)]"
         />
         <div className="pointer-events-none relative mx-auto w-full max-w-6xl px-5 sm:px-8">
           <div className="flex flex-wrap items-end gap-x-5 gap-y-1">

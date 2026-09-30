@@ -782,6 +782,47 @@ test("live job: on the way shows the live arrival estimate in the hero", async (
   ).toBeVisible();
 });
 
+test("admin: the tiles are one-tap filters, rows open the job from anywhere on them", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await fakeSupabase(page.context(), { staff: true });
+  await page.context().addCookies([sessionCookie]);
+  await page.goto("/admin", { waitUntil: "networkidle" });
+  const tile = page.getByRole("button", { name: /^Needs confirming: 1/ });
+  await expect(tile).toHaveAttribute("aria-pressed", "false");
+  await tile.click();
+  await expect(tile).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("link", { name: /Open TTD-9A3E7220/ })).toHaveCount(0);
+  await expect(page.locator("article", { hasText: "TTD-11112222" })).toBeVisible();
+  await tile.click();
+  await expect(tile).toHaveAttribute("aria-pressed", "false");
+  const row = page.getByRole("link", { name: /Open TTD-9A3E7220/ });
+  await expect(row).toBeVisible();
+  // Dense: a row is a fraction of the old card.
+  expect((await row.boundingBox())!.height).toBeLessThan(110);
+  await page.getByRole("button", { name: /^Active now: 1/ }).click();
+  await expect(page.getByRole("link", { name: /Open TTD-33334444/ })).toHaveCount(0);
+});
+
+test("detailer: the queue marks the live job, and each stage row is a full tap target", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fakeSupabase(page.context(), { bookingStatus: "in_progress" });
+  await page.goto("/d/tok-jamie", { waitUntil: "networkidle" });
+  await expect(page.getByText("Continue job")).toHaveCount(1);
+  await expect(page.getByText("Open job")).toHaveCount(1);
+  await page.goto("/d/tok-jamie/b1", { waitUntil: "networkidle" });
+  for (const name of [/Interior clean/, /Protection and finish/]) {
+    const row = page.getByRole("button", { name });
+    await expect(row).toBeVisible();
+    expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(56);
+  }
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  expect(over).toBeLessThanOrEqual(1);
+});
+
 test("the sign in and register switch is a round pill with a thumb that slides", async ({
   page,
 }) => {

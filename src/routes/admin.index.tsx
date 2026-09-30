@@ -24,6 +24,7 @@ import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { ListSkeleton } from "@/components/ttd/Skeleton";
 import { useCountUp } from "@/hooks/use-motion";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { useRequireStaffSession } from "@/hooks/use-session";
@@ -37,8 +38,19 @@ import {
 import { sendBookingEmail } from "@/lib/portal-email";
 import { formatAppointment } from "@/lib/format";
 
-const STATUS_FILTER_OPTIONS: { value: BookingStatus | "all"; label: string }[] = [
+type StatusFilter = BookingStatus | "all" | "active";
+const ACTIVE_NOW: BookingStatus[] = [
+  "en_route",
+  "arrived",
+  "check_in",
+  "in_progress",
+  "qc",
+  "handover",
+];
+
+const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All statuses" },
+  { value: "active", label: "Active now" },
   { value: "requested", label: "Needs confirming" },
   { value: "confirmed", label: "Confirmed" },
   { value: "assigned", label: "Assigned" },
@@ -72,7 +84,7 @@ function AdminDashboard() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const {
     data: bookings,
@@ -91,7 +103,12 @@ function AdminDashboard() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const byStatus = statusFilter === "all" ? all : all.filter((b) => b.status === statusFilter);
+    const byStatus =
+      statusFilter === "all"
+        ? all
+        : statusFilter === "active"
+          ? all.filter((b) => ACTIVE_NOW.includes(b.status))
+          : all.filter((b) => b.status === statusFilter);
     if (!q) return byStatus;
     return byStatus.filter((b) =>
       [b.booking_reference, b.vehicle_registration, b.service_postcode, b.detailer?.name]
@@ -165,24 +182,30 @@ function AdminDashboard() {
           label="Needs confirming"
           value={all.filter((b) => b.status === "requested").length}
           highlight
+          pressed={statusFilter === "requested"}
+          onPress={() => setStatusFilter(statusFilter === "requested" ? "all" : "requested")}
         />
         <Stat
           icon={CalendarClock}
           label="Unassigned"
           value={all.filter((b) => b.status === "confirmed").length}
+          pressed={statusFilter === "confirmed"}
+          onPress={() => setStatusFilter(statusFilter === "confirmed" ? "all" : "confirmed")}
         />
         <Stat
           icon={Radio}
           label="Active now"
-          value={
-            all.filter((b) =>
-              ["en_route", "arrived", "check_in", "in_progress", "qc", "handover"].includes(
-                b.status,
-              ),
-            ).length
-          }
+          value={all.filter((b) => ACTIVE_NOW.includes(b.status)).length}
+          pressed={statusFilter === "active"}
+          onPress={() => setStatusFilter(statusFilter === "active" ? "all" : "active")}
         />
-        <Stat icon={CheckCheck} label="Completed today" value={completedToday} />
+        <Stat
+          icon={CheckCheck}
+          label="Completed today"
+          value={completedToday}
+          pressed={statusFilter === "completed"}
+          onPress={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
+        />
       </div>
 
       <div className="mt-8 flex gap-2">
@@ -214,7 +237,7 @@ function AdminDashboard() {
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as BookingStatus | "all")}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           aria-label="Filter by status"
           className="select-field min-h-11 shrink-0 rounded-xl border border-hairline bg-surface-2 pl-3 text-[13px] font-medium outline-none transition-colors focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
         >
@@ -433,33 +456,54 @@ function BookingList({ bookings }: { bookings: BookingWithDetailer[] }) {
   );
 }
 
+/** A count that is also a filter: one tap shows just those bookings, a second tap clears it. */
 function Stat({
   icon: Icon,
   label,
   value,
   highlight,
+  pressed,
+  onPress,
 }: {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   label: string;
   value: number;
   highlight?: boolean;
+  pressed: boolean;
+  onPress: () => void;
 }) {
   const shown = useCountUp(value, { durationMs: 550 });
   return (
-    <div
-      className={`min-w-0 rounded-xl border p-4 ${highlight && value > 0 ? "border-warning/40 bg-warning/8" : "border-hairline bg-surface"}`}
+    <button
+      type="button"
+      onClick={onPress}
+      aria-pressed={pressed}
+      aria-label={`${label}: ${value}. ${pressed ? "Showing only these. Tap to show everything." : "Tap to show only these."}`}
+      className={cn(
+        "press state-transition min-w-0 rounded-xl border p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-signal",
+        pressed
+          ? "border-foreground bg-foreground text-background"
+          : highlight && value > 0
+            ? "border-warning/40 bg-warning/8 hover:bg-warning/15"
+            : "border-hairline bg-surface hover:bg-surface-2",
+      )}
     >
-      <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+      <span
+        className={cn(
+          "flex min-w-0 items-center gap-1.5",
+          pressed ? "text-background/70" : "text-muted-foreground",
+        )}
+      >
         <Icon
-          className={`h-4 w-4 shrink-0 ${highlight ? "text-signal-deep" : ""}`}
+          className={cn("h-4 w-4 shrink-0", highlight && !pressed && "text-signal-deep")}
           strokeWidth={2.2}
         />
         <span className="min-w-0 text-[11px] font-semibold uppercase leading-tight tracking-[0.08em]">
           {label}
         </span>
       </span>
-      <p className="mt-2 font-display text-[44px] leading-none tabular-nums">{shown}</p>
-    </div>
+      <span className="mt-2 block font-display text-[44px] leading-none tabular-nums">{shown}</span>
+    </button>
   );
 }
 

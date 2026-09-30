@@ -85,7 +85,8 @@ export function StageChecklist({
             <>
               <span
                 className={cn(
-                  "grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px] font-bold transition-colors",
+                  "grid shrink-0 place-items-center rounded-full border text-[10px] font-bold transition-colors",
+                  interactive ? "h-8 w-8" : "h-5 w-5",
                   done && "border-success bg-success text-success-foreground",
                   active && !done && "border-signal-deep/40 bg-signal text-signal-foreground",
                   !done && !active && "border-hairline bg-surface-2 text-transparent",
@@ -104,7 +105,7 @@ export function StageChecklist({
               </span>
               <span
                 className={cn(
-                  "text-[14px] leading-tight",
+                  interactive ? "text-[16px] leading-tight" : "text-[14px] leading-tight",
                   done
                     ? "text-foreground"
                     : active
@@ -124,7 +125,7 @@ export function StageChecklist({
                   type="button"
                   disabled={Boolean(pendingStage)}
                   onClick={() => onToggle(key as DetailStageKey, !done)}
-                  className="press flex w-full items-center gap-2.5 px-1.5 py-1.5 text-left hover:bg-surface-2 disabled:opacity-60"
+                  className="press flex min-h-14 w-full items-center gap-3.5 rounded-xl px-2.5 py-2 text-left hover:bg-surface-2 disabled:opacity-60"
                 >
                   {row}
                 </button>

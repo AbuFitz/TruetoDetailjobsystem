@@ -299,7 +299,12 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
           vehicle_description: detailer.vehicle_description,
         },
       ]);
-    if (p.endsWith("/rpc/get_detailer_jobs")) return json(detailerJobs);
+    if (p.endsWith("/rpc/get_detailer_jobs"))
+      return json(
+        detailerJobs.map((j) =>
+          opts.bookingStatus && j.id === "b1" ? { ...j, status: opts.bookingStatus } : j,
+        ),
+      );
     if (p.endsWith("/rpc/get_detailer_job_history")) return json([]);
     if (p.endsWith("/rpc/get_detailer_job_stages"))
       return json([
