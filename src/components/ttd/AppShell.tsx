@@ -208,7 +208,7 @@ export function AppShell({
             "relative mx-auto w-full max-w-6xl px-5 pb-12 pt-7 sm:px-8 sm:pb-14 sm:pt-10",
             // Over a stage the words must not block the surface's own controls or torch.
             stage !== undefined &&
-              "pointer-events-none pb-4 sm:pb-4 [&_a]:pointer-events-auto [&_button]:pointer-events-auto",
+              "pointer-events-none pb-4 sm:pb-4 [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_h1]:[text-shadow:0_2px_30px_rgb(12_12_12/0.6)]",
           )}
         >
           {back ? (

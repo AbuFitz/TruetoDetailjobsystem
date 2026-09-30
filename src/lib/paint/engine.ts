@@ -84,7 +84,16 @@ export function createPaintEngine(
       const a = gl!.getAttribLocation(p, "a");
       gl!.enableVertexAttribArray(a);
       gl!.vertexAttribPointer(a, 2, gl!.FLOAT, false, 0, 0);
-      for (const n of ["u_res", "u_level", "u_torch", "u_tilt", "u_pass", "u_focus"]) {
+      for (const n of [
+        "u_res",
+        "u_level",
+        "u_torch",
+        "u_tilt",
+        "u_pass",
+        "u_focus",
+        "u_time",
+        "u_amb",
+      ]) {
         loc[n] = gl!.getUniformLocation(p, n);
       }
       return true;
@@ -109,6 +118,12 @@ export function createPaintEngine(
   let torchTarget = 0;
   let passT0 = 0;
   let passing = false;
+  // A short ambient wake-up: the lights drift for a few seconds, ease to nothing, and
+  // leave the surface exactly as the poster shows it. It never runs on its own forever.
+  const AMBIENT_MS = 7000;
+  let ambT0 = -1e9;
+  let lastWake = -1e9;
+  let lastDraw = 0;
 
   let cssW = 0;
   let cssH = 0;
@@ -139,11 +154,28 @@ export function createPaintEngine(
     const pass = passing ? (now - passT0) / 1100 : -1;
     gl!.uniform1f(loc["u_pass"]!, pass);
     gl!.uniform1f(loc["u_focus"]!, focusX);
+    const a = ambientAmount(now);
+    gl!.uniform1f(loc["u_time"]!, (now - ambT0) / 1000);
+    gl!.uniform1f(loc["u_amb"]!, a);
     gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
   }
 
+  function ambientAmount(now: number): number {
+    const t = (now - ambT0) / AMBIENT_MS;
+    if (t < 0 || t >= 1) return 0;
+    const fadeIn = Math.min(1, t * 8);
+    const fadeOut = 1 - t * t * (3 - 2 * t);
+    return fadeIn * fadeOut;
+  }
+
+  function wake(now = performance.now()) {
+    if (now - lastWake < 20_000) return;
+    lastWake = now;
+    ambT0 = now;
+  }
+
   function step(now: number): boolean {
-    let busy = false;
+    let busy = ambientAmount(now) > 0;
     if (levelAnimating) {
       const t = levelMs > 0 ? Math.min(1, (now - levelT0) / levelMs) : 1;
       level = levelFrom + (levelTo - levelFrom) * ease(t);
@@ -168,6 +200,14 @@ export function createPaintEngine(
     raf = 0;
     if (dead || !active) return;
     const busy = step(now);
+    // While only the ambient light is moving, 24 frames a second is plenty.
+    const ambientOnly =
+      busy && !levelAnimating && !passing && torchK < 0.004 && focusX === focusTarget;
+    if (ambientOnly && now - lastDraw < 41) {
+      raf = requestAnimationFrame(frame);
+      return;
+    }
+    lastDraw = now;
     draw(now);
 
     // Watch the frame rate while things move. Step the resolution down before giving up.
@@ -218,6 +258,7 @@ export function createPaintEngine(
 
   return {
     setLevel(next, o = {}) {
+      wake();
       const to = Math.min(1, Math.max(0, next));
       const from = o.from !== undefined ? Math.min(1, Math.max(0, o.from)) : level;
       levelFrom = from;
@@ -268,6 +309,7 @@ export function createPaintEngine(
       if (next) {
         lastFrame = 0;
         deltas.length = 0;
+        wake();
         if (program) draw(performance.now());
         kick();
       }

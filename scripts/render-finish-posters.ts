@@ -60,6 +60,8 @@ for (const [name, [w, h]] of Object.entries(SIZES)) {
         gl.uniform2f(u("u_tilt"), 0, 0);
         gl.uniform1f(u("u_pass"), -1);
         gl.uniform1f(u("u_focus"), -1);
+        gl.uniform1f(u("u_time"), 0);
+        gl.uniform1f(u("u_amb"), 0);
         gl.viewport(0, 0, w, h);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         return c.toDataURL("image/webp", 0.7);
