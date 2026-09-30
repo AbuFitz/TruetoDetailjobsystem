@@ -594,7 +594,7 @@ async function rewardsPage(
   await page.waitForTimeout(500);
 }
 
-test("rewards: the stamp card is made of real visits and tells you which one each stamp is", async ({
+test("rewards: the car is finished one real visit at a time and each column says which visit it is", async ({
   page,
 }) => {
   await rewardsPage(page, { extra: 2 });
@@ -602,14 +602,14 @@ test("rewards: the stamp card is made of real visits and tells you which one eac
   await expect(card.getByRole("img", { name: "3 of 7 qualifying visits" })).toBeVisible();
   await expect(card.getByText("4 MORE VISITS")).toBeVisible();
   await expect(card.getByRole("listitem")).toHaveCount(7);
-  await card.getByRole("button", { name: /^Stamp 2, earned/ }).click();
+  await card.getByRole("button", { name: /^Visit 2, completed/ }).click();
   await expect(
-    card.getByText(/^Stamp 2: Full Valet Car Detail, \d{1,2} \w{3} \d{4}$/),
+    card.getByText(/^Visit 2: Full Valet Car Detail, \d{1,2} \w{3} \d{4}$/),
   ).toBeVisible();
-  await card.getByRole("button", { name: "Stamp 4, next" }).click();
-  await expect(card.getByText(/Stamp 4 is next/)).toBeVisible();
-  await card.getByRole("button", { name: "Stamp 6, not yet earned" }).click();
-  await expect(card.getByText("Stamp 6 is 3 visits away.")).toBeVisible();
+  await card.getByRole("button", { name: "Visit 4, next" }).click();
+  await expect(card.getByText(/Visit 4 is next/)).toBeVisible();
+  await card.getByRole("button", { name: "Visit 6, not yet completed" }).click();
+  await expect(card.getByText("Visit 6 is 3 visits away.")).toBeVisible();
   // First look on a device never celebrates.
   await expect(card.getByRole("status")).toHaveCount(0);
 });
@@ -619,9 +619,9 @@ test("rewards: a newly counted visit gets an earned moment once, then not again"
 }) => {
   await rewardsPage(page, { extra: 2, seen: 2 });
   const card = page.getByRole("region", { name: "TTD Rewards" });
-  await expect(card.getByText("New stamp earned. That is visit 3 of 7.")).toBeVisible();
+  await expect(card.getByText("New visit counted. That is visit 3 of 7.")).toBeVisible();
   await page.reload({ waitUntil: "networkidle" });
-  await expect(card.getByText(/New stamp earned/)).toHaveCount(0);
+  await expect(card.getByText(/New visit counted/)).toHaveCount(0);
 });
 
 test("rewards: reaching the goal is a milestone", async ({ page }) => {
@@ -638,18 +638,15 @@ test("rewards: with reduced motion the state is complete and nothing flies aroun
   await rewardsPage(page, { extra: 6, seen: 6, reduce: true });
   const card = page.getByRole("region", { name: "TTD Rewards" });
   await expect(card.getByText("YOU ARE THERE")).toBeVisible();
-  const dots = await card
-    .locator(".burst-dot")
+  // The car is fully finished straight away and the light-pass never runs.
+  await expect(card.locator("[style*='clip-path']")).toHaveAttribute("style", /108%/);
+  const pass = await card
+    .locator(".car-pass")
     .evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== "none").length);
-  expect(dots).toBe(0);
-  const dash = await card
-    .locator("svg circle")
-    .nth(1)
-    .evaluate((c) => Number((c as SVGCircleElement).style.strokeDashoffset));
-  expect(dash).toBeLessThan(1);
+  expect(pass).toBe(0);
 });
 
-test("rewards: a phone shows all seven stamps without sideways scroll", async ({ page }) => {
+test("rewards: a phone shows all seven visits without sideways scroll", async ({ page }) => {
   await rewardsPage(page, { extra: 2, width: 360 });
   const card = page.getByRole("region", { name: "TTD Rewards" });
   await expect(card.getByRole("listitem")).toHaveCount(7);
@@ -657,17 +654,28 @@ test("rewards: a phone shows all seven stamps without sideways scroll", async ({
   expect(over).toBeLessThanOrEqual(1);
 });
 
-test("rewards: past visits name the stamp they earned, and the card sits under the next visit on a phone", async ({
+test("rewards: past visits name the counted visit they are, and a phone gets a shortcut that keeps reading order", async ({
   page,
 }) => {
   await rewardsPage(page, { extra: 2, width: 390 });
   const history = page.locator("section", { hasText: "Previous details" });
-  await expect(history.getByText("Stamp 3")).toBeVisible();
-  await expect(history.getByText("Stamp 1")).toBeVisible();
-  const box = async (sel: ReturnType<typeof page.locator>) => (await sel.boundingBox())!.y;
-  const rewardsY = await box(page.getByRole("region", { name: "TTD Rewards" }));
-  const historyY = await box(history);
-  expect(rewardsY).toBeLessThan(historyY);
+  await expect(history.getByText("Visit 3")).toBeVisible();
+  await expect(history.getByText("Visit 1")).toBeVisible();
+  const shortcut = page.getByRole("link", { name: /TTD Rewards: 3 of 7/ });
+  await expect(shortcut).toBeVisible();
+  // The shortcut is up top, the card itself stays where the page order puts it.
+  const y = async (l: ReturnType<typeof page.locator>) => (await l.boundingBox())!.y;
+  expect(await y(shortcut)).toBeLessThan(await y(history));
+  await shortcut.click();
+  await expect(page).toHaveURL(/#ttd-rewards$/);
+  await expect(page.getByRole("region", { name: "TTD Rewards" })).toBeInViewport();
+});
+
+test("rewards: the shortcut is phone only, and keyboard order follows the page", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2, width: 1280 });
+  await expect(page.getByRole("link", { name: /TTD Rewards: 3 of 7/ })).toBeHidden();
 });
 
 test("rewards: on a desktop the card stays in the side column, beside the next visit", async ({
@@ -677,6 +685,82 @@ test("rewards: on a desktop the card stays in the side column, beside the next v
   const rewards = await page.getByRole("region", { name: "TTD Rewards" }).boundingBox();
   const history = await page.locator("section", { hasText: "Previous details" }).boundingBox();
   expect(rewards!.x).toBeGreaterThan(history!.x + history!.width - 1);
+});
+
+test("rewards: every visit column is a comfortable tap: 44px at 360, and at 320 no smaller than 38px (accepted, above the 24px AA minimum)", async ({
+  page,
+}) => {
+  for (const width of [360, 320]) {
+    await rewardsPage(page, { extra: 2, width });
+    const card = page.getByRole("region", { name: "TTD Rewards" });
+    for (const b of await card.getByRole("button", { name: /^Visit \d/ }).all()) {
+      const box = (await b.boundingBox())!;
+      expect(box.height, `column height at ${width}`).toBeGreaterThanOrEqual(44);
+      expect(box.width, `column width at ${width}`).toBeGreaterThanOrEqual(width === 360 ? 44 : 38);
+    }
+    const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    expect(over).toBeLessThanOrEqual(1);
+  }
+});
+
+test("rewards: the keyboard reaches each visit in order and the choice is announced", async ({
+  page,
+}) => {
+  await rewardsPage(page, { extra: 2, width: 1280 });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await card.getByRole("button", { name: /^Visit 1,/ }).focus();
+  await page.keyboard.press("Tab");
+  await expect(card.getByRole("button", { name: /^Visit 2,/ })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(card.getByRole("button", { name: /^Visit 2,/ })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(card.getByText(/^Visit 2: Full Valet Car Detail/)).toBeVisible();
+});
+
+test("rewards: with no completed visits the car is all primer and says the first visit finishes the first section", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await fakeSupabase(page.context());
+  await page.context().addCookies([sessionCookie]);
+  await page.context().route(/\/rest\/v1\/bookings/, (r) =>
+    r.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: "[]",
+    }),
+  );
+  await page.goto("/account", { waitUntil: "networkidle" });
+  const card = page.getByRole("region", { name: "TTD Rewards" });
+  await expect(card.getByText("7 MORE VISITS")).toBeVisible();
+  await expect(
+    card.getByText("Your first completed visit finishes the first section."),
+  ).toBeVisible();
+  await expect(card.getByRole("img", { name: "0 of 7 qualifying visits" })).toBeVisible();
+});
+
+test("customer dashboard: when bookings fail to load it says so, offers a retry, and never claims nothing is booked", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await fakeSupabase(page.context());
+  await page.context().addCookies([sessionCookie]);
+  await page.context().route(/\/rest\/v1\/bookings/, (r) =>
+    r.fulfill({
+      status: 500,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify({ message: "boom" }),
+    }),
+  );
+  await page.goto("/account", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Couldn't load your bookings")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: /try again/i })).toBeVisible();
+  await expect(page.getByText(/nothing booked/i)).toHaveCount(0);
+  await expect(page.getByText(/finished details will collect here/i)).toHaveCount(0);
 });
 
 test("rewards: nothing is remembered or celebrated while bookings are still loading", async ({
@@ -702,7 +786,7 @@ test("rewards: nothing is remembered or celebrated while bookings are still load
     await page.evaluate((k) => localStorage.getItem(k), `ttd_rewards_seen:${CUSTOMER_UID}`),
   ).toBe("2");
   const card = page.getByRole("region", { name: "TTD Rewards" });
-  await expect(card.getByText("New stamp earned. That is visit 3 of 7.")).toBeVisible({
+  await expect(card.getByText("New visit counted. That is visit 3 of 7.")).toBeVisible({
     timeout: 8000,
   });
   expect(

@@ -426,10 +426,8 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
 function BookingList({ bookings }: { bookings: BookingWithDetailer[] }) {
   return (
     <div className="flex flex-col gap-3">
-      {bookings.map((b, i) => (
-        <div key={b.id} className="rise-in" style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}>
-          <AdminBookingCard booking={b} />
-        </div>
+      {bookings.map((b) => (
+        <AdminBookingCard key={b.id} booking={b} />
       ))}
     </div>
   );
@@ -449,7 +447,7 @@ function Stat({
   const shown = useCountUp(value, { durationMs: 550 });
   return (
     <div
-      className={`rise-in min-w-0 rounded-xl border p-4 ${highlight && value > 0 ? "border-warning/40 bg-warning/8" : "border-hairline bg-surface"}`}
+      className={`min-w-0 rounded-xl border p-4 ${highlight && value > 0 ? "border-warning/40 bg-warning/8" : "border-hairline bg-surface"}`}
     >
       <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
         <Icon

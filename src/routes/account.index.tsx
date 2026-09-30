@@ -4,11 +4,21 @@ import { addWeeks, format, isFuture } from "date-fns";
 import { cn } from "@/lib/utils";
 import { UK_TIME } from "@/lib/uk-time";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarPlus, Car, ChevronRight, Gift, MapPin, Check } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarPlus,
+  Car,
+  ChevronRight,
+  Gift,
+  MapPin,
+  Check,
+  Sparkles,
+} from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
+import { ErrorState } from "@/components/ttd/ErrorState";
 import { Avatar } from "@/components/ttd/Avatar";
 import { useRequireCustomerSession } from "@/hooks/use-session";
 import { getMyProfile } from "@/lib/customers";
@@ -18,6 +28,7 @@ import { daysUntilLabel, formatAppointment } from "@/lib/format";
 import { MAINTENANCE_DETAIL_INTERVAL_WEEKS, REWARD_VISITS_REQUIRED } from "@/lib/constants";
 import { DashboardSkeleton, Skeleton } from "@/components/ttd/Skeleton";
 import { RewardsCard } from "@/components/ttd/RewardsCard";
+import { rewardsView } from "@/lib/rewards";
 import { customerHeadline, formatDuration } from "@/lib/progress";
 
 export const Route = createFileRoute("/account/")({
@@ -52,7 +63,12 @@ function AccountDashboard() {
     enabled: Boolean(session),
   });
 
-  const { data: bookings, isLoading: bookingsLoading } = useQuery({
+  const {
+    data: bookings,
+    isLoading: bookingsLoading,
+    isError: bookingsFailed,
+    refetch: refetchBookings,
+  } = useQuery({
     queryKey: ["my-bookings"],
     queryFn: listMyBookings,
     enabled: Boolean(session),
@@ -100,7 +116,7 @@ function AccountDashboard() {
       // this list a second upcoming detail was invisible on the dashboard.
       otherUpcoming: upcoming.filter((b) => b.id !== next?.id),
       previousBookings: previous.slice(0, 5),
-      // Which stamp each completed visit earned (1 is the oldest visit).
+      // Which counted visit each completed booking is (1 is the oldest).
       stampByBooking: new Map(
         [...previous].reverse().map((b, i) => [b.id, i + 1 <= REWARD_VISITS_REQUIRED ? i + 1 : 0]),
       ),
@@ -138,38 +154,47 @@ function AccountDashboard() {
       }
     >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-8">
+        <div className="flex min-w-0 flex-col gap-8">
           {bookingsLoading ? (
             <DashboardSkeleton />
+          ) : bookingsFailed && !bookings ? (
+            // Never say "nothing booked" when the truth is that bookings did not load.
+            <ErrorState
+              title="Couldn't load your bookings"
+              description="Your visits and rewards will show here as soon as they load."
+              onRetry={() => void refetchBookings()}
+            />
           ) : nextBooking ? (
-            <div className="order-1 lg:order-none">
-              <NextVisitCard booking={nextBooking} live={Boolean(liveBooking)} />
-            </div>
+            <NextVisitCard booking={nextBooking} live={Boolean(liveBooking)} />
           ) : (
-            <div className="order-1 lg:order-none">
-              <BookNextCard lastVisit={previousBookings[0] ?? null} />
-            </div>
+            <BookNextCard lastVisit={previousBookings[0] ?? null} />
           )}
 
+          {bookings ? (
+            <RewardsShortcut earned={completedVisits.length} required={REWARD_VISITS_REQUIRED} />
+          ) : null}
+
           {otherUpcoming.length > 0 ? (
-            <Section title="Also booked" className="order-3 lg:order-none">
+            <Section title="Also booked">
               <VisitList bookings={otherUpcoming} />
             </Section>
           ) : null}
 
-          <Section title="Previous details" className="order-4 lg:order-none">
-            {previousBookings.length > 0 ? (
-              <VisitList bookings={previousBookings} past stamps={stampByBooking} />
-            ) : (
-              <p className="rounded-2xl border border-dashed border-hairline px-5 py-6 text-center text-[14px] text-muted-foreground">
-                Your finished details will collect here, with the date, car and what we did.
-              </p>
-            )}
-          </Section>
+          {bookingsFailed && !bookings ? null : (
+            <Section title="Previous details">
+              {previousBookings.length > 0 ? (
+                <VisitList bookings={previousBookings} past stamps={stampByBooking} />
+              ) : (
+                <p className="rounded-2xl border border-dashed border-hairline px-5 py-6 text-center text-[14px] text-muted-foreground">
+                  Your finished details will collect here, with the date, car and what we did.
+                </p>
+              )}
+            </Section>
+          )}
         </div>
 
-        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-8">
-          <div className="order-5 grid grid-cols-2 gap-2 lg:order-none">
+        <div className="flex min-w-0 flex-col gap-8">
+          <div className="grid grid-cols-2 gap-2">
             <Link
               to="/book"
               className="press col-span-2 inline-flex min-h-12 items-center justify-between bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep sm:col-span-1 lg:col-span-2"
@@ -187,19 +212,17 @@ function AccountDashboard() {
           </div>
 
           {/* Only once the real bookings are known: a count of zero while loading would be remembered as "nothing earned". */}
-          <div className="order-2 lg:order-none">
-            {bookings ? (
-              <RewardsCard
-                visits={completedVisits}
-                required={REWARD_VISITS_REQUIRED}
-                storageKey={session.user.id}
-              />
-            ) : (
-              <Skeleton className="h-[330px] w-full" />
-            )}
-          </div>
+          {bookings ? (
+            <RewardsCard
+              visits={completedVisits}
+              required={REWARD_VISITS_REQUIRED}
+              storageKey={session.user.id}
+            />
+          ) : bookingsFailed ? null : (
+            <Skeleton className="h-[400px] w-full" />
+          )}
 
-          <Section title="Your garage" className="order-6 lg:order-none">
+          <Section title="Your garage">
             <div className="overflow-hidden rounded-2xl border border-hairline bg-surface">
               {vehicles && vehicles.length > 0 ? (
                 <ul className="divide-y divide-hairline">
@@ -233,7 +256,7 @@ function AccountDashboard() {
           </Section>
 
           {recommendedDate ? (
-            <div className="order-7 rounded-2xl border border-signal/30 bg-signal/8 p-5 lg:order-none">
+            <div className="rounded-2xl border border-signal/30 bg-signal/8 p-5">
               <p className="eyebrow text-signal-deep">Recommended</p>
               <p className="mt-2 font-display text-[28px] leading-[0.95]">
                 MAINTENANCE DETAIL DUE AROUND{" "}
@@ -255,6 +278,39 @@ function AccountDashboard() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+/**
+ * Phones only. The full rewards card sits in the side column, which stacks
+ * below the visit lists on a small screen, so this puts progress in reach
+ * without changing reading order: one line, and a link that jumps to the card.
+ */
+function RewardsShortcut({ earned, required }: { earned: number; required: number }) {
+  const view = rewardsView(earned, required);
+  return (
+    <a
+      href="#ttd-rewards"
+      className="press -mt-3 flex min-h-12 items-center gap-3 rounded-2xl border border-hairline bg-surface px-4 py-3 lg:hidden"
+    >
+      <Sparkles className="h-4 w-4 shrink-0 text-signal" strokeWidth={2.4} />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-semibold">
+          {view.reached
+            ? "TTD Rewards: milestone reached"
+            : `TTD Rewards: ${view.earned} of ${required}`}
+        </span>
+        <span aria-hidden className="mt-1.5 block h-1 overflow-hidden rounded-full bg-hairline">
+          <span
+            className="grow-x block h-full rounded-full bg-signal"
+            style={{ width: `${view.fraction * 100}%` }}
+          />
+        </span>
+      </span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-signal-deep">
+        View progress
+      </span>
+    </a>
   );
 }
 
@@ -291,7 +347,7 @@ function VisitList({
 }: {
   bookings: BookingWithDetailer[];
   past?: boolean;
-  /** Booking id to the stamp it earned (0 for none), so history and rewards read as one thing. */
+  /** Booking id to the counted visit number it is (0 for none), so history and rewards read as one thing. */
   stamps?: Map<string, number>;
 }) {
   return (
@@ -321,7 +377,7 @@ function VisitList({
                   {stamp > 0 ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.1em] text-signal-deep">
                       <Check className="h-3 w-3" strokeWidth={3.2} />
-                      Stamp {stamp}
+                      Visit {stamp}
                     </span>
                   ) : null}
                   <span className="sm:hidden">

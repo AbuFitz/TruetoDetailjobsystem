@@ -388,18 +388,13 @@
   }
 }
 
-@keyframes ttd-stamp {
-  0% {
-    opacity: 0;
-    transform: scale(1.7) rotate(-8deg);
+/* One pass of light across the finished paint. Units are the car's own 280 x 100 grid. */
+@keyframes ttd-pass {
+  from {
+    transform: translateX(-60px);
   }
-  55% {
-    opacity: 1;
-    transform: scale(0.9) rotate(2deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
+  to {
+    transform: translateX(340px);
   }
 }
 
@@ -461,10 +456,12 @@
 @keyframes ttd-glow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--signal) 45%, transparent);
+    opacity: 0.7;
+    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 7px color-mix(in srgb, var(--signal) 0%, transparent);
+    opacity: 0;
+    transform: scale(1.28);
   }
 }
 
@@ -485,9 +482,8 @@
   animation: ttd-slide-down 320ms var(--ease-out) both;
 }
 
-/* A new stamp landing on the card: it comes down large and settles. */
-@utility stamp-in {
-  animation: ttd-stamp 480ms var(--ease-out) both;
+@utility car-pass {
+  animation: ttd-pass 1100ms var(--ease-out) 700ms 1 both;
 }
 
 /* A stroke that draws itself. Give the path pathLength="1". */
@@ -503,9 +499,19 @@
   animation: ttd-grow-x 700ms var(--ease-out) both;
 }
 
-/* A soft ring that breathes around the one thing to do next. */
+/* A soft ring that breathes around the one thing to do next. Transform and
+   opacity only, on a pseudo-element, so it stays cheap on a phone. */
 @utility glow-next {
-  animation: ttd-glow 2.4s ease-in-out infinite;
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid var(--signal);
+    pointer-events: none;
+    animation: ttd-glow 2.4s ease-in-out infinite;
+  }
 }
 
 /* A single pass of light across a finished mark. Parent needs relative and overflow-hidden. */
@@ -575,15 +581,19 @@
     scroll-behavior: auto !important;
   }
   .pulse-ring,
-  .glow-next,
+  .glow-next::before,
   .skeleton {
     animation: none !important;
+  }
+  .glow-next::before {
+    opacity: 0;
   }
   .pulse-ring {
     opacity: 0.35;
     transform: scale(1.4);
   }
-  .burst-dot {
+  .burst-dot,
+  .car-pass {
     display: none;
   }
   .draw-in {
