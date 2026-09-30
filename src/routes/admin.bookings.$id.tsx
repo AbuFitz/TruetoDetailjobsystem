@@ -362,7 +362,7 @@ function AdminBookingDetail() {
                     });
                     setAddrOpen(true);
                   }}
-                  className="mt-1 block text-[12px] font-medium text-muted-foreground underline underline-offset-2"
+                  className="press -mb-2 mt-0 inline-flex min-h-11 items-center text-[12px] font-medium text-muted-foreground underline underline-offset-2"
                 >
                   Edit
                 </button>

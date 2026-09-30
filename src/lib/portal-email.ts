@@ -13,6 +13,8 @@ export type BookingEmailKind = "booked_in" | "assigned" | "on_the_way" | "comple
 export interface EmailResult {
   sent: boolean;
   reason?: string | undefined;
+  /** True only when the team's own notice of a new portal booking really went out. */
+  staffNotified?: boolean | undefined;
 }
 
 const ENDPOINT = `${(import.meta.env["VITE_MAIN_SITE_URL"] as string | undefined) ?? ttdSiteLinks.website}/api/portal-email`;
@@ -42,10 +44,19 @@ export async function sendBookingEmail(
       sent?: boolean;
       reason?: string;
       error?: string;
+      staffNotified?: boolean;
     };
     if (!res.ok)
-      return { sent: false, reason: body.error ?? `Email service returned ${res.status}` };
-    return { sent: Boolean(body.sent), reason: body.reason };
+      return {
+        sent: false,
+        reason: body.error ?? `Email service returned ${res.status}`,
+        staffNotified: body.staffNotified === true,
+      };
+    return {
+      sent: Boolean(body.sent),
+      reason: body.reason,
+      staffNotified: body.staffNotified === true,
+    };
   } catch {
     return { sent: false, reason: "The email service could not be reached." };
   }

@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, ChevronLeft, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/ttd/AppShell";
-import { sendBookingEmail } from "@/lib/portal-email";
+import { sendBookingEmail, type EmailResult } from "@/lib/portal-email";
+import { confirmationNotice } from "@/lib/booking-email";
 import { guideTo } from "@/lib/guide";
 import { SuccessMark } from "@/components/ttd/SuccessMark";
 import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
@@ -81,6 +82,8 @@ function BookingFlow() {
   const [notes, setNotes] = useState("");
 
   const [bookingId, setBookingId] = useState<string | null>(null);
+  // What happened to the confirmation email, so the screen can say so honestly.
+  const [emailResult, setEmailResult] = useState<EmailResult | null>(null);
 
   const { data: addresses } = useQuery({
     queryKey: ["my-addresses"],
@@ -186,14 +189,18 @@ function BookingFlow() {
         estimated_duration_minutes: selectedPackage.durationMinutes,
         customer_notes: notes || undefined,
       });
-      await sendBookingEmail(booking.id, "booked_in");
-      return booking;
+      // Never throws: the booking is made either way, and the screen reports what happened.
+      const email = await sendBookingEmail(booking.id, "booked_in");
+      return { booking, email };
     },
-    onSuccess: (booking) => {
+    onSuccess: ({ booking, email }) => {
       setBookingId(booking.id);
+      setEmailResult(email);
       setStep("done");
     },
   });
+
+  const notice = confirmationNotice(emailResult, session?.user.email);
 
   // Signed-out visitors are sent to sign in, then straight back here.
   useEffect(() => {
@@ -606,6 +613,24 @@ function BookingFlow() {
             We'll see you on {formatBookingDate(date)} at {time}. Your detailer will come to you,
             and you can track it all from your account.
           </p>
+          {notice ? (
+            notice.tone === "ok" ? (
+              <p
+                role="status"
+                className="mt-4 inline-flex items-center gap-2 text-[14px] font-semibold"
+              >
+                <Check className="h-4 w-4 text-success" strokeWidth={3} />
+                {notice.text}
+              </p>
+            ) : (
+              <p
+                role="status"
+                className="mt-4 max-w-sm rounded-xl border border-warning/40 bg-warning/8 px-4 py-3 text-[14px] leading-relaxed"
+              >
+                {notice.text}
+              </p>
+            )
+          ) : null}
           <Link to="/account/bookings/$id" params={{ id: bookingId }} className="mt-6">
             <PrimaryActionButton className="w-auto px-8">View booking</PrimaryActionButton>
           </Link>
