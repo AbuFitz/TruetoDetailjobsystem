@@ -163,8 +163,8 @@ export function VisitHero({
                   <span
                     className={cn(
                       "grid min-w-[30px] place-items-center rounded-full px-2 py-1 font-mono text-[12px] font-medium tabular-nums transition-colors",
-                      earned ? "text-ink-foreground" : "text-ink-foreground/55",
-                      next && "glow-next text-signal",
+                      earned ? "text-ink-foreground" : "bg-ink/55 text-ink-foreground/85",
+                      next && "glow-next bg-ink/70 text-signal",
                       focus === n && "bg-ink-foreground text-ink",
                       isNew(n) && "pop-in",
                     )}
