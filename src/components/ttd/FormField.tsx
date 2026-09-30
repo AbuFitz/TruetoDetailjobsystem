@@ -32,7 +32,7 @@ export function Field({
         type={type}
         placeholder={placeholder}
         aria-invalid={Boolean(error)}
-        className={`mt-2 min-h-12 w-full rounded-xl border bg-surface-2 px-3.5 text-base font-medium outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/60 focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30 ${
+        className={`mt-2 min-h-12 w-full rounded-2xl border bg-surface-2 px-3.5 text-base font-medium outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/60 focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30 ${
           error ? "border-destructive/50" : "border-input"
         } ${mono ? "font-mono" : ""} ${upper ? "uppercase tracking-wide" : ""}`}
         {...inputProps}

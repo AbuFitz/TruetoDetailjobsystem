@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 
 // Matches the real truetodetail.co.uk CTA buttons exactly (Navbar's "Book
 // Now", Hero's "Book Your Detail"): body font (DM Sans) bold, small
-// uppercase tracked label, square corners, flat (no shadow), background-
-// color-only hover — not the display font, and not rounded.
+// uppercase tracked label, pill corners, flat (no shadow), background-
+// color-only hover — not the display font, and pill-rounded, like the login switch.
 const actionVariants = cva(
-  "press inline-flex w-full items-center justify-center gap-2.5 font-sans font-bold uppercase tracking-[0.1em] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+  "press inline-flex w-full items-center rounded-full justify-center gap-2.5 font-sans font-bold uppercase tracking-[0.1em] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {

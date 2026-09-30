@@ -198,14 +198,14 @@ function AccountDashboard() {
           <div className="grid grid-cols-2 gap-2">
             <Link
               to="/book"
-              className="press col-span-2 inline-flex min-h-12 items-center justify-between bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep sm:col-span-1"
+              className="press col-span-2 inline-flex min-h-12 items-center justify-between rounded-full bg-signal px-6 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep sm:col-span-1"
             >
               Book a detail
               <CalendarPlus className="h-4 w-4" strokeWidth={2.4} />
             </Link>
             <Link
               to="/account/addresses"
-              className="press col-span-2 inline-flex min-h-12 items-center justify-between border border-hairline bg-surface px-5 text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-surface-2 sm:col-span-1"
+              className="press col-span-2 inline-flex min-h-12 items-center justify-between rounded-full border border-hairline bg-surface px-6 text-[12px] font-bold uppercase tracking-[0.12em] hover:bg-surface-2 sm:col-span-1"
             >
               Your addresses
               <MapPin className="h-4 w-4 text-signal-deep" strokeWidth={2.4} />
@@ -484,7 +484,7 @@ function NowBand({ booking, live }: { booking: BookingWithDetailer; live: boolea
             {first}
           </span>
         ) : null}
-        <span className="ml-auto inline-flex min-h-11 items-center gap-2 bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground group-hover:bg-signal-deep">
+        <span className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground group-hover:bg-signal-deep">
           {live ? (booking.status === "en_route" ? "Watch live" : "View job") : "View booking"}
           <ArrowRight className="h-4 w-4" strokeWidth={2.6} />
         </span>
@@ -508,7 +508,7 @@ function BookNext({ lastVisit }: { lastVisit: BookingWithDetailer | null }) {
       </p>
       <Link
         to="/book"
-        className="press mt-5 inline-flex min-h-12 items-center gap-2 bg-signal px-6 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep"
+        className="press mt-5 inline-flex min-h-12 items-center gap-2 rounded-full bg-signal px-6 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep"
       >
         Book a detail <ArrowRight className="h-4 w-4" strokeWidth={2.6} />
       </Link>
