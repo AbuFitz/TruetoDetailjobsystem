@@ -272,8 +272,24 @@ export function TrackingMap({
         });
       }
     };
-    if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
+    // The style can still be loading (and "load" may already have fired), so
+    // try now and, if the map is not ready, try again on each style update.
+    const tryApply = (): boolean => {
+      try {
+        apply();
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    if (tryApply()) return;
+    const retry = () => {
+      if (tryApply()) map.off("styledata", retry);
+    };
+    map.on("styledata", retry);
+    return () => {
+      map.off("styledata", retry);
+    };
   }, [route]);
 
   return (
