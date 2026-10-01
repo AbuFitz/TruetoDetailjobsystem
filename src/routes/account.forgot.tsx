@@ -38,7 +38,7 @@ function Forgot() {
 
   return (
     <PublicShell
-      eyebrow="Password help"
+      eyebrow="Your account"
       title={
         <>
           RESET YOUR PASSWORD<span className="text-signal">.</span>

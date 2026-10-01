@@ -81,7 +81,7 @@ function Reset() {
 
   if (loading || verifying || (!session && !waited)) {
     return (
-      <PublicShell eyebrow="Password help" title="ONE MOMENT">
+      <PublicShell eyebrow="Your account" title="ONE MOMENT">
         <BrandedLoading label="Checking your link" />
       </PublicShell>
     );
@@ -90,7 +90,7 @@ function Reset() {
   if (!session) {
     return (
       <PublicShell
-        eyebrow="Password help"
+        eyebrow="Your account"
         title={
           <>
             {reason === "expired" ? "THAT LINK HAS EXPIRED" : "THAT LINK DID NOT WORK"}
@@ -117,7 +117,7 @@ function Reset() {
 
   return (
     <PublicShell
-      eyebrow="Password help"
+      eyebrow="Your account"
       title={
         <>
           NEW PASSWORD<span className="text-signal">.</span>
