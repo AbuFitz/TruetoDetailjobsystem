@@ -95,14 +95,14 @@ function CreateAccount() {
         <Link
           to="/account/login"
           search={{ email: email.trim() }}
-          className="press mt-6 inline-flex min-h-12 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
+          className="press rounded-full mt-6 inline-flex min-h-12 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
         >
           Sign in
         </Link>
         <Link
           to="/account/forgot"
           search={{ email: email.trim() }}
-          className="press mt-3 inline-flex min-h-12 w-full items-center justify-center border border-hairline bg-surface px-4 text-[13px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2"
+          className="press rounded-full mt-3 inline-flex min-h-12 w-full items-center justify-center border border-hairline bg-surface px-4 text-[13px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2"
         >
           I forgot my password
         </Link>
@@ -143,7 +143,7 @@ function CreateAccount() {
           type="button"
           onClick={resend}
           disabled={cooldown > 0}
-          className="press mt-5 inline-flex min-h-11 items-center justify-center border border-hairline bg-surface px-5 text-[12px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2 disabled:opacity-50"
+          className="press rounded-full mt-5 inline-flex min-h-11 items-center justify-center border border-hairline bg-surface px-5 text-[12px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2 disabled:opacity-50"
         >
           {cooldown > 0 ? `Send again in ${cooldown}s` : "Send the email again"}
         </button>

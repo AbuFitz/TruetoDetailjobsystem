@@ -144,7 +144,7 @@ function TrackPage() {
               </p>
               <Link
                 to="/book"
-                className="press mt-4 inline-flex min-h-11 items-center justify-center bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
+                className="press rounded-full mt-4 inline-flex min-h-11 items-center justify-center bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
               >
                 Book again
               </Link>
@@ -211,7 +211,7 @@ function TrackPage() {
               <Link
                 to="/account/create"
                 search={{ from: token }}
-                className="press mt-4 inline-flex min-h-11 w-full items-center justify-center bg-signal px-4 text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
+                className="press rounded-full mt-4 inline-flex min-h-11 w-full items-center justify-center bg-signal px-4 text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
               >
                 Create your free account
               </Link>
@@ -232,13 +232,13 @@ function TrackPage() {
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <a
-                className="press inline-flex min-h-11 items-center justify-center gap-2 border border-hairline text-[13px] font-semibold hover:bg-surface-2"
+                className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-hairline text-[13px] font-semibold hover:bg-surface-2"
                 href={`tel:${supportContact.phone.replace(/\s/g, "")}`}
               >
                 <Phone className="h-4 w-4" /> Call
               </a>
               <a
-                className="press inline-flex min-h-11 items-center justify-center gap-2 border border-hairline text-[13px] font-semibold hover:bg-surface-2"
+                className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-hairline text-[13px] font-semibold hover:bg-surface-2"
                 href={`https://wa.me/44${supportContact.phone.replace(/\s/g, "").slice(1)}`}
               >
                 <MessageCircle className="h-4 w-4" /> WhatsApp

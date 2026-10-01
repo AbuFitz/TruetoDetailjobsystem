@@ -81,7 +81,7 @@ function Verified() {
         </p>
         <Link
           to="/account/login"
-          className="press mt-5 inline-flex min-h-12 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
+          className="press rounded-full mt-5 inline-flex min-h-12 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
         >
           Sign in
         </Link>

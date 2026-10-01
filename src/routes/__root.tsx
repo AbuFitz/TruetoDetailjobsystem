@@ -134,6 +134,9 @@ const THEME_INIT_SCRIPT = `
   try {
     var q = new URLSearchParams(location.hash.replace(/^#/, "") + "&" + location.search.replace(/^[?]/, ""));
     window.__ttdLinkProblem = q.get("error_code") || q.get("error") || null;
+    // The reset link's own token, kept before the auth library strips it from the address.
+    window.__ttdLinkToken = q.get("token_hash") ? { hash: q.get("token_hash"), type: q.get("type") } : null;
+    window.__ttdLinkCode = q.get("code") || null;
   } catch (e) {}
 })();
 `;

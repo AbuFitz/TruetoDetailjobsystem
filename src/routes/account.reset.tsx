@@ -6,6 +6,7 @@ import { NewPasswordFields, passwordProblems } from "@/components/ttd/PasswordFi
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { useSession } from "@/hooks/use-session";
+import { supabase } from "@/lib/supabase";
 import { updateMyPassword } from "@/lib/auth";
 import { confirmPasswordChanged } from "@/lib/accounts";
 
@@ -27,6 +28,32 @@ function Reset() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [reason, setReason] = useState<"expired" | "other-browser" | "unknown">("unknown");
+
+  // A link carrying its own token works from any browser or device, and an email
+  // scanner that merely opens it cannot use it up, because it is redeemed here.
+  useEffect(() => {
+    const w = window as unknown as {
+      __ttdLinkProblem?: string | null;
+      __ttdLinkToken?: { hash: string; type: string | null } | null;
+      __ttdLinkCode?: string | null;
+    };
+    if (w.__ttdLinkToken?.hash) {
+      setVerifying(true);
+      void supabase.auth
+        .verifyOtp({ token_hash: w.__ttdLinkToken.hash, type: "recovery" })
+        .then(({ error: err }) => {
+          if (err) setReason(/expired|invalid/i.test(err.message) ? "expired" : "unknown");
+          setVerifying(false);
+        });
+    } else if (w.__ttdLinkProblem) {
+      setReason(/expired/i.test(w.__ttdLinkProblem) ? "expired" : "unknown");
+    } else if (w.__ttdLinkCode) {
+      // The older link style only works in the browser that asked for it.
+      setReason("other-browser");
+    }
+  }, []);
 
   // The reset link signs the person in for this one step; give the sign-in a moment to land.
   useEffect(() => {
@@ -52,7 +79,7 @@ function Reset() {
     }
   }
 
-  if (loading || (!session && !waited)) {
+  if (loading || verifying || (!session && !waited)) {
     return (
       <PublicShell eyebrow="Password help" title="ONE MOMENT">
         <BrandedLoading label="Checking your link" />
@@ -66,16 +93,21 @@ function Reset() {
         eyebrow="Password help"
         title={
           <>
-            THAT LINK HAS EXPIRED<span className="text-signal">.</span>
+            {reason === "expired" ? "THAT LINK HAS EXPIRED" : "THAT LINK DID NOT WORK"}
+            <span className="text-signal">.</span>
           </>
         }
       >
         <p className="text-[15px] leading-relaxed text-muted-foreground">
-          Reset links work once, for an hour. Request a fresh one and we will send it straight away.
+          {reason === "expired"
+            ? "Reset links work once, for an hour. Request a fresh one and we will send it straight away."
+            : reason === "other-browser"
+              ? "This link only works in the browser you asked for it from. Open it there, or request a fresh link from this device."
+              : "We could not sign you in from that link. It may already have been used, or opened by an email scanner. Request a fresh one and open it straight away."}
         </p>
         <Link
           to="/account/forgot"
-          className="press mt-5 inline-flex min-h-12 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
+          className="press rounded-full mt-5 inline-flex min-h-12 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep"
         >
           Send a new link
         </Link>

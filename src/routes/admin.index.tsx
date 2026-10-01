@@ -406,7 +406,7 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
           onClick={() => confirm.mutate()}
           disabled={confirm.isPending || confirm.isSuccess || decline.isPending}
           aria-busy={confirm.isPending}
-          className="press state-transition inline-flex min-h-11 items-center justify-center gap-1.5 bg-signal px-3 font-sans text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep disabled:opacity-50"
+          className="press rounded-full state-transition inline-flex min-h-11 items-center justify-center gap-1.5 bg-signal px-3 font-sans text-[12px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep disabled:opacity-50"
         >
           {confirm.isPending ? (
             <>
@@ -425,7 +425,7 @@ function RequestCard({ booking }: { booking: BookingWithDetailer }) {
         <Link
           to="/admin/bookings/$id"
           params={{ id: booking.id }}
-          className="press inline-flex min-h-11 items-center justify-center border border-hairline bg-surface px-3 font-sans text-[12px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2"
+          className="press rounded-full inline-flex min-h-11 items-center justify-center border border-hairline bg-surface px-3 font-sans text-[12px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2"
         >
           Open
         </Link>

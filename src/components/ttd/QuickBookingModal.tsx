@@ -790,7 +790,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
                   setStep((s) => (s - 1) as Step);
                   setApiError("");
                 }}
-                className="press flex-shrink-0 rounded-xl border border-input px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                className="press flex-shrink-0 rounded-full border border-input px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
               >
                 ← Back
               </button>

@@ -302,14 +302,14 @@ export function CalendarButtons({
         href={googleCalendarUrl(event)}
         target="_blank"
         rel="noreferrer"
-        className="press inline-flex min-h-11 items-center justify-center gap-2 border border-hairline text-[13px] font-semibold hover:bg-surface-2"
+        className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-hairline text-[13px] font-semibold hover:bg-surface-2"
       >
         <CalendarPlus className="h-4 w-4" /> Google
       </a>
       <button
         type="button"
         onClick={download}
-        className="press inline-flex min-h-11 items-center justify-center gap-2 border border-hairline text-[13px] font-semibold hover:bg-surface-2"
+        className="press inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-hairline text-[13px] font-semibold hover:bg-surface-2"
       >
         <Download className="h-4 w-4" /> Apple / Outlook
       </button>

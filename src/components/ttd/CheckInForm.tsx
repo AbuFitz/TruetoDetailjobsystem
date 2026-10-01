@@ -129,7 +129,7 @@ export function CheckInForm({
         type="button"
         disabled={submitting}
         onClick={quickStart}
-        className="press flex min-h-14 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep disabled:opacity-60"
+        className="press rounded-full flex min-h-14 w-full items-center justify-center bg-signal px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-signal-foreground hover:bg-signal-deep disabled:opacity-60"
       >
         Nothing to note, start detailing
       </button>

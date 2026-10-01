@@ -25,7 +25,7 @@ export function VehicleCard({
       )}
     >
       {!compact ? (
-        <span className="grid h-10 w-10 shrink-0 place-items-center bg-surface-2 text-foreground">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-foreground">
           <Car className="h-5 w-5" strokeWidth={2} />
         </span>
       ) : null}

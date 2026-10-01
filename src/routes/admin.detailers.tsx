@@ -36,7 +36,7 @@ function DetailersList() {
       actions={
         <Link
           to="/admin/detailers/new"
-          className="press inline-flex min-h-11 items-center gap-2 bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep"
+          className="press rounded-full inline-flex min-h-11 items-center gap-2 bg-signal px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-signal-foreground hover:bg-signal-deep"
         >
           <Plus className="h-4 w-4" strokeWidth={2.8} />
           Add detailer

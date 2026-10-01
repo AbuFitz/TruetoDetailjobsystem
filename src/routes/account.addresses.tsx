@@ -122,7 +122,7 @@ function AddressesPage() {
               key={a.id}
               className="flex items-start gap-3 rounded-xl border border-hairline bg-surface p-4"
             >
-              <span className="grid h-10 w-10 shrink-0 place-items-center bg-surface-2 text-foreground">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-foreground">
                 <MapPin className="h-5 w-5" strokeWidth={2} />
               </span>
               <div className="min-w-0 flex-1">

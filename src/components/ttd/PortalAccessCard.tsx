@@ -166,7 +166,7 @@ export function PortalAccessCard({ customer }: Props) {
                   type="button"
                   onClick={() => copy(creds.temp_password, "pw")}
                   aria-label="Copy password"
-                  className="press grid h-10 w-10 place-items-center rounded-lg border border-hairline bg-surface hover:bg-surface-2"
+                  className="press grid h-10 w-10 place-items-center rounded-full border border-hairline bg-surface hover:bg-surface-2"
                 >
                   {copied === "pw" ? (
                     <Check className="h-4 w-4 text-success" />
@@ -180,7 +180,7 @@ export function PortalAccessCard({ customer }: Props) {
           <button
             type="button"
             onClick={() => copy(message, "msg")}
-            className="press mt-3 inline-flex min-h-10 items-center gap-2 border border-hairline bg-surface px-4 text-[12px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2"
+            className="press rounded-full mt-3 inline-flex min-h-10 items-center gap-2 border border-hairline bg-surface px-4 text-[12px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2"
           >
             {copied === "msg" ? (
               <Check className="h-4 w-4 text-success" />

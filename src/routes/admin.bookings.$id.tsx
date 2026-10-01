@@ -620,7 +620,7 @@ function AdminBookingDetail() {
                     href={p.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="aspect-square overflow-hidden border border-hairline"
+                    className="aspect-square overflow-hidden rounded-xl border border-hairline"
                   >
                     <img src={p.url} alt="" className="h-full w-full object-cover" />
                   </a>
@@ -677,7 +677,7 @@ function AdminBookingDetail() {
                     type="button"
                     disabled={emailMutation.isPending || !customer?.email}
                     onClick={() => emailMutation.mutate({ kind, force: Boolean(at) })}
-                    className="press shrink-0 border border-hairline px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2 disabled:opacity-40"
+                    className="press shrink-0 rounded-full border border-hairline px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2 disabled:opacity-40"
                   >
                     {at ? "Resend" : "Send"}
                   </button>

@@ -268,6 +268,12 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
       });
     }
     if (p.endsWith("/auth/v1/resend")) return json({});
+    if (p.endsWith("/auth/v1/verify")) {
+      const body = JSON.parse(req.postData() ?? "{}") as { token_hash?: string };
+      if (body.token_hash === "expired-hash")
+        return json({ code: "otp_expired", message: "Email link is invalid or has expired" }, 403);
+      return json(session);
+    }
     if (p.endsWith("/auth/v1/token")) {
       const body = JSON.parse(req.postData() ?? "{}") as { password?: string };
       if (body.password === "Wrong-Pass-1")

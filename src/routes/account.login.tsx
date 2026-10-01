@@ -185,8 +185,18 @@ function AccountLogin() {
             ))}
           </div>
 
-          {mode === "register" ? (
-            <div id="panel-register" role="tabpanel" aria-labelledby="tab-register">
+          {/*
+            Both panels sit in one grid cell, so the card is always as tall as the taller one and
+            the main button and the legal links stay put when switching. The idle panel is inert.
+          */}
+          <div className="grid">
+            <div
+              id="panel-register"
+              role="tabpanel"
+              aria-labelledby="tab-register"
+              inert={mode !== "register"}
+              className={`col-start-1 row-start-1 flex flex-col ${mode === "register" ? "" : "invisible"}`}
+            >
               <h2 className="font-display text-[32px] leading-[0.95]">
                 BOOK A DETAIL, AND YOUR ACCOUNT IS READY
               </h2>
@@ -194,10 +204,7 @@ function AccountLogin() {
                 The easiest way in is to make a booking. We set up your account with it, email you
                 the details, and you can follow your detailer live and rebook in two taps.
               </p>
-              <PrimaryActionButton className="mt-5" onClick={() => setBookingOpen(true)}>
-                Book a detail
-              </PrimaryActionButton>
-              <p className="mt-6 text-center text-[13px] text-muted-foreground">
+              <p className="mt-3 text-[13px] text-muted-foreground">
                 Only want an account for now?{" "}
                 <Link
                   to="/account/create"
@@ -207,14 +214,17 @@ function AccountLogin() {
                 </Link>
                 .
               </p>
+              <PrimaryActionButton className="mt-auto" onClick={() => setBookingOpen(true)}>
+                Book a detail
+              </PrimaryActionButton>
             </div>
-          ) : (
             <form
               id="panel-signin"
               role="tabpanel"
               aria-labelledby="tab-signin"
+              inert={mode !== "signin"}
               onSubmit={handleSubmit(onSubmit)}
-              className="flex flex-col gap-4"
+              className={`col-start-1 row-start-1 flex flex-col gap-4 ${mode === "signin" ? "" : "invisible"}`}
             >
               <LoginField
                 id="email"
@@ -245,11 +255,11 @@ function AccountLogin() {
                 </p>
               ) : null}
 
-              <PrimaryActionButton type="submit" loading={submitting}>
+              <PrimaryActionButton className="mt-auto" type="submit" loading={submitting}>
                 Sign in
               </PrimaryActionButton>
             </form>
-          )}
+          </div>
 
           <LegalLinks className="mt-8" />
         </div>

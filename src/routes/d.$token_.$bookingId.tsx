@@ -281,7 +281,7 @@ function DetailerJob() {
             href={navigationUrlFor(job)}
             target="_blank"
             rel="noopener noreferrer"
-            className="press mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-2 font-sans text-[13px] font-bold uppercase tracking-[0.1em] hover:bg-surface"
+            className="press mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-hairline bg-surface-2 font-sans text-[13px] font-bold uppercase tracking-[0.1em] hover:bg-surface"
           >
             <Navigation className="h-4 w-4" strokeWidth={2.4} />
             Start navigation

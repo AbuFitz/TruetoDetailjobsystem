@@ -363,7 +363,7 @@ function NewBooking() {
                         key={l}
                         type="button"
                         onClick={() => setAddressForm((p) => ({ ...p, label: l }))}
-                        className={`min-h-9 rounded-lg border text-[12px] font-semibold ${
+                        className={`min-h-9 rounded-xl border text-[12px] font-semibold ${
                           addressForm.label === l
                             ? "border-signal bg-signal text-signal-foreground"
                             : "border-input bg-surface-2 text-muted-foreground"
@@ -377,19 +377,19 @@ function NewBooking() {
                     value={addressForm.line1}
                     onChange={(e) => setAddressForm((p) => ({ ...p, line1: e.target.value }))}
                     placeholder="Address line 1"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                    className="min-h-10 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
                   />
                   <input
                     value={addressForm.city}
                     onChange={(e) => setAddressForm((p) => ({ ...p, city: e.target.value }))}
                     placeholder="Town / city (optional)"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                    className="min-h-10 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
                   />
                   <input
                     value={addressForm.postcode}
                     onChange={(e) => setAddressForm((p) => ({ ...p, postcode: e.target.value }))}
                     placeholder="Postcode"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm uppercase outline-none focus:border-signal"
+                    className="min-h-10 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm uppercase outline-none focus:border-signal"
                   />
                   {createAddress.isError ? (
                     <p className="text-[12px] text-destructive">
@@ -456,27 +456,27 @@ function NewBooking() {
                       setVehicleForm((p) => ({ ...p, registration: e.target.value }))
                     }
                     placeholder="Registration"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm uppercase outline-none focus:border-signal"
+                    className="min-h-10 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm uppercase outline-none focus:border-signal"
                   />
                   <div className="grid grid-cols-2 gap-1.5">
                     <input
                       value={vehicleForm.make}
                       onChange={(e) => setVehicleForm((p) => ({ ...p, make: e.target.value }))}
                       placeholder="Make (optional)"
-                      className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                      className="min-h-10 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
                     />
                     <input
                       value={vehicleForm.model}
                       onChange={(e) => setVehicleForm((p) => ({ ...p, model: e.target.value }))}
                       placeholder="Model (optional)"
-                      className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                      className="min-h-10 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
                     />
                   </div>
                   <input
                     value={vehicleForm.colour}
                     onChange={(e) => setVehicleForm((p) => ({ ...p, colour: e.target.value }))}
                     placeholder="Colour (optional)"
-                    className="min-h-10 w-full rounded-lg border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
+                    className="min-h-10 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm outline-none focus:border-signal"
                   />
                   {createVehicle.isError ? (
                     <p className="text-[12px] text-destructive">

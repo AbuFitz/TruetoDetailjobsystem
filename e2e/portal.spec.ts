@@ -421,7 +421,7 @@ test("the public login page toggles between sign in and register, and register p
   await expect(
     page.getByRole("heading", { name: /book a detail, and your account is ready/i }),
   ).toBeVisible();
-  await expect(page.locator("#password")).toHaveCount(0);
+  await expect(page.locator("#password")).toBeHidden();
   await expect(page.getByRole("link", { name: /create one/i })).toHaveAttribute(
     "href",
     /account\/create/,
@@ -437,6 +437,25 @@ test("the public login page toggles between sign in and register, and register p
     "aria-selected",
     "true",
   );
+});
+
+test("switching between sign in and register keeps the main button and the legal links in place", async ({
+  page,
+}) => {
+  await fakeSupabase(page.context());
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/account/login", { waitUntil: "networkidle" });
+    await page.waitForTimeout(400);
+    const y = async (loc: ReturnType<Page["locator"]>) => Math.round((await loc.boundingBox())!.y);
+    const legal = page.getByRole("link", { name: /^terms/i }).first();
+    const signIn = await y(page.getByRole("button", { name: "Sign in", exact: true }).last());
+    const legalSignIn = await y(legal);
+    await page.getByRole("tab", { name: "Register" }).click();
+    await page.waitForTimeout(400);
+    expect(await y(page.getByRole("button", { name: "Book a detail" }))).toBe(signIn);
+    expect(await y(legal)).toBe(legalSignIn);
+  }
 });
 
 test("the staff sign in has no register option", async ({ page }) => {
@@ -1010,4 +1029,41 @@ test("motion: with no preference, entrances and the live pulse do run", async ({
     ),
   ]);
   expect(names.some((n) => n !== "none")).toBe(true);
+});
+
+test.describe("password reset link", () => {
+  test("a link carrying its own token signs in from any browser and shows the new password form", async ({
+    browser,
+  }) => {
+    const ctx = await browser.newContext();
+    await fakeSupabase(ctx, {});
+    const page = await ctx.newPage();
+    await page.goto("/account/reset?token_hash=good-hash&type=recovery");
+    await expect(page.getByRole("heading", { name: /NEW PASSWORD/i })).toBeVisible();
+    await expect(page.getByText(/expired/i)).toHaveCount(0);
+    await ctx.close();
+  });
+
+  test("a genuinely expired link says expired", async ({ browser }) => {
+    const ctx = await browser.newContext();
+    await fakeSupabase(ctx, {});
+    const page = await ctx.newPage();
+    await page.goto("/account/reset?token_hash=expired-hash&type=recovery");
+    await expect(page.getByRole("heading", { name: /LINK HAS EXPIRED/i })).toBeVisible();
+    await ctx.close();
+  });
+
+  test("a link opened where it was not requested explains that, and does not claim it expired", async ({
+    browser,
+  }) => {
+    const ctx = await browser.newContext();
+    await fakeSupabase(ctx, {});
+    const page = await ctx.newPage();
+    await page.goto("/account/reset?code=abc123");
+    await expect(page.getByRole("heading", { name: /DID NOT WORK/i })).toBeVisible({
+      timeout: 8000,
+    });
+    await expect(page.getByText(/browser you asked for it from/i)).toBeVisible();
+    await ctx.close();
+  });
 });

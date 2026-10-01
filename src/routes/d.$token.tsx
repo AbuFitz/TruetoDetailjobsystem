@@ -213,7 +213,7 @@ function InvalidDetailerLink() {
         >
           <TtdLogo size="lg" />
         </a>
-        <span className="mt-7 inline-grid h-14 w-14 place-items-center bg-surface-2 text-muted-foreground">
+        <span className="mt-7 inline-grid h-14 w-14 place-items-center rounded-full bg-surface-2 text-muted-foreground">
           <Clock3 className="h-6 w-6" strokeWidth={2} />
         </span>
         <h1 className="mt-5 font-display text-[26px] leading-tight">This link isn't active</h1>
