@@ -7,6 +7,8 @@ import { DETAIL_STAGE_LABELS, STAGE_DISPLAY_ORDER } from "@/lib/constants";
 import { checklistProgress, estimatedFinish } from "@/lib/journey";
 import { formatDuration } from "@/lib/progress";
 import { formatMiles } from "@/lib/eta";
+import { DateBlock } from "@/components/ttd/DateBlock";
+import { whenParts } from "@/lib/format";
 import { FinishStage } from "@/components/ttd/FinishStage";
 import { useDrivingRoute, useEta, type JobView } from "@/components/ttd/LiveJob";
 
@@ -22,7 +24,7 @@ const DETAILING = ["arrived", "check_in", "in_progress", "qc", "handover"];
 export function JobHero({
   bookingId,
   view,
-  appointment,
+  startIso,
   where,
   visitNumber,
   required,
@@ -31,8 +33,8 @@ export function JobHero({
 }: {
   bookingId: string;
   view: JobView;
-  /** "Today, 6:08 PM" */
-  appointment: string;
+  /** When the visit is booked for. */
+  startIso: string;
   where: string;
   /** The completed visit this job counts as, once it is done. */
   visitNumber: number | null;
@@ -134,8 +136,11 @@ export function JobHero({
             </div>
           ) : (
             <div>
-              <p className="font-display text-[44px] leading-none sm:text-[60px]">
-                {appointment.toUpperCase()}
+              <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-display leading-none">
+                <DateBlock iso={startIso} tone="onDark" className="text-[52px] sm:text-[68px]" />
+                <span className="text-[28px] text-ink-foreground/80 sm:text-[36px]">
+                  {whenParts(startIso).timeLabel.toUpperCase()}
+                </span>
               </p>
               <p className="mt-2 text-[14px] text-ink-foreground/75">{where}</p>
             </div>

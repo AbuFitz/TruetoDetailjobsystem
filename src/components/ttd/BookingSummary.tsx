@@ -1,4 +1,5 @@
 import { CalendarClock, MapPin } from "lucide-react";
+import { DateBlock } from "@/components/ttd/DateBlock";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { CalendarButtons } from "@/components/ttd/TrackingExtras";
 import type { CalendarEvent } from "@/lib/calendar";
@@ -13,6 +14,7 @@ export function BookingSummary({
   addons,
   dayLabel,
   timeLabel,
+  startIso,
   vehicleDescription,
   registration,
   where,
@@ -24,6 +26,8 @@ export function BookingSummary({
   addons?: string[] | null;
   dayLabel: string;
   timeLabel: string;
+  /** When given, the date is the main treatment: TODAY on the day, the real date otherwise. */
+  startIso?: string | undefined;
   vehicleDescription?: string | null;
   registration: string;
   where: string;
@@ -35,21 +39,37 @@ export function BookingSummary({
   return (
     <section className="rounded-2xl border border-hairline bg-surface p-5">
       <p className="eyebrow text-muted-foreground">Your booking</p>
-      <h2 className="mt-2 font-display text-[32px] leading-[0.95]">{packageName}</h2>
+      {startIso ? (
+        <p className="mt-2 flex flex-wrap items-baseline gap-x-3 font-display leading-none">
+          <DateBlock iso={startIso} className="text-[44px]" />
+          <span className="text-[24px] text-muted-foreground">{timeLabel.toUpperCase()}</span>
+        </p>
+      ) : null}
+      <h2
+        className={
+          startIso
+            ? "mt-3 font-display text-[24px] leading-[0.95]"
+            : "mt-2 font-display text-[32px] leading-[0.95]"
+        }
+      >
+        {packageName}
+      </h2>
       {addons && addons.length > 0 ? (
         <p className="mt-1.5 text-[13px] text-muted-foreground">+ {addons.join(", ")}</p>
       ) : null}
 
       <dl className="mt-5 divide-y divide-hairline border-y border-hairline text-[14px]">
-        <div className="flex items-start gap-3 py-3">
-          <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-signal-deep" strokeWidth={2.2} />
-          <div className="min-w-0">
-            <dt className="eyebrow text-muted-foreground">When</dt>
-            <dd className="mt-0.5 font-semibold">
-              {dayLabel}, {timeLabel}
-            </dd>
+        {startIso ? null : (
+          <div className="flex items-start gap-3 py-3">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-signal-deep" strokeWidth={2.2} />
+            <div className="min-w-0">
+              <dt className="eyebrow text-muted-foreground">When</dt>
+              <dd className="mt-0.5 font-semibold">
+                {dayLabel}, {timeLabel}
+              </dd>
+            </div>
           </div>
-        </div>
+        )}
         <div className="flex items-start gap-3 py-3">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-signal-deep" strokeWidth={2.2} />
           <div className="min-w-0">

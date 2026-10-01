@@ -227,6 +227,10 @@ export interface FakeOptions {
   bookingStatus?: string;
   /** How many of the four detailing stages are ticked on b1. */
   stagesDone?: number;
+  /** One saved address, so the booking flow can run through to the end without a postcode lookup. */
+  withAddress?: boolean;
+  /** Puts the confirmed booking (b3) two days ahead, so it is not today. */
+  laterVisit?: boolean;
 }
 
 export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) {
@@ -328,8 +332,15 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
     }
     if (p.includes("/rest/v1/bookings")) {
       const id = url.searchParams.get("id");
-      const asStatus = <T extends { id: string; status: string }>(b: T): T =>
-        opts.bookingStatus && b.id === "b1" ? { ...b, status: opts.bookingStatus } : b;
+      const asStatus = <T extends { id: string; status: string; scheduled_start: string }>(
+        b: T,
+      ): T => {
+        const withStatus =
+          opts.bookingStatus && b.id === "b1" ? { ...b, status: opts.bookingStatus } : b;
+        return opts.laterVisit && b.id === "b3"
+          ? { ...withStatus, scheduled_start: iso(now + 2 * 86400e3) }
+          : withStatus;
+      };
       if (id) {
         const b = asStatus(bookings.find((x) => `eq.${x.id}` === id) ?? bookings[0]!);
         return json(wantsObject ? b : [b]);
@@ -349,6 +360,26 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
         wantsObject ? asStatus(bookings[0]!) : [...bookings, ...extra].map((b) => asStatus(b)),
       );
     }
+    if (p.includes("/rest/v1/customer_addresses"))
+      return json(
+        opts.withAddress
+          ? [
+              {
+                id: "a1",
+                customer_id: "c1",
+                label: "Home",
+                line1: "12 Marlowes",
+                line2: null,
+                city: "Hemel Hempstead",
+                postcode: "HP2 6EL",
+                lat: 51.75,
+                lng: -0.47,
+                is_default: true,
+                created_at: iso(now - 30 * 86400e3),
+              },
+            ]
+          : [],
+      );
     if (p.includes("/rest/v1/vehicles"))
       return json([
         { id: "v1", customer_id: "c1", make: "Ford", model: "Focus", registration: "AB12CDE" },

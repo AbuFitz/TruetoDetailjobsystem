@@ -189,6 +189,7 @@ function TrackPage() {
             addons={booking.addon_labels}
             dayLabel={dayLabel}
             timeLabel={timeLabel}
+            startIso={booking.scheduled_start}
             vehicleDescription={booking.vehicle_description}
             registration={booking.vehicle_registration}
             where={[booking.service_city, booking.service_postcode].filter(Boolean).join(", ")}

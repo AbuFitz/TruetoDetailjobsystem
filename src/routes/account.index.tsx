@@ -18,7 +18,7 @@ import { useRequireCustomerSession } from "@/hooks/use-session";
 import { getMyProfile } from "@/lib/customers";
 import { listMyBookings, LIVE_JOB_STATUSES, type BookingWithDetailer } from "@/lib/bookings";
 import { listMyVehicles, vehicleDescription } from "@/lib/vehicles";
-import { daysUntilLabel, formatAppointment } from "@/lib/format";
+import { daysUntilLabel, formatAppointment, whenParts } from "@/lib/format";
 import { MAINTENANCE_DETAIL_INTERVAL_WEEKS, REWARD_VISITS_REQUIRED } from "@/lib/constants";
 import { customerHeadline, formatDuration } from "@/lib/progress";
 
@@ -302,9 +302,19 @@ function AccountDashboard() {
   );
 }
 
-/** Big day and month, the way the booking sits on a calendar. */
-function DateBlock({ iso }: { iso: string }) {
+/** Big day and month, the way the booking sits on a calendar. On the day itself it just says TODAY. */
+function CalendarTile({ iso }: { iso: string }) {
   const d = new Date(iso);
+  if (whenParts(iso).today) {
+    return (
+      <div
+        data-today="true"
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-ink"
+      >
+        <span className="font-display text-[17px] leading-none text-signal">TODAY</span>
+      </div>
+    );
+  }
   return (
     <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-surface-2">
       <span className="font-display text-[26px] leading-[0.85]">
@@ -362,7 +372,7 @@ function VisitRail({
                 selected && "bg-signal/8",
               )}
             >
-              <DateBlock iso={b.scheduled_start} />
+              <CalendarTile iso={b.scheduled_start} />
               <div className="min-w-0 flex-1">
                 <p className="font-display text-[22px] leading-[1.02] sm:truncate">
                   {b.package_name}
@@ -433,9 +443,12 @@ function NowBand({ booking, live }: { booking: BookingWithDetailer; live: boolea
           {live ? "Happening now" : "Next visit"}
         </p>
         {!live ? (
-          <span className="bg-ink px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-signal">
-            {daysUntilLabel(booking.scheduled_start)}
-          </span>
+          // The day itself says TODAY in the headline below, so no second badge for it.
+          whenParts(booking.scheduled_start).today ? null : (
+            <span className="rounded-full bg-ink px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-signal">
+              {daysUntilLabel(booking.scheduled_start)}
+            </span>
+          )
         ) : (
           <StatusBadge status={booking.status} size="sm" />
         )}
@@ -455,10 +468,21 @@ function NowBand({ booking, live }: { booking: BookingWithDetailer; live: boolea
         </>
       ) : (
         <p className="mt-3 font-display text-[64px] leading-[0.82] sm:text-[92px]">
-          {format(d, "EEE d", { in: UK_TIME }).toUpperCase()}
-          <span className="ml-3 text-foreground/35">
-            {format(d, "MMM", { in: UK_TIME }).toUpperCase()}
-          </span>
+          {whenParts(booking.scheduled_start).today ? (
+            <>
+              <span className="sr-only">Today</span>
+              <span aria-hidden data-today="true" className="text-signal-deep">
+                TODAY
+              </span>
+            </>
+          ) : (
+            <>
+              {format(d, "EEE d", { in: UK_TIME }).toUpperCase()}
+              <span className="ml-3 text-foreground/35">
+                {format(d, "MMM", { in: UK_TIME }).toUpperCase()}
+              </span>
+            </>
+          )}
         </p>
       )}
 

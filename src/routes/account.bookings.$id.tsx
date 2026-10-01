@@ -24,7 +24,7 @@ import {
   LIVE_JOB_STATUSES,
 } from "@/lib/bookings";
 import { formatAppointment } from "@/lib/format";
-import { customerHeadline } from "@/lib/progress";
+import { customerHeadline, customerStepIndex } from "@/lib/progress";
 import { sendBookingEmail } from "@/lib/portal-email";
 import { copyText } from "@/lib/clipboard";
 import { supabase } from "@/lib/supabase";
@@ -137,6 +137,7 @@ function BookingDetail() {
   const view = viewFromBooking(booking, stages ?? []);
   const live = LIVE_JOB_STATUSES.includes(booking.status) && booking.status !== "assigned";
   const canCancel = booking.status === "requested" || booking.status === "confirmed";
+  const stepNow = customerStepIndex(booking.status);
   const upcoming = ["requested", "confirmed", "assigned", "en_route"].includes(booking.status);
   const events = journeyEvents(booking, view.detailerFirstName);
   const calendarEvent = {
@@ -160,13 +161,17 @@ function BookingDetail() {
         </>
       }
       back={{ to: "/account", label: "My Account" }}
-      actions={<StatusBadge status={booking.status} />}
+      actions={
+        <span className="inline-flex rounded-full bg-surface p-1 text-foreground">
+          <StatusBadge status={booking.status} />
+        </span>
+      }
       stage={
         booking.status === "cancelled" ? undefined : (
           <JobHero
             bookingId={booking.id}
             view={view}
-            appointment={`${dayLabel}, ${timeLabel}`}
+            startIso={booking.scheduled_start}
             where={`${booking.service_address_line1}, ${booking.service_postcode}`}
             visitNumber={visitNumber}
             required={REWARD_VISITS_REQUIRED}
@@ -176,8 +181,13 @@ function BookingDetail() {
         )
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-4">
+      {/*
+        One column on a phone, in the order a customer needs it: where things stand, the
+        booking itself, then the story so far and what to do before we arrive, with the
+        cancel control last. From lg up the booking sits in a side column beside them.
+      */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr_auto] lg:gap-x-6">
+        <div className="lg:col-start-1 lg:row-start-1">
           {live ? (
             <LiveJobPanel
               view={view}
@@ -187,8 +197,15 @@ function BookingDetail() {
               showChecklist={false}
             />
           ) : (
-            <section className="rounded-2xl border border-hairline bg-surface p-5">
-              <p className="eyebrow text-muted-foreground">Progress</p>
+            <section className="rounded-2xl border border-hairline bg-surface p-5 sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <p className="eyebrow text-muted-foreground">Progress</p>
+                {stepNow >= 0 ? (
+                  <p className="font-mono text-[12px] text-muted-foreground">
+                    Step {Math.min(5, Math.floor(stepNow) + 1)} of 5
+                  </p>
+                ) : null}
+              </div>
               <StepTracker status={booking.status} className="mt-5" />
               {booking.status === "requested" ? (
                 <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
@@ -214,17 +231,15 @@ function BookingDetail() {
               ) : null}
             </section>
           )}
-          {booking.status !== "requested" ? <JourneyLog events={events} /> : null}
-          {upcoming ? <PrepList /> : null}
         </div>
 
-        <aside className="flex flex-col gap-4">
-          {upcoming ? <AlertsToggle /> : null}
+        <aside className="flex flex-col gap-4 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <BookingSummary
             packageName={booking.package_name}
             addons={booking.addon_labels}
             dayLabel={dayLabel}
             timeLabel={timeLabel}
+            startIso={booking.status === "cancelled" ? booking.scheduled_start : undefined}
             vehicleDescription={booking.vehicle_description}
             registration={booking.vehicle_registration}
             where={`${booking.service_address_line1}, ${booking.service_postcode}`}
@@ -232,12 +247,13 @@ function BookingDetail() {
             notes={booking.customer_notes}
             calendar={upcoming ? calendarEvent : null}
           />
+          {upcoming ? <AlertsToggle /> : null}
 
           {booking.status !== "cancelled" && booking.status !== "completed" ? (
             <button
               type="button"
               onClick={copyLink}
-              className="press flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-4 text-left hover:bg-surface-2"
+              className="press flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-4 text-left hover:bg-surface-2"
             >
               <span>
                 <span className="block text-[14px] font-semibold">
@@ -249,55 +265,60 @@ function BookingDetail() {
                     : "Let someone else follow this booking without signing in."}
                 </span>
               </span>
-              {copied ? (
-                <Check className="h-5 w-5 shrink-0 text-success" />
-              ) : (
-                <Link2 className="h-5 w-5 shrink-0 text-muted-foreground" />
-              )}
+              <span
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${copied ? "bg-success/12 text-success" : "bg-surface-2 text-muted-foreground"}`}
+              >
+                {copied ? <Check className="h-5 w-5" /> : <Link2 className="h-5 w-5" />}
+              </span>
             </button>
           ) : null}
-
-          {canCancel ? (
-            <div>
-              {cancelError ? (
-                <p className="mb-2 text-[13px] text-destructive">{cancelError}</p>
-              ) : null}
-              {confirmCancel ? (
-                <div className="rounded-2xl border border-destructive/25 p-4">
-                  <p className="text-[14px] font-semibold">Cancel this booking?</p>
-                  <p className="mt-1 text-[13px] text-muted-foreground">
-                    To change the date instead, call or WhatsApp {supportContact.phone}. We are
-                    happy to move it.
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <PrimaryActionButton
-                      variant="outline"
-                      size="md"
-                      onClick={() => setConfirmCancel(false)}
-                    >
-                      Keep it
-                    </PrimaryActionButton>
-                    <PrimaryActionButton
-                      variant="ghostDestructive"
-                      size="md"
-                      loading={cancelling}
-                      onClick={handleCancel}
-                    >
-                      Yes, cancel
-                    </PrimaryActionButton>
-                  </div>
-                </div>
-              ) : (
-                <PrimaryActionButton
-                  variant="ghostDestructive"
-                  onClick={() => setConfirmCancel(true)}
-                >
-                  Cancel this booking
-                </PrimaryActionButton>
-              )}
-            </div>
-          ) : null}
         </aside>
+
+        <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-2">
+          {booking.status !== "requested" ? <JourneyLog events={events} /> : null}
+          {upcoming ? <PrepList /> : null}
+        </div>
+
+        {canCancel ? (
+          <div className="lg:col-start-2 lg:row-start-3">
+            {cancelError ? (
+              <p className="mb-2 text-[13px] text-destructive">{cancelError}</p>
+            ) : null}
+            {confirmCancel ? (
+              <div className="rounded-2xl border border-destructive/25 p-4">
+                <p className="text-[14px] font-semibold">Cancel this booking?</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  To change the date instead, call or WhatsApp {supportContact.phone}. We are happy
+                  to move it.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <PrimaryActionButton
+                    variant="outline"
+                    size="md"
+                    onClick={() => setConfirmCancel(false)}
+                  >
+                    Keep it
+                  </PrimaryActionButton>
+                  <PrimaryActionButton
+                    variant="ghostDestructive"
+                    size="md"
+                    loading={cancelling}
+                    onClick={handleCancel}
+                  >
+                    Yes, cancel
+                  </PrimaryActionButton>
+                </div>
+              </div>
+            ) : (
+              <PrimaryActionButton
+                variant="ghostDestructive"
+                onClick={() => setConfirmCancel(true)}
+              >
+                Cancel this booking
+              </PrimaryActionButton>
+            )}
+          </div>
+        ) : null}
       </div>
     </AppShell>
   );

@@ -229,14 +229,14 @@ test("the signed-in booking flow has the website's three steps", async ({ page }
     "Saloons and estates",
   );
   await page
-    .getByRole("button", { name: /full valet/i })
+    .getByRole("radio", { name: /full valet/i })
     .first()
     .click();
   await page.getByRole("button", { name: /next: when and where/i }).click();
   await expect(page.getByRole("heading", { name: /when and where/i })).toBeVisible();
   await expect(page.getByText(/enter the postcode/i)).toBeVisible();
   // Back returns to step one with choices kept.
-  await page.getByRole("button", { name: /back/i }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.getByRole("heading", { name: /vehicle and package/i })).toBeVisible();
 });
 
@@ -538,19 +538,19 @@ test("phone: the signed-in booking page guides from vehicle to size to package",
   await page.getByRole("heading", { name: /vehicle and package/i }).waitFor();
   await page.locator("button", { hasText: "AB12CDE" }).first().click();
   await page.waitForTimeout(900);
-  const size = page.getByText("Vehicle size", { exact: true });
+  const size = page.getByText(/Vehicle size$/).first();
   expect(await topOf(page, size)).not.toBeNull();
   await page.getByRole("radio").nth(2).click();
   await page.waitForTimeout(900);
-  const pack = page.getByText("Package", { exact: true }).first();
+  const pack = page.getByText(/Package$/).first();
   expect(await topOf(page, pack), "package heading in view after picking a size").not.toBeNull();
   expect((await topOf(page, pack))!).toBeLessThan(300);
   await page
-    .getByRole("button", { name: /full valet/i })
+    .getByRole("radio", { name: /full valet/i })
     .first()
     .click();
   await page.waitForTimeout(900);
-  const addons = page.getByText("Add-ons", { exact: true });
+  const addons = page.getByText(/Add-ons \(optional\)/);
   // In the upper part of the screen, not left at the bottom edge.
   expect((await topOf(page, addons))!).toBeLessThan(490);
 });
@@ -1065,5 +1065,130 @@ test.describe("password reset link", () => {
     });
     await expect(page.getByText(/browser you asked for it from/i)).toBeVisible();
     await ctx.close();
+  });
+});
+
+test.describe("book a detail and booking status pages", () => {
+  test("book: the hero tracks the three parts and the total, and the flow reaches the confirmation", async ({
+    page,
+  }) => {
+    await fakeSupabase(page.context(), { withAddress: true });
+    await page.context().addCookies([sessionCookie]);
+    await page.goto("/book", { waitUntil: "networkidle" });
+    const steps = page.getByRole("list", { name: "Booking steps" });
+    await expect(steps.getByRole("listitem").nth(0)).toHaveAttribute("aria-current", "step");
+    await expect(page.getByLabel(/Total so far, 155 pounds/)).toBeVisible();
+    // Choosing a bigger package and an add-on moves the total.
+    await page.getByRole("radio", { name: /Premium Full Car Detail/ }).click();
+    await expect(page.getByLabel(/Total so far, 240 pounds/)).toBeVisible();
+    await page.getByRole("checkbox", { name: /Engine Bay Clean/ }).check();
+    await page.getByRole("button", { name: /Next: when and where · £280/ }).click();
+
+    await expect(steps.getByRole("listitem").nth(1)).toHaveAttribute("aria-current", "step");
+    // A finished part takes you back to it.
+    await page.getByRole("button", { name: "Go back to Vehicle and package" }).click();
+    await expect(page.getByRole("heading", { name: "Vehicle and package" })).toBeVisible();
+    await page.getByRole("button", { name: /Next: when and where/ }).click();
+
+    const later = new Date(Date.now() + 2 * 86400e3).toISOString().slice(0, 10);
+    await page.locator('input[type="date"]').fill(later);
+    await page.getByRole("button", { name: "10:00 AM" }).click();
+    await page.getByRole("button", { name: /Next: review/ }).click();
+    await expect(page.getByRole("heading", { name: "Confirm your booking" })).toBeVisible();
+    await expect(page.getByText("Engine Bay Clean")).toBeVisible();
+    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await expect(page.getByText("Booking confirmed")).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "BOOKED IN" })).toBeVisible();
+  });
+
+  test("book: the choices are real radio and checkbox groups with visible selected states", async ({
+    page,
+  }) => {
+    await fakeSupabase(page.context());
+    await page.context().addCookies([sessionCookie]);
+    await page.goto("/book", { waitUntil: "networkidle" });
+    const pkg = page.getByRole("radiogroup", { name: "Package" });
+    await expect(pkg.getByRole("radio")).toHaveCount(3);
+    await expect(pkg.getByRole("radio", { name: /Full Valet/ })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await pkg.getByRole("radio", { name: /Essential/ }).focus();
+    await page.keyboard.press("Enter");
+    await expect(pkg.getByRole("radio", { name: /Essential/ })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  });
+
+  test("book: on a phone nothing scrolls sideways and the main button is full width", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await fakeSupabase(page.context());
+    await page.context().addCookies([sessionCookie]);
+    await page.goto("/book", { waitUntil: "networkidle" });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+    const btn = page.getByRole("button", { name: /Next: when and where/ });
+    await btn.scrollIntoViewIfNeeded();
+    expect((await btn.boundingBox())!.width).toBeGreaterThan(260);
+  });
+
+  test("booking status: a booking today reads TODAY in the hero, with no separate TODAY badge", async ({
+    page,
+  }) => {
+    await fakeSupabase(page.context());
+    await page.context().addCookies([sessionCookie]);
+    await page.goto("/account/bookings/b2", { waitUntil: "networkidle" });
+    const hero = page.getByRole("region", { name: "Job progress" });
+    await expect(hero.locator('[data-today="true"]')).toContainText("TODAY");
+    // Said once on the page, not again as a badge or a repeat in the summary.
+    expect(await page.locator('[data-today="true"]').count()).toBe(1);
+  });
+
+  test("booking status: a booking on another day shows the real date, not TODAY or TOMORROW", async ({
+    page,
+  }) => {
+    await fakeSupabase(page.context(), { laterVisit: true });
+    await page.context().addCookies([sessionCookie]);
+    await page.goto("/account/bookings/b3", { waitUntil: "networkidle" });
+    const hero = page.getByRole("region", { name: "Job progress" });
+    await expect(hero).toContainText(/(MON|TUE|WED|THU|FRI|SAT|SUN) \d{1,2} [A-Z]{3}/);
+    await expect(hero).not.toContainText(/TODAY|TOMORROW/);
+    expect(await page.locator('[data-today="true"]').count()).toBe(0);
+  });
+
+  test("booking status: on a phone the booking comes before the visit log, cancel is last", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await fakeSupabase(page.context());
+    await page.context().addCookies([sessionCookie]);
+    await page.goto("/account/bookings/b3", { waitUntil: "networkidle" });
+    const y = async (t: string) =>
+      (await page.getByText(t, { exact: true }).first().boundingBox())!.y;
+    const progress = await y("Progress");
+    const booking = await y("Your booking");
+    const log = await y("Your visit so far");
+    const cancel = (await page.getByRole("button", { name: "Cancel this booking" }).boundingBox())!
+      .y;
+    expect(progress).toBeLessThan(booking);
+    expect(booking).toBeLessThan(log);
+    expect(log).toBeLessThan(cancel);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      390,
+    );
+  });
+
+  test("account home: today's visits say TODAY on their calendar tile, with no separate badge", async ({
+    page,
+  }) => {
+    await fakeSupabase(page.context());
+    await page.context().addCookies([sessionCookie]);
+    await page.goto("/account", { waitUntil: "networkidle" });
+    // b1 is on the way (live), so the next-visit headline is its status, and the calendar tile says TODAY.
+    await expect(page.locator('[data-today="true"]').first()).toBeVisible();
   });
 });

@@ -160,3 +160,26 @@ export function daysUntilLabel(iso: string, now: Date = new Date()): string {
   if (days < 14) return `In ${days} days`;
   return `In ${Math.round(days / 7)} weeks`;
 }
+
+/**
+ * How a visit's date is shown as the main date treatment. Today reads "TODAY" and
+ * nothing else says so; any other day reads as the real date ("THU 1 OCT"). One
+ * rule for every page that shows a date this way.
+ */
+export function whenParts(iso: string): {
+  today: boolean;
+  /** "TODAY" or "THU 1 OCT" */
+  headline: string;
+  /** "Thursday 1 October", for screen readers and plain text. */
+  spoken: string;
+  timeLabel: string;
+} {
+  const d = new Date(iso);
+  const today = isToday(d, { in: UK_TIME });
+  return {
+    today,
+    headline: today ? "TODAY" : format(d, "EEE d MMM", { in: UK_TIME }).toUpperCase(),
+    spoken: today ? "Today" : format(d, "EEEE d MMMM", { in: UK_TIME }),
+    timeLabel: format(d, "h:mm a", { in: UK_TIME }),
+  };
+}

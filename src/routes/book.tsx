@@ -6,6 +6,10 @@ import { AppShell } from "@/components/ttd/AppShell";
 import { sendBookingEmail, type EmailResult } from "@/lib/portal-email";
 import { confirmationNotice } from "@/lib/booking-email";
 import { guideTo } from "@/lib/guide";
+import { DateBlock } from "@/components/ttd/DateBlock";
+import { BookHero } from "@/components/ttd/BookHero";
+import { whenParts } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { SuccessMark } from "@/components/ttd/SuccessMark";
 import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -225,12 +229,20 @@ function BookingFlow() {
           BOOK A DETAIL<span className="text-signal">.</span>
         </>
       }
+      stage={
+        <BookHero
+          step={step}
+          total={totalPrice}
+          summary={`${selectedPackage.name} · ${VEHICLE_SIZE_LABELS[vehicleSize]}`}
+          onStep={setStep}
+        />
+      }
     >
       {step !== "vehicle" && step !== "done" ? (
         <button
           type="button"
           onClick={() => setStep(prevStep(step))}
-          className="press mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+          className="press -ml-2 mb-3 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
@@ -239,10 +251,10 @@ function BookingFlow() {
 
       {step === "vehicle" ? (
         <section>
-          <h2 className="font-display text-[28px] leading-none">Vehicle and package</h2>
-          <div className="mt-5 grid gap-8 lg:grid-cols-2">
+          <StepHead n={1} title="Vehicle and package" />
+          <div className="mt-6 grid gap-10 lg:grid-cols-2">
             <div>
-              <p className="eyebrow text-muted-foreground">Vehicle</p>
+              <GroupLabel n="a">Your vehicle</GroupLabel>
               <div className="mt-3 flex flex-col gap-2.5">
                 {(vehicles ?? []).map((v) => (
                   <ChoiceCard
@@ -278,25 +290,25 @@ function BookingFlow() {
                     value={newVehicle.make}
                     onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
                     placeholder="Make"
-                    className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                    className="min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm outline-none focus:border-signal"
                   />
                   <input
                     value={newVehicle.model}
                     onChange={(e) => setNewVehicle((s) => ({ ...s, model: e.target.value }))}
                     placeholder="Model"
-                    className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                    className="min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm outline-none focus:border-signal"
                   />
                   <input
                     value={newVehicle.registration}
                     onChange={(e) => setNewVehicle((s) => ({ ...s, registration: e.target.value }))}
                     placeholder="Registration"
-                    className="col-span-2 min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm uppercase outline-none focus:border-signal"
+                    className="col-span-2 min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm uppercase outline-none focus:border-signal"
                   />
                 </div>
               ) : null}
 
-              <div ref={sizeRef} className="mt-5">
-                <span className="eyebrow block text-muted-foreground">Vehicle size</span>
+              <div ref={sizeRef} className="mt-7">
+                <GroupLabel n="b">Vehicle size</GroupLabel>
                 <VehicleSizePicker
                   className="mt-2"
                   value={vehicleSize}
@@ -308,39 +320,45 @@ function BookingFlow() {
               </div>
             </div>
             <div ref={packageRef}>
-              <p className="eyebrow text-muted-foreground">Package</p>
-              <div className="mt-3 flex flex-col gap-2.5">
+              <GroupLabel n="c">Package</GroupLabel>
+              <div role="radiogroup" aria-label="Package" className="mt-3 flex flex-col gap-2.5">
                 {DETAIL_PACKAGES.map((p) => (
                   <ChoiceCard
                     key={p.id}
+                    radio
                     selected={packageId === p.id}
                     onClick={() => {
                       setPackageId(p.id);
                       guideTo(addonsRef.current);
                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
                         <p className="text-[15px] font-semibold">{p.name}</p>
                         <p className="text-[13px] text-muted-foreground">
                           {p.tagline} · {p.durationLabel}
                         </p>
                       </div>
-                      <p className="font-display text-xl">£{p.priceBySize[vehicleSize]}</p>
+                      <p
+                        key={vehicleSize}
+                        className="fade-in shrink-0 font-display text-[28px] leading-none"
+                      >
+                        £{p.priceBySize[vehicleSize]}
+                      </p>
                     </div>
                   </ChoiceCard>
                 ))}
               </div>
 
-              <div ref={addonsRef} className="mt-5">
-                <span className="eyebrow block text-muted-foreground">Add-ons</span>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <div ref={addonsRef} className="mt-7">
+                <GroupLabel n="d">Add-ons (optional)</GroupLabel>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {DETAIL_ADDONS.map((a) => (
                     <label
                       key={a.id}
-                      className="press flex items-center justify-between rounded-xl border border-hairline bg-surface p-3.5"
+                      className="press flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-3.5 transition-colors has-[:checked]:border-signal has-[:checked]:bg-signal/8 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal/40"
                     >
-                      <span className="flex items-center gap-2.5 text-[14px] font-medium">
+                      <span className="flex items-center gap-3 text-[14px] font-medium">
                         <input
                           type="checkbox"
                           checked={addonIds.includes(a.id)}
@@ -349,11 +367,13 @@ function BookingFlow() {
                               e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
                             )
                           }
-                          className="h-4 w-4 rounded border-input accent-[var(--color-signal)]"
+                          className="h-5 w-5 rounded-md border-input accent-[var(--color-signal)]"
                         />
                         {a.label}
                       </span>
-                      <span className="text-[13px] text-muted-foreground">+£{a.price}</span>
+                      <span className="shrink-0 text-[13px] font-semibold text-muted-foreground">
+                        +£{a.price}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -362,7 +382,7 @@ function BookingFlow() {
           </div>
           <div ref={nextRef} />
           <PrimaryActionButton
-            className="mt-6"
+            className="mt-8"
             disabled={
               vehicleChoice === null || (vehicleChoice === "new" && !newVehicle.registration.trim())
             }
@@ -375,11 +395,11 @@ function BookingFlow() {
 
       {step === "schedule" ? (
         <section>
-          <h2 className="font-display text-[28px] leading-none">When and where</h2>
-          <div className="mt-5 grid gap-8 lg:grid-cols-2">
+          <StepHead n={2} title="When and where" />
+          <div className="mt-6 grid gap-10 lg:grid-cols-2">
             <div>
-              <p className="eyebrow text-muted-foreground">Date and time</p>
-              <div className="mt-5">
+              <GroupLabel n="a">Date and time</GroupLabel>
+              <div className="mt-3">
                 <span className="eyebrow block text-muted-foreground">Date</span>
                 <input
                   type="date"
@@ -392,7 +412,7 @@ function BookingFlow() {
                       setTime(firstAvailableSlot(next) ?? "");
                     if (next) guideTo(timeRef.current);
                   }}
-                  className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base outline-none focus:border-signal"
+                  className="mt-2 min-h-12 w-full rounded-2xl border border-input bg-surface-2 px-4 text-base outline-none focus:border-signal focus:ring-2 focus:ring-signal/30"
                 />
               </div>
               <div ref={timeRef} className="mt-4">
@@ -410,7 +430,7 @@ function BookingFlow() {
                           setTime(t);
                           guideTo(addressChoice ? nextRef.current : whereRef.current);
                         }}
-                        className={`min-h-11 border text-[13px] font-semibold disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                        className={`press min-h-11 rounded-full border text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2 hover:bg-surface"}`}
                       >
                         {t}
                       </button>
@@ -425,7 +445,7 @@ function BookingFlow() {
               </div>
             </div>
             <div ref={whereRef}>
-              <p className="eyebrow text-muted-foreground">Where should we come?</p>
+              <GroupLabel n="b">Where should we come?</GroupLabel>
               <div className="mt-3 flex flex-col gap-2.5">
                 {(addresses ?? []).map((a) => (
                   <ChoiceCard
@@ -450,9 +470,11 @@ function BookingFlow() {
                   }}
                 >
                   <p className="text-[14px] font-semibold">Another address</p>
-                  <p className="text-[13px] text-muted-foreground">
-                    Postcode {areaResult?.postcode}
-                  </p>
+                  {areaResult?.postcode ? (
+                    <p className="text-[13px] text-muted-foreground">
+                      Postcode {areaResult.postcode}
+                    </p>
+                  ) : null}
                 </ChoiceCard>
               </div>
               {addressChoice === "new" ? (
@@ -465,7 +487,7 @@ function BookingFlow() {
                       value={postcode}
                       onChange={(e) => setPostcode(e.target.value)}
                       placeholder="e.g. HP2 6EL"
-                      className="min-h-12 min-w-0 flex-1 rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+                      className="min-h-12 min-w-0 flex-1 rounded-2xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
                     />
                     <PrimaryActionButton
                       className="w-auto px-6"
@@ -491,14 +513,14 @@ function BookingFlow() {
                     <p className="mt-3 text-[13px] text-destructive">{areaError}</p>
                   ) : null}
                   {areaResult?.covered ? (
-                    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-4">
+                    <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-hairline bg-surface p-4">
                       <div className="grid grid-cols-3 gap-2">
                         {(["Home", "Work", "Other"] as const).map((l) => (
                           <button
                             key={l}
                             type="button"
                             onClick={() => setNewAddress((s) => ({ ...s, label: l }))}
-                            className={`min-h-9 border text-[13px] font-semibold ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
+                            className={`press min-h-11 rounded-full border text-[13px] font-semibold transition-colors ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
                           >
                             {l}
                           </button>
@@ -508,13 +530,13 @@ function BookingFlow() {
                         value={newAddress.line1}
                         onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
                         placeholder="Address line 1"
-                        className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                        className="min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm outline-none focus:border-signal"
                       />
                       <input
                         value={newAddress.city}
                         onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
                         placeholder="Town / city"
-                        className="min-h-11 rounded-xl border border-input bg-surface-2 px-3.5 text-sm outline-none focus:border-signal"
+                        className="min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm outline-none focus:border-signal"
                       />
                     </div>
                   ) : null}
@@ -524,7 +546,7 @@ function BookingFlow() {
           </div>
           <div ref={nextRef} />
           <PrimaryActionButton
-            className="mt-6"
+            className="mt-8"
             loading={createAddressMutation.isPending}
             disabled={
               !date ||
@@ -544,36 +566,44 @@ function BookingFlow() {
 
       {step === "review" ? (
         <section>
-          <h2 className="font-display text-[28px] leading-none">Confirm your booking</h2>
-          <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-hairline bg-surface p-5">
-            <SummaryRow label="Package">{selectedPackage.name}</SummaryRow>
-            <SummaryRow label="Vehicle">
-              {vehicleChoice === "new"
-                ? `${newVehicle.make} ${newVehicle.model} (${newVehicle.registration})`
-                : vehicleChoice
-                  ? `${vehicleDescription(vehicleChoice) ?? ""} (${vehicleChoice.registration})`
-                  : ""}
-            </SummaryRow>
-            <SummaryRow label="Address">
-              {addressChoice === "new"
-                ? `${newAddress.line1}, ${areaResult?.postcode}`
-                : addressChoice
-                  ? `${addressChoice.line1}, ${addressChoice.postcode}`
-                  : ""}
-            </SummaryRow>
-            <SummaryRow label="When">
-              {formatBookingDate(date)} · {time}
-            </SummaryRow>
-            {addonIds.length ? (
-              <SummaryRow label="Add-ons">
-                {DETAIL_ADDONS.filter((a) => addonIds.includes(a.id))
-                  .map((a) => a.label)
-                  .join(", ")}
+          <StepHead n={3} title="Confirm your booking" />
+          <div className="mt-5 overflow-hidden rounded-2xl border border-hairline bg-surface">
+            <div className="flex items-end justify-between gap-4 bg-ink px-5 py-4 text-ink-foreground">
+              <div className="min-w-0">
+                <p className="eyebrow text-ink-foreground/55">When</p>
+                <p className="mt-1.5 text-[32px] sm:text-[40px]">
+                  <DateBlock iso={ukSlotToIso(date, time)} tone="onDark" />
+                </p>
+              </div>
+              <p className="font-display text-[32px] leading-none sm:text-[40px]">{time}</p>
+            </div>
+            <div className="flex flex-col gap-3 p-5">
+              <SummaryRow label="Package">{selectedPackage.name}</SummaryRow>
+              <SummaryRow label="Vehicle">
+                {vehicleChoice === "new"
+                  ? `${newVehicle.make} ${newVehicle.model} (${newVehicle.registration})`
+                  : vehicleChoice
+                    ? `${vehicleDescription(vehicleChoice) ?? ""} (${vehicleChoice.registration})`
+                    : ""}
               </SummaryRow>
-            ) : null}
-            <div className="mt-2 flex items-center justify-between border-t border-hairline pt-3">
-              <p className="font-display text-lg">Total</p>
-              <p className="font-display text-2xl">£{totalPrice}</p>
+              <SummaryRow label="Address">
+                {addressChoice === "new"
+                  ? `${newAddress.line1}, ${areaResult?.postcode}`
+                  : addressChoice
+                    ? `${addressChoice.line1}, ${addressChoice.postcode}`
+                    : ""}
+              </SummaryRow>
+              {addonIds.length ? (
+                <SummaryRow label="Add-ons">
+                  {DETAIL_ADDONS.filter((a) => addonIds.includes(a.id))
+                    .map((a) => a.label)
+                    .join(", ")}
+                </SummaryRow>
+              ) : null}
+              <div className="mt-2 flex items-center justify-between border-t border-hairline pt-3">
+                <p className="font-display text-lg">Total</p>
+                <p className="font-display text-[32px] leading-none">£{totalPrice}</p>
+              </div>
             </div>
           </div>
 
@@ -585,7 +615,7 @@ function BookingFlow() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="mt-2 w-full resize-none rounded-xl border border-input bg-surface-2 px-3.5 py-3 text-sm outline-none focus:border-signal"
+              className="mt-2 w-full resize-none rounded-2xl border border-input bg-surface-2 px-4 py-3 text-sm outline-none focus:border-signal"
             />
           </div>
           {submitBooking.isError ? (
@@ -606,12 +636,13 @@ function BookingFlow() {
       ) : null}
 
       {step === "done" && bookingId ? (
-        <section className="rise-in flex flex-col items-center py-10 text-center">
+        <section className="rise-in flex flex-col items-center py-8 text-center">
           <SuccessMark tone="success" />
           <h2 className="mt-5 font-display text-[28px] leading-tight">Booking confirmed</h2>
           <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">
-            We'll see you on {formatBookingDate(date)} at {time}. Your detailer will come to you,
-            and you can track it all from your account.
+            We'll see you{" "}
+            {whenParts(ukSlotToIso(date, time)).today ? "today" : `on ${formatBookingDate(date)}`}{" "}
+            at {time}. Your detailer will come to you, and you can track it all from your account.
           </p>
           {notice ? (
             notice.tone === "ok" ? (
@@ -625,7 +656,7 @@ function BookingFlow() {
             ) : (
               <p
                 role="status"
-                className="mt-4 max-w-sm rounded-xl border border-warning/40 bg-warning/8 px-4 py-3 text-[14px] leading-relaxed"
+                className="mt-4 max-w-sm rounded-2xl border border-warning/40 bg-warning/8 px-4 py-3 text-[14px] leading-relaxed"
               >
                 {notice.text}
               </p>
@@ -643,20 +674,65 @@ function BookingFlow() {
 function ChoiceCard({
   selected,
   onClick,
+  radio,
   children,
 }: {
   selected: boolean;
   onClick: () => void;
+  /** Part of a one-of-several group, so it is announced that way. */
+  radio?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
+      role={radio ? "radio" : undefined}
+      aria-checked={radio ? selected : undefined}
+      aria-pressed={radio ? undefined : selected}
       onClick={onClick}
-      className={`press border p-3.5 text-left transition-colors ${selected ? "border-signal bg-signal/8" : "border-hairline bg-surface hover:bg-surface-2"}`}
+      className={cn(
+        "press flex items-center gap-3.5 rounded-2xl border p-4 text-left transition-[border-color,background-color,box-shadow]",
+        selected
+          ? "border-signal bg-signal/8 shadow-[0_0_0_1px_var(--color-signal)]"
+          : "border-hairline bg-surface hover:bg-surface-2",
+      )}
     >
-      {children}
+      <span
+        aria-hidden
+        className={cn(
+          "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+          selected ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface",
+        )}
+      >
+        {selected ? <Check className="h-3 w-3" strokeWidth={3.4} /> : null}
+      </span>
+      <span className="min-w-0 flex-1">{children}</span>
     </button>
+  );
+}
+
+/** "Step 2 of 3" and the name of the part, at the top of each part of the booking. */
+function StepHead({ n, title }: { n: number; title: string }) {
+  return (
+    <div>
+      <p className="eyebrow text-signal-deep">Step {n} of 3</p>
+      <h2 className="mt-1 font-display text-[34px] leading-none">{title}</h2>
+    </div>
+  );
+}
+
+/** A lettered group inside a step: a, b, c, d, in the order to answer them. */
+function GroupLabel({ n, children }: { n: string; children: React.ReactNode }) {
+  return (
+    <p className="flex items-center gap-2.5 text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+      <span
+        aria-hidden
+        className="grid h-5 w-5 place-items-center rounded-full bg-surface-2 font-mono text-[10px] font-medium normal-case tracking-normal text-foreground"
+      >
+        {n}
+      </span>
+      {children}
+    </p>
   );
 }
 
