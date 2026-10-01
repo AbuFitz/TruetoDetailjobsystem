@@ -105,7 +105,7 @@ function AddressesPage() {
     <AppShell
       area="customer"
       width="narrow"
-      eyebrow="Your addresses"
+      eyebrow="Settings"
       title={
         <>
           YOUR ADDRESSES<span className="text-signal">.</span>

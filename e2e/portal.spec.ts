@@ -83,7 +83,7 @@ const PAGES: PageCase[] = [
     path: "/book",
     auth: true,
     logoHref: "/account",
-    text: /Book a detail/i,
+    text: /Your car/i,
   },
   {
     name: "admin today",
@@ -222,22 +222,29 @@ test("the booking popup asks for the vehicle size with the UK guide", async ({ p
   await expect(page.locator("body")).not.toContainText(/sedan/i);
 });
 
-test("the signed-in booking flow has the website's three steps", async ({ page }) => {
+test("the signed-in booking flow asks one question per screen and keeps your choices going back", async ({
+  page,
+}) => {
   await open(page, { name: "book", path: "/book", auth: true, logoHref: "/account", text: /x/ });
-  await expect(page.getByRole("heading", { name: /vehicle and package/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /your car/i })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(/we come to you/i);
+  await page.getByRole("button", { name: /continue/i }).click();
+  await expect(page.getByRole("heading", { name: /car size/i })).toBeVisible();
   await expect(page.getByRole("radiogroup", { name: /vehicle size/i })).toContainText(
     "Saloons and estates",
   );
+  await page.getByRole("radio", { name: /Large SUV/ }).click();
+  await page.getByRole("button", { name: /continue/i }).click();
+  await expect(page.getByRole("heading", { name: /package/i })).toBeVisible();
   await page
     .getByRole("radio", { name: /full valet/i })
     .first()
     .click();
-  await page.getByRole("button", { name: /next: when and where/i }).click();
-  await expect(page.getByRole("heading", { name: /when and where/i })).toBeVisible();
-  await expect(page.getByText(/enter the postcode/i)).toBeVisible();
-  // Back returns to step one with choices kept.
   await page.getByRole("button", { name: "Back", exact: true }).click();
-  await expect(page.getByRole("heading", { name: /vehicle and package/i })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /Large SUV/ })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
 });
 
 async function fillCreate(page: Page, email: string) {
@@ -528,31 +535,81 @@ for (const [label, size] of [
   });
 }
 
-test("phone: the signed-in booking page guides from vehicle to size to package", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 700 });
+for (const [w, h] of [
+  [375, 667],
+  [390, 844],
+  [1280, 720],
+] as const) {
+  test(`book: every step fits a ${w}x${h} screen with no page scroll, no sideways scroll and no zoom-on-focus inputs`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await fakeSupabase(page.context(), { withAddress: true });
+    await page.context().addCookies([sessionCookie]);
+    await page.goto("/book", { waitUntil: "networkidle" });
+
+    const fits = async (label: string) => {
+      const m = await page.evaluate(() => {
+        const sheet = document.querySelector<HTMLElement>('[data-testid="book-scroll"]')!;
+        const small = Array.from(document.querySelectorAll("input, textarea, select")).filter(
+          (el) => {
+            const cs = getComputedStyle(el);
+            return (
+              (el as HTMLInputElement).type !== "checkbox" &&
+              cs.display !== "none" &&
+              parseFloat(cs.fontSize) < 16
+            );
+          },
+        ).length;
+        return {
+          page: document.documentElement.scrollHeight - window.innerHeight,
+          x: document.documentElement.scrollWidth - window.innerWidth,
+          inner: sheet.scrollHeight - sheet.clientHeight,
+          small,
+        };
+      });
+      expect(m.page, `${label}: page scrolls vertically`).toBeLessThanOrEqual(0);
+      expect(m.x, `${label}: page scrolls sideways`).toBeLessThanOrEqual(0);
+      expect(m.inner, `${label}: the answer area needs scrolling`).toBeLessThanOrEqual(1);
+      expect(m.small, `${label}: a field under 16px would zoom a phone`).toBe(0);
+    };
+
+    const next = () => page.getByRole("button", { name: /continue|send request/i }).click();
+    await fits("car");
+    await next();
+    await fits("size");
+    await next();
+    await fits("package");
+    await next();
+    await fits("extras");
+    await next();
+    await fits("when, nothing picked");
+    await page.getByRole("group", { name: "Day" }).getByRole("button").nth(2).click();
+    await page.getByRole("button", { name: "10:00 AM" }).click();
+    await fits("when, picked");
+    await next();
+    await fits("where");
+    await next();
+    await fits("review");
+    await page.getByRole("button", { name: /send request/i }).click();
+    await expect(page.getByRole("heading", { name: "Request sent" })).toBeVisible();
+    await fits("sent");
+  });
+}
+
+test("book: a new car and a new address fit the phone screen too", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
   await fakeSupabase(page.context());
   await page.context().addCookies([sessionCookie]);
   await page.goto("/book", { waitUntil: "networkidle" });
-  await page.getByRole("heading", { name: /vehicle and package/i }).waitFor();
-  await page.locator("button", { hasText: "AB12CDE" }).first().click();
-  await page.waitForTimeout(900);
-  const size = page.getByText(/Vehicle size$/).first();
-  expect(await topOf(page, size)).not.toBeNull();
-  await page.getByRole("radio").nth(2).click();
-  await page.waitForTimeout(900);
-  const pack = page.getByText(/Package$/).first();
-  expect(await topOf(page, pack), "package heading in view after picking a size").not.toBeNull();
-  expect((await topOf(page, pack))!).toBeLessThan(460);
-  await page
-    .getByRole("radio", { name: /full valet/i })
-    .first()
-    .click();
-  await page.waitForTimeout(900);
-  const addons = page.getByText(/Add-ons \(optional\)/);
-  // In the upper part of the screen, not left at the bottom edge.
-  expect((await topOf(page, addons))!).toBeLessThan(490);
+  await page.getByRole("button", { name: /add a new car/i }).click();
+  await page.getByLabel("Registration").fill("zz99zzz");
+  const over = await page.evaluate(() => {
+    const sheet = document.querySelector<HTMLElement>('[data-testid="book-scroll"]')!;
+    return sheet.scrollHeight - sheet.clientHeight;
+  });
+  expect(over).toBeLessThanOrEqual(1);
+  await expect(page.getByRole("button", { name: /continue/i })).toBeEnabled();
 });
 
 test("phone: the staff tab bar stays on one row and booking titles are not cut off", async ({
@@ -778,36 +835,50 @@ test.describe("password reset link", () => {
 });
 
 test.describe("book a detail and booking status pages", () => {
-  test("book: the progress strip tracks the three parts and the total, and the flow reaches the confirmation", async ({
+  test("book: the steps and the total follow your choices, and sending makes a request, not a booking", async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await fakeSupabase(page.context(), { withAddress: true });
     await page.context().addCookies([sessionCookie]);
+    const posted: string[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && /\/rest\/v1\/bookings/.test(r.url()))
+        posted.push(r.postData() ?? "");
+    });
     await page.goto("/book", { waitUntil: "networkidle" });
     const steps = page.getByRole("list", { name: "Booking steps" });
     await expect(steps.getByRole("listitem").nth(0)).toHaveAttribute("aria-current", "step");
     await expect(page.getByLabel(/Total so far, 155 pounds/)).toBeVisible();
+    await page.getByRole("button", { name: /continue/i }).click();
+    await page.getByRole("button", { name: /continue/i }).click();
     // Choosing a bigger package and an add-on moves the total.
     await page.getByRole("radio", { name: /Premium Full Car Detail/ }).click();
     await expect(page.getByLabel(/Total so far, 240 pounds/)).toBeVisible();
+    await page.getByRole("button", { name: /continue/i }).click();
     await page.getByRole("checkbox", { name: /Engine Bay Clean/ }).check();
-    await page.getByRole("button", { name: /Next: when and where · £280/ }).click();
+    await expect(page.getByLabel(/Total so far, 280 pounds/)).toBeVisible();
+    await page.getByRole("button", { name: /continue/i }).click();
 
-    await expect(steps.getByRole("listitem").nth(1)).toHaveAttribute("aria-current", "step");
-    // A finished part takes you back to it.
-    await page.getByRole("button", { name: "Go back to Vehicle and package" }).click();
-    await expect(page.getByRole("heading", { name: "Vehicle and package" })).toBeVisible();
-    await page.getByRole("button", { name: /Next: when and where/ }).click();
+    await expect(steps.getByRole("listitem").nth(4)).toHaveAttribute("aria-current", "step");
+    // A finished step takes you back to it.
+    await page.getByRole("button", { name: "Go back to Car", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Your car" })).toBeVisible();
+    for (let i = 0; i < 4; i++) await page.getByRole("button", { name: /continue/i }).click();
 
-    const later = new Date(Date.now() + 2 * 86400e3).toISOString().slice(0, 10);
-    await page.locator('input[type="date"]').fill(later);
+    await page.getByRole("group", { name: "Day" }).getByRole("button").nth(2).click();
     await page.getByRole("button", { name: "10:00 AM" }).click();
-    await page.getByRole("button", { name: /Next: review/ }).click();
-    await expect(page.getByRole("heading", { name: "Confirm your booking" })).toBeVisible();
-    await expect(page.getByText("Engine Bay Clean")).toBeVisible();
-    await page.getByRole("button", { name: "Confirm booking" }).click();
-    await expect(page.getByText("Booking confirmed")).toBeVisible();
-    await expect(page.getByText("Booked in", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /continue/i }).click();
+    await page.getByRole("button", { name: /continue/i }).click();
+    await expect(page.getByRole("heading", { name: "Check and send" })).toBeVisible();
+    await expect(page.getByTestId("book-scroll").getByText("Engine Bay Clean")).toBeVisible();
+    await expect(page.getByText(/not locked in until we confirm it/i)).toBeVisible();
+    await page.getByRole("button", { name: "Send request" }).click();
+    await expect(page.getByRole("heading", { name: "Request sent" })).toBeVisible();
+    await expect(page.getByText(/It is not locked in yet/i)).toBeVisible();
+    await expect(page.getByText("Booking confirmed")).toHaveCount(0);
+    expect(posted.length, "one booking was created").toBe(1);
+    expect(JSON.parse(posted[0]!).status).toBe("requested");
   });
 
   test("book: the choices are real radio and checkbox groups with visible selected states", async ({
@@ -816,6 +887,8 @@ test.describe("book a detail and booking status pages", () => {
     await fakeSupabase(page.context());
     await page.context().addCookies([sessionCookie]);
     await page.goto("/book", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: /continue/i }).click();
+    await page.getByRole("button", { name: /continue/i }).click();
     const pkg = page.getByRole("radiogroup", { name: "Package" });
     await expect(pkg.getByRole("radio")).toHaveCount(3);
     await expect(pkg.getByRole("radio", { name: /Full Valet/ })).toHaveAttribute(
@@ -830,7 +903,7 @@ test.describe("book a detail and booking status pages", () => {
     );
   });
 
-  test("book: on a phone nothing scrolls sideways and the main button is full width", async ({
+  test("book: on a small phone nothing scrolls sideways and the main button is full width", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 320, height: 640 });
@@ -840,8 +913,7 @@ test.describe("book a detail and booking status pages", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       320,
     );
-    const btn = page.getByRole("button", { name: /Next: when and where/ });
-    await btn.scrollIntoViewIfNeeded();
+    const btn = page.getByRole("button", { name: /continue/i });
     expect((await btn.boundingBox())!.width).toBeGreaterThan(260);
   });
 

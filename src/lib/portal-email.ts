@@ -8,7 +8,8 @@
 import { supabase } from "./supabase";
 import { ttdSiteLinks } from "./constants";
 
-export type BookingEmailKind = "booked_in" | "assigned" | "on_the_way" | "completed" | "cancelled";
+export type BookingEmailKind =
+  "received" | "staff_alert" | "booked_in" | "assigned" | "on_the_way" | "completed" | "cancelled";
 
 export interface EmailResult {
   sent: boolean;

@@ -46,7 +46,7 @@ union all
 select 'duplicate add-ons are charged once', addon_ids = array['engine-bay', 'steam'], addon_ids::text from public.bookings
 union all
 select 'staff-only fields are reset',
-  assigned_detailer_id is null and internal_notes is null and not tracking_active and completed_at is null and travel_time_minutes is null and status = 'confirmed',
+  assigned_detailer_id is null and internal_notes is null and not tracking_active and completed_at is null and travel_time_minutes is null and status = 'requested',
   concat_ws(' | ', assigned_detailer_id, internal_notes, tracking_active, completed_at, status)
 from public.bookings;
 

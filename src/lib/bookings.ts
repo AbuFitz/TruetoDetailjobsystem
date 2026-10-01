@@ -191,7 +191,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
 
   const { data, error } = await supabase
     .from(TABLE)
-    .insert({ ...input, customer_id: customerId, status: "confirmed" })
+    .insert({ ...input, customer_id: customerId, status: "requested" })
     .select("*")
     .single();
   if (error) throw dbError(error, "Couldn't create this booking.");
@@ -317,6 +317,12 @@ export interface StaffUpdateBookingInput {
   destination_lng?: number | null;
   vehicle_registration?: string;
   vehicle_description?: string | null;
+  vehicle_size?: VehicleSize;
+  package_id?: string;
+  package_name?: string;
+  addon_ids?: string[];
+  addon_labels?: string[];
+  price?: number;
   scheduled_start?: string;
   estimated_duration_minutes?: number;
   internal_notes?: string | null;

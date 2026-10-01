@@ -7,6 +7,7 @@ import { AppShell } from "@/components/ttd/AppShell";
 import { StatusBadge } from "@/components/ttd/StatusBadge";
 import { VehicleCard } from "@/components/ttd/VehicleTag";
 import { BookingTimeline, timelineForStatus } from "@/components/ttd/BookingTimeline";
+import { AmendBooking } from "@/components/ttd/AmendBooking";
 import { StageChecklist } from "@/components/ttd/StageChecklist";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
@@ -101,6 +102,7 @@ function AdminBookingDetail() {
 
   const [addr, setAddr] = useState({ line1: "", line2: "", city: "", postcode: "" });
   const [addrOpen, setAddrOpen] = useState(false);
+  const [amendOpen, setAmendOpen] = useState(false);
   const [pickDetailer, setPickDetailer] = useState("");
   const [emailNote, setEmailNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -235,6 +237,8 @@ function AdminBookingDetail() {
     if (ok) setTimeout(() => setCopied(false), 2500);
   }
   const EMAIL_LABELS: Record<BookingEmailKind, string> = {
+    received: "Request received",
+    staff_alert: "Team alert",
     booked_in: "Booked in",
     assigned: "Detailer assigned",
     on_the_way: "On the way",
@@ -255,8 +259,10 @@ function AdminBookingDetail() {
         <div className="mb-5 rounded-2xl border border-warning/40 bg-warning/8 p-5">
           <p className="font-display text-[26px] leading-none">NEEDS CONFIRMING</p>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            This came in from the website. One button books it in, plots the address, assigns a
-            detailer and emails the customer their booking and tracking link.
+            This is a request, not a booking yet. Call or text the customer if anything needs
+            changing, amend it below, then confirm. One button books it in, plots the address,
+            assigns a detailer and emails the customer their confirmed booking and tracking link.
+            Amending sends no email.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {needsAddressNow ? (
@@ -395,6 +401,21 @@ function AdminBookingDetail() {
             </p>
           ) : null}
         </section>
+
+        {["requested", "confirmed", "assigned"].includes(booking.status) ? (
+          amendOpen ? (
+            <AmendBooking booking={booking} onClose={() => setAmendOpen(false)} />
+          ) : (
+            <PrimaryActionButton
+              variant="outline"
+              size="md"
+              className="mb-4"
+              onClick={() => setAmendOpen(true)}
+            >
+              Amend booking details
+            </PrimaryActionButton>
+          )
+        ) : null}
 
         {customer ? (
           <section className="mb-4 break-inside-avoid rounded-2xl border border-hairline bg-surface p-5">

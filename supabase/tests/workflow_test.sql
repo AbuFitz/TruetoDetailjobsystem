@@ -153,9 +153,16 @@ declare b record; p jsonb; bid uuid := (select v::uuid from ctx where k = 'porta
 begin
   select * into b from public.bookings where public.bookings.id = bid;
   insert into results values ('a customer cannot choose their own source, token or status',
-    b.source = 'portal' and b.tracking_token <> 'chosen-by-customer' and b.status = 'confirmed' and b.price = 80, concat_ws(' | ', b.source, b.status, b.price));
-  p := public.claim_booking_email(bid, 'booked_in');
-  insert into results values ('a customer can trigger the booked-in email for their own new booking', p ->> 'customer_email' = 'sam@example.com', coalesce(p ->> 'customer_email', 'null'));
+    b.source = 'portal' and b.tracking_token <> 'chosen-by-customer' and b.status = 'requested' and b.price = 80, concat_ws(' | ', b.source, b.status, b.price));
+  begin
+    perform public.claim_booking_email(bid, 'booked_in');
+    insert into results values ('a customer cannot trigger the booked-in email, only staff approval can', false, 'allowed');
+  exception when others then insert into results values ('a customer cannot trigger the booked-in email, only staff approval can', sqlerrm = 'Not allowed', sqlerrm); end;
+  p := public.claim_booking_email(bid, 'received');
+  insert into results values ('a customer can trigger the request-received email for their own new booking', p ->> 'customer_email' = 'sam@example.com' and length(p ->> 'tracking_token') >= 8, coalesce(p ->> 'customer_email', 'null'));
+  p := public.claim_booking_email(bid, 'staff_alert');
+  insert into results values ('a customer can trigger the team alert for their own new booking', p ->> 'customer_phone' is not distinct from p ->> 'customer_phone' and p ->> 'customer_email' = 'sam@example.com', coalesce(p ->> 'customer_email', 'null'));
+  insert into results values ('the request-received email is only claimed once', public.claim_booking_email(bid, 'received') is null, 'second claim');
   begin
     perform public.claim_booking_email((select v::uuid from ctx where k = 'website_id'), 'booked_in');
     insert into results values ('a customer cannot trigger emails for someone else''s booking', false, 'allowed');

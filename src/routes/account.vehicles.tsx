@@ -112,7 +112,7 @@ function VehiclesPage() {
     <AppShell
       area="customer"
       width="medium"
-      eyebrow="Your Garage"
+      eyebrow="Your cars"
       title={
         <>
           YOUR GARAGE<span className="text-signal">.</span>

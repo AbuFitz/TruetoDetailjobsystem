@@ -1,8 +1,8 @@
 /**
- * What the booking confirmation screen says about the emails, decided from what
+ * What the booking request screen says about the emails, decided from what
  * actually happened. It only ever claims what is true: the customer is told the
- * confirmation was emailed only if it was, and is told the team knows about the
- * booking only if the team's own notice really went out.
+ * confirmation of their request was emailed only if it was, and is told the
+ * team knows about it only if the team's own notice really went out.
  */
 export interface EmailOutcome {
   sent: boolean;
@@ -30,9 +30,9 @@ export function confirmationNotice(
   return {
     tone: "warn",
     text:
-      "We could not send your confirmation email just now. Your booking is saved and is in your account." +
+      "We could not send your confirmation email just now. Your request is saved and is in your account." +
       (outcome.staffNotified
         ? " We have been told about it."
-        : " If you do not hear from us, call or WhatsApp and we will confirm it."),
+        : " If you do not hear from us, call or WhatsApp and we will pick it up."),
   };
 }

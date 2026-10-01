@@ -1,17 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, ChevronLeft, TriangleAlert } from "lucide-react";
-import { AppShell } from "@/components/ttd/AppShell";
+import { Check, ChevronLeft, ChevronRight, Plus, TriangleAlert, X } from "lucide-react";
+import { TtdLogo } from "@/components/ttd/Header";
+import { ThemeToggle } from "@/components/ttd/ThemeToggle";
 import { sendBookingEmail, type EmailResult } from "@/lib/portal-email";
 import { confirmationNotice } from "@/lib/booking-email";
-import { guideTo } from "@/lib/guide";
-import { DateBlock } from "@/components/ttd/DateBlock";
-import { BookProgress } from "@/components/ttd/BookProgress";
 import { whenParts } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { SuccessMark } from "@/components/ttd/SuccessMark";
-import { VehicleSizePicker } from "@/components/ttd/VehicleSizePicker";
+import { useStillPage } from "@/hooks/use-still";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { PlateTag } from "@/components/ttd/VehicleTag";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
@@ -29,6 +26,7 @@ import {
   TIME_SLOTS,
   firstAvailableSlot,
   formatBookingDate,
+  formatShortDate,
   isSlotAvailable,
   ukNow,
   ukSlotToIso,
@@ -36,7 +34,9 @@ import {
 import {
   DETAIL_ADDONS,
   DETAIL_PACKAGES,
+  VEHICLE_SIZE_GUIDE,
   VEHICLE_SIZE_LABELS,
+  VEHICLE_SIZE_NOTE,
   type VehicleSize,
 } from "@/lib/constants";
 
@@ -45,22 +45,53 @@ export const Route = createFileRoute("/book")({
   component: BookingFlow,
 });
 
-type Step = "vehicle" | "schedule" | "review" | "done";
+/**
+ * One question per screen. The page is exactly the height of the screen (no
+ * page scroll, nothing to zoom into): a black header with the question, a
+ * white sheet with the answer, and the main button always in the same place.
+ * Every field is 16px so a phone never zooms in on focus.
+ */
+type Step = "vehicle" | "size" | "package" | "extras" | "when" | "where" | "review" | "done";
+type Question = Exclude<Step, "done">;
+
+const QUESTIONS: { key: Question; label: string; title: string; hint: string }[] = [
+  { key: "vehicle", label: "Car", title: "Your car", hint: "Which car are we detailing?" },
+  { key: "size", label: "Size", title: "Car size", hint: "This sets the price." },
+  { key: "package", label: "Package", title: "Package", hint: "Pick the level of detail." },
+  { key: "extras", label: "Extras", title: "Extras", hint: "Optional. Add whatever helps." },
+  { key: "when", label: "When", title: "Date and time", hint: "Pick a day, then a time." },
+  { key: "where", label: "Where", title: "Where to", hint: "We come to you." },
+  { key: "review", label: "Send", title: "Check and send", hint: "Last look before it goes." },
+];
+
+const fieldClass =
+  "min-h-12 w-full rounded-2xl border border-input bg-surface-2 px-4 text-base outline-none focus:border-signal focus:ring-2 focus:ring-signal/30";
+
+/** Seven days starting `offset` days after today, in UK time, as YYYY-MM-DD. */
+function weekDates(weekOffset: number): string[] {
+  const start = new Date(`${ukNow().date}T00:00:00Z`);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setUTCDate(start.getUTCDate() + weekOffset * 7 + i);
+    return d.toISOString().slice(0, 10);
+  });
+}
+
+function monthLabel(dates: string[]): string {
+  const fmt = (d: string, o: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", ...o }).format(new Date(`${d}T00:00:00Z`));
+  const first = fmt(dates[0]!, { month: "long", year: "numeric" });
+  const last = fmt(dates[6]!, { month: "long", year: "numeric" });
+  return first === last ? first : `${fmt(dates[0]!, { month: "short" })} to ${last}`;
+}
 
 function BookingFlow() {
+  useStillPage();
   const { session, loading: authLoading } = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState<Step>("vehicle");
-  const sizeRef = useRef<HTMLDivElement>(null);
-  const newVehicleRef = useRef<HTMLDivElement>(null);
-  const packageRef = useRef<HTMLDivElement>(null);
-  const addonsRef = useRef<HTMLDivElement>(null);
-  const timeRef = useRef<HTMLDivElement>(null);
-  const whereRef = useRef<HTMLDivElement>(null);
-  const newAddressRef = useRef<HTMLDivElement>(null);
-  const nextRef = useRef<HTMLDivElement>(null);
   const [postcode, setPostcode] = useState("");
   const [areaResult, setAreaResult] = useState<ServiceAreaResult | null>(null);
   const [checkingArea, setCheckingArea] = useState(false);
@@ -81,8 +112,9 @@ function BookingFlow() {
   const [packageId, setPackageId] = useState(DETAIL_PACKAGES[1]!.id);
   const [addonIds, setAddonIds] = useState<string[]>([]);
 
+  const [weekOffset, setWeekOffset] = useState(0);
   const [date, setDate] = useState("");
-  const [time, setTime] = useState(TIME_SLOTS[1]!);
+  const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
 
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -109,8 +141,8 @@ function BookingFlow() {
   }, [addresses, addressChoice]);
 
   useEffect(() => {
-    if (vehicles && vehicles.length > 0 && vehicleChoice === null) {
-      setVehicleChoice(vehicles[0]!);
+    if (vehicles && vehicleChoice === null) {
+      setVehicleChoice(vehicles.length > 0 ? vehicles[0]! : "new");
     }
   }, [vehicles, vehicleChoice]);
 
@@ -172,6 +204,7 @@ function BookingFlow() {
         throw new Error("That time has already passed. Please pick a later slot or another day.");
       }
 
+      // A portal booking is a request: it is not locked in until the team approves it.
       const booking = await createBooking({
         vehicle_id: vehicle.id,
         vehicle_registration: vehicle.registration,
@@ -193,8 +226,12 @@ function BookingFlow() {
         estimated_duration_minutes: selectedPackage.durationMinutes,
         customer_notes: notes || undefined,
       });
-      // Never throws: the booking is made either way, and the screen reports what happened.
-      const email = await sendBookingEmail(booking.id, "booked_in");
+      // Neither throws: the request is saved either way, and the screen reports what happened.
+      const [received, staff] = await Promise.all([
+        sendBookingEmail(booking.id, "received"),
+        sendBookingEmail(booking.id, "staff_alert"),
+      ]);
+      const email: EmailResult = { ...received, staffNotified: staff.sent };
       return { booking, email };
     },
     onSuccess: ({ booking, email }) => {
@@ -213,459 +250,670 @@ function BookingFlow() {
 
   if (authLoading || !session) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh bg-background">
         <BrandedLoading label="Loading" />
       </div>
     );
   }
 
+  const at = step === "done" ? QUESTIONS.length : QUESTIONS.findIndex((q) => q.key === step);
+  const question = step === "done" ? null : QUESTIONS[at]!;
+
+  const vehicleText =
+    vehicleChoice === "new"
+      ? [newVehicle.make, newVehicle.model].filter(Boolean).join(" ") || "New car"
+      : vehicleChoice
+        ? (vehicleDescription(vehicleChoice) ?? "Your car")
+        : "";
+  const vehicleReg =
+    vehicleChoice === "new"
+      ? newVehicle.registration.toUpperCase()
+      : (vehicleChoice?.registration ?? "");
+  const addressText =
+    addressChoice === "new"
+      ? [newAddress.line1, areaResult?.postcode].filter(Boolean).join(", ")
+      : addressChoice
+        ? `${addressChoice.line1}, ${addressChoice.postcode}`
+        : "";
+  const whenText = date && time ? `${formatShortDate(date)}, ${time}` : "";
+  const addonText = DETAIL_ADDONS.filter((a) => addonIds.includes(a.id))
+    .map((a) => a.label)
+    .join(", ");
+
+  const canContinue: Record<Question, boolean> = {
+    vehicle:
+      vehicleChoice !== null &&
+      (vehicleChoice !== "new" || Boolean(newVehicle.registration.trim())),
+    size: true,
+    package: true,
+    extras: true,
+    when: Boolean(date) && Boolean(time) && isSlotAvailable(date, time),
+    where:
+      addressChoice !== null &&
+      (addressChoice !== "new" ||
+        (Boolean(areaResult?.covered) && Boolean(newAddress.line1.trim()))),
+    review: true,
+  };
+
+  function next() {
+    if (step === "where" && addressChoice === "new") {
+      createAddressMutation.mutate();
+      return;
+    }
+    if (step === "review") {
+      submitBooking.mutate();
+      return;
+    }
+    const i = QUESTIONS.findIndex((q) => q.key === step);
+    const target = QUESTIONS[i + 1];
+    if (target) setStep(target.key);
+  }
+
+  function back() {
+    const i = QUESTIONS.findIndex((q) => q.key === step);
+    const target = QUESTIONS[i - 1];
+    if (target) setStep(target.key);
+  }
+
+  const summary: { label: string; value: string }[] = [
+    {
+      label: "Car",
+      value: vehicleText ? `${vehicleText}${vehicleReg ? ` (${vehicleReg})` : ""}` : "",
+    },
+    { label: "Size", value: VEHICLE_SIZE_LABELS[vehicleSize] },
+    { label: "Package", value: selectedPackage.name },
+    { label: "Extras", value: addonText },
+    { label: "When", value: whenText },
+    { label: "Where", value: addressText },
+  ].filter((r) => r.value);
+
   return (
-    <AppShell
-      area="customer"
-      width="medium"
-      eyebrow="We come to you"
-      title={
-        <>
-          BOOK A DETAIL<span className="text-signal">.</span>
-        </>
-      }
-    >
-      <BookProgress
-        step={step}
-        total={totalPrice}
-        summary={`${selectedPackage.name} · ${VEHICLE_SIZE_LABELS[vehicleSize]}`}
-        onStep={setStep}
-      />
-      {step !== "vehicle" && step !== "done" ? (
-        <button
-          type="button"
-          onClick={() => setStep(prevStep(step))}
-          className="press -ml-2 mb-3 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </button>
-      ) : null}
+    <main className="flex h-dvh touch-manipulation flex-col overflow-hidden bg-ink text-ink-foreground lg:flex-row">
+      {/* Header on a phone, left-hand panel on a desktop. */}
+      <header className="shrink-0 px-5 pb-4 pt-3 lg:flex lg:w-[420px] lg:flex-col lg:px-10 lg:pb-10 lg:pt-8 xl:w-[480px]">
+        <div className="flex items-center justify-between gap-3">
+          <Link to="/account" aria-label="True To Detail, home" className="press inline-block">
+            <TtdLogo tone="light" size="md" />
+          </Link>
+          <div className="flex items-center gap-2">
+            {step === "done" ? null : (
+              <p
+                className="mr-1 font-display text-[28px] leading-none lg:hidden"
+                aria-label={`Total so far, ${totalPrice} pounds`}
+              >
+                £{totalPrice}
+              </p>
+            )}
+            <ThemeToggle className="border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
+            <Link
+              to="/account"
+              aria-label="Close booking"
+              className="press grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground"
+            >
+              <X className="h-4 w-4" strokeWidth={2.4} />
+            </Link>
+          </div>
+        </div>
 
-      {step === "vehicle" ? (
-        <section>
-          <StepHead n={1} title="Vehicle and package" />
-          <div className="mt-6 grid gap-10 lg:grid-cols-2">
-            <div>
-              <GroupLabel n="a">Your vehicle</GroupLabel>
-              <div className="mt-3 flex flex-col gap-2.5">
-                {(vehicles ?? []).map((v) => (
-                  <ChoiceCard
-                    key={v.id}
-                    selected={vehicleChoice !== "new" && vehicleChoice?.id === v.id}
-                    onClick={() => {
-                      setVehicleChoice(v);
-                      guideTo(sizeRef.current);
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      {vehicleDescription(v) ? (
-                        <p className="text-[14px] font-semibold">{vehicleDescription(v)}</p>
-                      ) : null}
-                      <PlateTag registration={v.registration} />
+        {step === "done" ? (
+          <div className="mt-4 lg:mt-14">
+            <p className="eyebrow text-ink-foreground/55">Request sent</p>
+            <h1 className="mt-1 font-display text-[36px] leading-[0.9] lg:text-[64px]">
+              THANK YOU<span className="text-signal">.</span>
+            </h1>
+          </div>
+        ) : (
+          <>
+            <ol aria-label="Booking steps" className="mt-3 grid grid-cols-7 gap-1 lg:mt-14">
+              {QUESTIONS.map((q, i) => {
+                const done = i < at;
+                const now = i === at;
+                return (
+                  <li key={q.key} aria-current={now ? "step" : undefined} className="min-w-0">
+                    {done ? (
+                      <button
+                        type="button"
+                        onClick={() => setStep(q.key)}
+                        aria-label={`Go back to ${q.label}`}
+                        className="group block h-5 w-full"
+                      >
+                        <span className="mt-2 block h-1.5 rounded-sm bg-signal group-hover:bg-signal-deep" />
+                      </button>
+                    ) : (
+                      <span className="block h-5">
+                        <span
+                          className={cn(
+                            "mt-2 block h-1.5 rounded-sm",
+                            now ? "bg-signal" : "bg-ink-foreground/18",
+                          )}
+                        />
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+            <p className="eyebrow mt-2 text-ink-foreground/55">
+              Step {at + 1} of {QUESTIONS.length}
+            </p>
+            <h1 className="mt-1 font-display text-[36px] leading-[0.9] lg:text-[64px]">
+              {question!.title.toUpperCase()}
+              <span className="text-signal">.</span>
+            </h1>
+            <p className="mt-1.5 text-[13px] text-ink-foreground/60 lg:mt-3 lg:text-[15px]">
+              {question!.hint}
+            </p>
+
+            <div className="mt-auto hidden lg:block">
+              {summary.length ? (
+                <dl className="mb-6 divide-y divide-white/10 border-y border-white/10 text-[14px]">
+                  {summary.map((r) => (
+                    <div key={r.label} className="flex items-start justify-between gap-4 py-2.5">
+                      <dt className="text-ink-foreground/55">{r.label}</dt>
+                      <dd className="text-right font-medium">{r.value}</dd>
                     </div>
-                  </ChoiceCard>
-                ))}
-                <ChoiceCard
-                  selected={vehicleChoice === "new"}
-                  onClick={() => {
-                    setVehicleChoice("new");
-                    guideTo(newVehicleRef.current);
-                  }}
-                >
-                  <p className="text-[14px] font-semibold">Add a new vehicle</p>
-                </ChoiceCard>
-              </div>
+                  ))}
+                </dl>
+              ) : null}
+              <p className="eyebrow text-ink-foreground/55">Total so far</p>
+              <p className="font-display text-[56px] leading-none" aria-hidden>
+                £{totalPrice}
+              </p>
+            </div>
+          </>
+        )}
+      </header>
 
+      {/* The sheet: the answer, and the button, always in the same place. */}
+      <section
+        aria-label={question ? question.title : "Request sent"}
+        className="flex min-h-0 flex-1 flex-col rounded-t-3xl bg-background text-foreground lg:rounded-l-3xl lg:rounded-tr-none"
+      >
+        <div
+          data-testid="book-scroll"
+          className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-5 pb-3 pt-5 lg:px-10 lg:pt-28"
+        >
+          {step === "vehicle" ? (
+            <div className="flex flex-col gap-2.5">
+              {(vehicles ?? []).map((v) => (
+                <ChoiceCard
+                  key={v.id}
+                  selected={vehicleChoice !== "new" && vehicleChoice?.id === v.id}
+                  onClick={() => setVehicleChoice(v)}
+                >
+                  <div className="flex items-center gap-2">
+                    {vehicleDescription(v) ? (
+                      <p className="text-[15px] font-semibold">{vehicleDescription(v)}</p>
+                    ) : null}
+                    <PlateTag registration={v.registration} />
+                  </div>
+                </ChoiceCard>
+              ))}
+              <ChoiceCard
+                selected={vehicleChoice === "new"}
+                onClick={() => setVehicleChoice("new")}
+                icon={<Plus className="h-3 w-3" strokeWidth={3.4} />}
+              >
+                <p className="text-[15px] font-semibold">Add a new car</p>
+              </ChoiceCard>
               {vehicleChoice === "new" ? (
-                <div ref={newVehicleRef} className="mt-4 grid grid-cols-2 gap-2">
+                <div className="mt-1 grid grid-cols-2 gap-2">
                   <input
                     value={newVehicle.make}
                     onChange={(e) => setNewVehicle((s) => ({ ...s, make: e.target.value }))}
                     placeholder="Make"
-                    className="min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm outline-none focus:border-signal"
+                    aria-label="Make"
+                    autoComplete="off"
+                    className={fieldClass}
                   />
                   <input
                     value={newVehicle.model}
                     onChange={(e) => setNewVehicle((s) => ({ ...s, model: e.target.value }))}
                     placeholder="Model"
-                    className="min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm outline-none focus:border-signal"
+                    aria-label="Model"
+                    autoComplete="off"
+                    className={fieldClass}
                   />
                   <input
                     value={newVehicle.registration}
                     onChange={(e) => setNewVehicle((s) => ({ ...s, registration: e.target.value }))}
                     placeholder="Registration"
-                    className="col-span-2 min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm uppercase outline-none focus:border-signal"
+                    aria-label="Registration"
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    className={cn(fieldClass, "col-span-2 uppercase")}
                   />
                 </div>
               ) : null}
-
-              <div ref={sizeRef} className="mt-7">
-                <GroupLabel n="b">Vehicle size</GroupLabel>
-                <VehicleSizePicker
-                  className="mt-2"
-                  value={vehicleSize}
-                  onChange={(size) => {
-                    setVehicleSize(size);
-                    guideTo(packageRef.current);
-                  }}
-                />
-              </div>
             </div>
-            <div ref={packageRef}>
-              <GroupLabel n="c">Package</GroupLabel>
-              <div role="radiogroup" aria-label="Package" className="mt-3 flex flex-col gap-2.5">
-                {DETAIL_PACKAGES.map((p) => (
+          ) : null}
+
+          {step === "size" ? (
+            <div>
+              <div role="radiogroup" aria-label="Vehicle size" className="flex flex-col gap-2.5">
+                {(Object.keys(VEHICLE_SIZE_LABELS) as VehicleSize[]).map((size) => (
                   <ChoiceCard
-                    key={p.id}
+                    key={size}
                     radio
-                    selected={packageId === p.id}
-                    onClick={() => {
-                      setPackageId(p.id);
-                      guideTo(addonsRef.current);
-                    }}
+                    selected={vehicleSize === size}
+                    onClick={() => setVehicleSize(size)}
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[15px] font-semibold">{p.name}</p>
-                        <p className="text-[13px] text-muted-foreground">
-                          {p.tagline} · {p.durationLabel}
-                        </p>
-                      </div>
-                      <p
-                        key={vehicleSize}
-                        className="fade-in shrink-0 font-display text-[28px] leading-none"
-                      >
-                        £{p.priceBySize[vehicleSize]}
-                      </p>
-                    </div>
+                    <p className="text-[15px] font-semibold">{VEHICLE_SIZE_LABELS[size]}</p>
+                    <p className="text-[13px] text-foreground/80">
+                      {VEHICLE_SIZE_GUIDE[size].body}
+                    </p>
+                    <p className="text-[12px] text-muted-foreground">
+                      {VEHICLE_SIZE_GUIDE[size].examples}
+                    </p>
                   </ChoiceCard>
                 ))}
               </div>
-
-              <div ref={addonsRef} className="mt-7">
-                <GroupLabel n="d">Add-ons (optional)</GroupLabel>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {DETAIL_ADDONS.map((a) => (
-                    <label
-                      key={a.id}
-                      className="press flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-3.5 transition-colors has-[:checked]:border-signal has-[:checked]:bg-signal/8 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal/40"
-                    >
-                      <span className="flex items-center gap-3 text-[14px] font-medium">
-                        <input
-                          type="checkbox"
-                          checked={addonIds.includes(a.id)}
-                          onChange={(e) =>
-                            setAddonIds((prev) =>
-                              e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
-                            )
-                          }
-                          className="h-5 w-5 rounded-md border-input accent-[var(--color-signal)]"
-                        />
-                        {a.label}
-                      </span>
-                      <span className="shrink-0 text-[13px] font-semibold text-muted-foreground">
-                        +£{a.price}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+                {VEHICLE_SIZE_NOTE}
+              </p>
             </div>
-          </div>
-          <div ref={nextRef} />
-          <PrimaryActionButton
-            className="mt-8"
-            disabled={
-              vehicleChoice === null || (vehicleChoice === "new" && !newVehicle.registration.trim())
-            }
-            onClick={() => setStep("schedule")}
-          >
-            Next: when and where · £{totalPrice}
-          </PrimaryActionButton>
-        </section>
-      ) : null}
+          ) : null}
 
-      {step === "schedule" ? (
-        <section>
-          <StepHead n={2} title="When and where" />
-          <div className="mt-6 grid gap-10 lg:grid-cols-2">
-            <div>
-              <GroupLabel n="a">Date and time</GroupLabel>
-              <div className="mt-3">
-                <span className="eyebrow block text-muted-foreground">Date</span>
-                <input
-                  type="date"
-                  value={date}
-                  min={ukNow().date}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setDate(next);
-                    if (next && !isSlotAvailable(next, time))
-                      setTime(firstAvailableSlot(next) ?? "");
-                    if (next) guideTo(timeRef.current);
-                  }}
-                  className="mt-2 min-h-12 w-full rounded-2xl border border-input bg-surface-2 px-4 text-base outline-none focus:border-signal focus:ring-2 focus:ring-signal/30"
-                />
-              </div>
-              <div ref={timeRef} className="mt-4">
-                <span className="eyebrow block text-muted-foreground">Time</span>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {TIME_SLOTS.map((t) => {
-                    const unavailable = Boolean(date) && !isSlotAvailable(date, t);
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        disabled={unavailable}
-                        aria-pressed={time === t}
-                        onClick={() => {
-                          setTime(t);
-                          guideTo(addressChoice ? nextRef.current : whereRef.current);
-                        }}
-                        className={`press min-h-11 rounded-full border text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:line-through disabled:opacity-35 ${time === t ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2 hover:bg-surface"}`}
-                      >
-                        {t}
-                      </button>
-                    );
-                  })}
+          {step === "package" ? (
+            <div role="radiogroup" aria-label="Package" className="flex flex-col gap-2.5">
+              {DETAIL_PACKAGES.map((p) => (
+                <ChoiceCard
+                  key={p.id}
+                  radio
+                  selected={packageId === p.id}
+                  onClick={() => setPackageId(p.id)}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-semibold">{p.name}</p>
+                      <p className="text-[13px] text-muted-foreground">
+                        {p.tagline} · {p.durationLabel}
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-display text-[28px] leading-none">
+                      £{p.priceBySize[vehicleSize]}
+                    </p>
+                  </div>
+                </ChoiceCard>
+              ))}
+            </div>
+          ) : null}
+
+          {step === "extras" ? (
+            <div className="flex flex-col gap-2">
+              {DETAIL_ADDONS.map((a) => (
+                <label
+                  key={a.id}
+                  className="press flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-3.5 has-[:checked]:border-signal has-[:checked]:bg-signal/8 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal/40"
+                >
+                  <span className="flex items-center gap-3 text-[14px] font-medium">
+                    <input
+                      type="checkbox"
+                      checked={addonIds.includes(a.id)}
+                      onChange={(e) =>
+                        setAddonIds((prev) =>
+                          e.target.checked ? [...prev, a.id] : prev.filter((id) => id !== a.id),
+                        )
+                      }
+                      className="h-5 w-5 rounded-md border-input accent-[var(--color-signal)]"
+                    />
+                    {a.label}
+                  </span>
+                  <span className="shrink-0 text-[13px] font-semibold text-muted-foreground">
+                    +£{a.price}
+                  </span>
+                </label>
+              ))}
+            </div>
+          ) : null}
+
+          {step === "when" ? (
+            <WhenPicker
+              weekOffset={weekOffset}
+              onWeek={setWeekOffset}
+              date={date}
+              time={time}
+              onDate={(d) => {
+                setDate(d);
+                if (time && !isSlotAvailable(d, time)) setTime("");
+              }}
+              onTime={setTime}
+            />
+          ) : null}
+
+          {step === "where" ? (
+            addressChoice === "new" ? (
+              <div>
+                {(addresses ?? []).length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setAddressChoice((addresses ?? [])[0] ?? null)}
+                    className="press -ml-2 mb-2 inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-[13px] font-semibold text-muted-foreground hover:text-foreground"
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Use a saved address
+                  </button>
+                ) : null}
+                <p className="text-[14px] text-muted-foreground">
+                  Enter the postcode and we will check we cover your area.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={postcode}
+                    onChange={(e) => setPostcode(e.target.value)}
+                    placeholder="e.g. HP2 6EL"
+                    aria-label="Postcode"
+                    autoComplete="postal-code"
+                    autoCapitalize="characters"
+                    className={cn(fieldClass, "min-w-0 flex-1 font-medium uppercase")}
+                  />
+                  <PrimaryActionButton
+                    className="w-auto px-6"
+                    loading={checkingArea}
+                    onClick={handlePostcodeSubmit}
+                  >
+                    Check
+                  </PrimaryActionButton>
                 </div>
-                {date && !firstAvailableSlot(date) ? (
-                  <p className="mt-2 text-[13px] text-muted-foreground">
-                    No slots left on this day. Please pick another date.
-                  </p>
+                {areaResult ? (
+                  areaResult.covered ? (
+                    <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-success">
+                      <Check className="h-4 w-4" strokeWidth={3} /> We cover your area
+                    </p>
+                  ) : (
+                    <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-destructive">
+                      <TriangleAlert className="h-4 w-4" /> This address is currently outside our
+                      mobile service area.
+                    </p>
+                  )
+                ) : null}
+                {areaError ? (
+                  <p className="mt-3 text-[13px] text-destructive">{areaError}</p>
+                ) : null}
+                {areaResult?.covered ? (
+                  <div className="mt-3 flex flex-col gap-2">
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["Home", "Work", "Other"] as const).map((l) => (
+                        <button
+                          key={l}
+                          type="button"
+                          onClick={() => setNewAddress((s) => ({ ...s, label: l }))}
+                          className={cn(
+                            "press min-h-11 rounded-full border text-[13px] font-semibold",
+                            newAddress.label === l
+                              ? "border-signal bg-signal text-signal-foreground"
+                              : "border-input bg-surface-2",
+                          )}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      value={newAddress.line1}
+                      onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
+                      placeholder="Address line 1"
+                      aria-label="Address line 1"
+                      autoComplete="address-line1"
+                      className={fieldClass}
+                    />
+                    <input
+                      value={newAddress.city}
+                      onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
+                      placeholder="Town / city"
+                      aria-label="Town or city"
+                      autoComplete="address-level2"
+                      className={fieldClass}
+                    />
+                  </div>
                 ) : null}
               </div>
-            </div>
-            <div ref={whereRef}>
-              <GroupLabel n="b">Where should we come?</GroupLabel>
-              <div className="mt-3 flex flex-col gap-2.5">
+            ) : (
+              <div className="flex flex-col gap-2.5">
                 {(addresses ?? []).map((a) => (
                   <ChoiceCard
                     key={a.id}
-                    selected={addressChoice !== "new" && addressChoice?.id === a.id}
-                    onClick={() => {
-                      setAddressChoice(a);
-                      guideTo(nextRef.current);
-                    }}
+                    selected={addressChoice !== null && addressChoice.id === a.id}
+                    onClick={() => setAddressChoice(a)}
                   >
-                    <p className="text-[14px] font-semibold">{a.label}</p>
+                    <p className="text-[15px] font-semibold">{a.label}</p>
                     <p className="text-[13px] text-muted-foreground">
                       {a.line1} · {a.postcode}
                     </p>
                   </ChoiceCard>
                 ))}
                 <ChoiceCard
-                  selected={addressChoice === "new"}
-                  onClick={() => {
-                    setAddressChoice("new");
-                    guideTo(newAddressRef.current);
-                  }}
+                  selected={false}
+                  onClick={() => setAddressChoice("new")}
+                  icon={<Plus className="h-3 w-3" strokeWidth={3.4} />}
                 >
-                  <p className="text-[14px] font-semibold">Another address</p>
-                  {areaResult?.postcode ? (
-                    <p className="text-[13px] text-muted-foreground">
-                      Postcode {areaResult.postcode}
-                    </p>
-                  ) : null}
+                  <p className="text-[15px] font-semibold">Another address</p>
                 </ChoiceCard>
               </div>
-              {addressChoice === "new" ? (
-                <div ref={newAddressRef} className="mt-4">
-                  <p className="text-[14px] text-muted-foreground">
-                    Enter the postcode and we'll check we cover your area.
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      value={postcode}
-                      onChange={(e) => setPostcode(e.target.value)}
-                      placeholder="e.g. HP2 6EL"
-                      className="min-h-12 min-w-0 flex-1 rounded-2xl border border-input bg-surface-2 px-3.5 text-base font-medium uppercase outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
-                    />
-                    <PrimaryActionButton
-                      className="w-auto px-6"
-                      loading={checkingArea}
-                      onClick={handlePostcodeSubmit}
-                    >
-                      Check
-                    </PrimaryActionButton>
-                  </div>
-                  {areaResult ? (
-                    areaResult.covered ? (
-                      <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-success">
-                        <Check className="h-4 w-4" strokeWidth={3} /> We cover your area
-                      </p>
-                    ) : (
-                      <p className="mt-3 flex items-center gap-2 text-[14px] font-medium text-destructive">
-                        <TriangleAlert className="h-4 w-4" /> This address is currently outside our
-                        mobile service area.
-                      </p>
-                    )
-                  ) : null}
-                  {areaError ? (
-                    <p className="mt-3 text-[13px] text-destructive">{areaError}</p>
-                  ) : null}
-                  {areaResult?.covered ? (
-                    <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-hairline bg-surface p-4">
-                      <div className="grid grid-cols-3 gap-2">
-                        {(["Home", "Work", "Other"] as const).map((l) => (
-                          <button
-                            key={l}
-                            type="button"
-                            onClick={() => setNewAddress((s) => ({ ...s, label: l }))}
-                            className={`press min-h-11 rounded-full border text-[13px] font-semibold transition-colors ${newAddress.label === l ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface-2"}`}
-                          >
-                            {l}
-                          </button>
-                        ))}
-                      </div>
-                      <input
-                        value={newAddress.line1}
-                        onChange={(e) => setNewAddress((s) => ({ ...s, line1: e.target.value }))}
-                        placeholder="Address line 1"
-                        className="min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm outline-none focus:border-signal"
-                      />
-                      <input
-                        value={newAddress.city}
-                        onChange={(e) => setNewAddress((s) => ({ ...s, city: e.target.value }))}
-                        placeholder="Town / city"
-                        className="min-h-11 rounded-2xl border border-input bg-surface-2 px-4 text-sm outline-none focus:border-signal"
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <div ref={nextRef} />
-          <PrimaryActionButton
-            className="mt-8"
-            loading={createAddressMutation.isPending}
-            disabled={
-              !date ||
-              !time ||
-              !isSlotAvailable(date, time) ||
-              addressChoice === null ||
-              (addressChoice === "new" && (!areaResult?.covered || !newAddress.line1.trim()))
-            }
-            onClick={() =>
-              addressChoice === "new" ? createAddressMutation.mutate() : setStep("review")
-            }
-          >
-            Next: review
-          </PrimaryActionButton>
-        </section>
-      ) : null}
-
-      {step === "review" ? (
-        <section>
-          <StepHead n={3} title="Confirm your booking" />
-          <div className="mt-5 overflow-hidden rounded-2xl border border-hairline bg-surface">
-            <div className="flex items-end justify-between gap-4 bg-ink px-5 py-4 text-ink-foreground">
-              <div className="min-w-0">
-                <p className="eyebrow text-ink-foreground/55">When</p>
-                <p className="mt-1.5 text-[32px] sm:text-[40px]">
-                  <DateBlock iso={ukSlotToIso(date, time)} tone="onDark" />
-                </p>
-              </div>
-              <p className="font-display text-[32px] leading-none sm:text-[40px]">{time}</p>
-            </div>
-            <div className="flex flex-col gap-3 p-5">
-              <SummaryRow label="Package">{selectedPackage.name}</SummaryRow>
-              <SummaryRow label="Vehicle">
-                {vehicleChoice === "new"
-                  ? `${newVehicle.make} ${newVehicle.model} (${newVehicle.registration})`
-                  : vehicleChoice
-                    ? `${vehicleDescription(vehicleChoice) ?? ""} (${vehicleChoice.registration})`
-                    : ""}
-              </SummaryRow>
-              <SummaryRow label="Address">
-                {addressChoice === "new"
-                  ? `${newAddress.line1}, ${areaResult?.postcode}`
-                  : addressChoice
-                    ? `${addressChoice.line1}, ${addressChoice.postcode}`
-                    : ""}
-              </SummaryRow>
-              {addonIds.length ? (
-                <SummaryRow label="Add-ons">
-                  {DETAIL_ADDONS.filter((a) => addonIds.includes(a.id))
-                    .map((a) => a.label)
-                    .join(", ")}
-                </SummaryRow>
-              ) : null}
-              <div className="mt-2 flex items-center justify-between border-t border-hairline pt-3">
-                <p className="font-display text-lg">Total</p>
-                <p className="font-display text-[32px] leading-none">£{totalPrice}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <span className="eyebrow block text-muted-foreground">
-              Anything we should know? (optional)
-            </span>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="mt-2 w-full resize-none rounded-2xl border border-input bg-surface-2 px-4 py-3 text-sm outline-none focus:border-signal"
-            />
-          </div>
-          {submitBooking.isError ? (
-            <p className="mt-3 text-[13px] text-destructive">
-              {submitBooking.error instanceof Error
-                ? submitBooking.error.message
-                : "Couldn't create this booking."}
-            </p>
-          ) : null}
-          <PrimaryActionButton
-            className="mt-5"
-            loading={submitBooking.isPending}
-            onClick={() => submitBooking.mutate()}
-          >
-            Confirm booking
-          </PrimaryActionButton>
-        </section>
-      ) : null}
-
-      {step === "done" && bookingId ? (
-        <section className="rise-in flex flex-col items-center py-8 text-center">
-          <SuccessMark tone="success" />
-          <h2 className="mt-5 font-display text-[28px] leading-tight">Booking confirmed</h2>
-          <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">
-            We'll see you{" "}
-            {whenParts(ukSlotToIso(date, time)).today ? "today" : `on ${formatBookingDate(date)}`}{" "}
-            at {time}. Your detailer will come to you, and you can track it all from your account.
-          </p>
-          {notice ? (
-            notice.tone === "ok" ? (
-              <p
-                role="status"
-                className="mt-4 inline-flex items-center gap-2 text-[14px] font-semibold"
-              >
-                <Check className="h-4 w-4 text-success" strokeWidth={3} />
-                {notice.text}
-              </p>
-            ) : (
-              <p
-                role="status"
-                className="mt-4 max-w-sm rounded-2xl border border-warning/40 bg-warning/8 px-4 py-3 text-[14px] leading-relaxed"
-              >
-                {notice.text}
-              </p>
             )
           ) : null}
-          <Link to="/account/bookings/$id" params={{ id: bookingId }} className="mt-6">
-            <PrimaryActionButton className="w-auto px-8">View booking</PrimaryActionButton>
-          </Link>
-        </section>
+
+          {step === "review" ? (
+            <div>
+              <div className="overflow-hidden rounded-2xl border border-hairline bg-surface">
+                <div className="flex items-end justify-between gap-4 bg-ink px-4 py-3 text-ink-foreground">
+                  <p className="font-display text-[26px] leading-none">{whenText}</p>
+                  <p className="font-display text-[26px] leading-none">£{totalPrice}</p>
+                </div>
+                <div className="flex flex-col gap-2 p-4">
+                  <SummaryRow label="Package">{selectedPackage.name}</SummaryRow>
+                  <SummaryRow label="Car">
+                    {vehicleText}
+                    {vehicleReg ? ` (${vehicleReg})` : ""} · {VEHICLE_SIZE_LABELS[vehicleSize]}
+                  </SummaryRow>
+                  <SummaryRow label="Where">{addressText}</SummaryRow>
+                  {addonText ? <SummaryRow label="Extras">{addonText}</SummaryRow> : null}
+                </div>
+              </div>
+              <label className="mt-3 block">
+                <span className="eyebrow block text-muted-foreground">
+                  Anything we should know? (optional)
+                </span>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  className="mt-2 w-full resize-none rounded-2xl border border-input bg-surface-2 px-4 py-3 text-base outline-none focus:border-signal focus:ring-2 focus:ring-signal/30"
+                />
+              </label>
+              <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                This sends us a request. It is not locked in until we confirm it with you. Payment
+                is on the day.
+              </p>
+              {submitBooking.isError ? (
+                <p role="alert" className="mt-2 text-[13px] text-destructive">
+                  {submitBooking.error instanceof Error
+                    ? submitBooking.error.message
+                    : "Couldn't send this request."}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {step === "done" && bookingId ? (
+            <div className="flex h-full flex-col justify-center py-4">
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-success/12 text-success">
+                <Check className="h-6 w-6" strokeWidth={3} />
+              </div>
+              <h2 className="mt-4 font-display text-[30px] leading-tight">Request sent</h2>
+              <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">
+                You asked for{" "}
+                {whenParts(ukSlotToIso(date, time)).today ? "today" : formatBookingDate(date)} at{" "}
+                {time}. It is not locked in yet. We will check the slot and confirm it with you
+                first, and if anything needs changing we will call or text you before we change it.
+              </p>
+              {notice ? (
+                notice.tone === "ok" ? (
+                  <p
+                    role="status"
+                    className="mt-4 inline-flex items-center gap-2 text-[14px] font-semibold"
+                  >
+                    <Check className="h-4 w-4 text-success" strokeWidth={3} />
+                    {notice.text}
+                  </p>
+                ) : (
+                  <p
+                    role="status"
+                    className="mt-4 rounded-2xl border border-warning/40 bg-warning/8 px-4 py-3 text-[14px] leading-relaxed"
+                  >
+                    {notice.text}
+                  </p>
+                )
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <footer className="shrink-0 border-t border-hairline bg-background px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 lg:px-10">
+          <div className="mx-auto flex w-full max-w-lg items-center gap-2">
+            {step === "done" ? (
+              bookingId ? (
+                <Link to="/account/bookings/$id" params={{ id: bookingId }} className="w-full">
+                  <PrimaryActionButton>View request</PrimaryActionButton>
+                </Link>
+              ) : null
+            ) : (
+              <>
+                {at > 0 ? (
+                  <PrimaryActionButton
+                    variant="outline"
+                    className="w-auto shrink-0 px-5"
+                    aria-label="Back"
+                    onClick={back}
+                  >
+                    <ChevronLeft className="h-4 w-4" strokeWidth={2.6} />
+                    Back
+                  </PrimaryActionButton>
+                ) : null}
+                <PrimaryActionButton
+                  className="flex-1"
+                  loading={createAddressMutation.isPending || submitBooking.isPending}
+                  disabled={!canContinue[step]}
+                  onClick={next}
+                >
+                  {step === "review" ? (
+                    "Send request"
+                  ) : (
+                    <>
+                      Continue
+                      <ChevronRight className="h-4 w-4" strokeWidth={2.6} />
+                    </>
+                  )}
+                </PrimaryActionButton>
+              </>
+            )}
+          </div>
+        </footer>
+      </section>
+    </main>
+  );
+}
+
+function WhenPicker({
+  weekOffset,
+  onWeek,
+  date,
+  time,
+  onDate,
+  onTime,
+}: {
+  weekOffset: number;
+  onWeek: (n: number) => void;
+  date: string;
+  time: string;
+  onDate: (d: string) => void;
+  onTime: (t: string) => void;
+}) {
+  const days = weekDates(weekOffset);
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          {monthLabel(days)}
+        </p>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            aria-label="Earlier week"
+            disabled={weekOffset === 0}
+            onClick={() => onWeek(weekOffset - 1)}
+            className="press grid h-11 w-11 place-items-center rounded-full border border-hairline bg-surface disabled:opacity-35"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Later week"
+            disabled={weekOffset >= 11}
+            onClick={() => onWeek(weekOffset + 1)}
+            className="press grid h-11 w-11 place-items-center rounded-full border border-hairline bg-surface disabled:opacity-35"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <div role="group" aria-label="Day" className="mt-2 grid grid-cols-7 gap-1.5">
+        {days.map((d) => {
+          const full = firstAvailableSlot(d) === null;
+          const [wd, dayNum] = formatShortDate(d).split(" ");
+          const selected = date === d;
+          return (
+            <button
+              key={d}
+              type="button"
+              disabled={full}
+              aria-pressed={selected}
+              aria-label={formatBookingDate(d)}
+              onClick={() => onDate(d)}
+              className={cn(
+                "press flex min-h-16 flex-col items-center justify-center rounded-xl border text-center disabled:cursor-not-allowed disabled:opacity-35",
+                selected
+                  ? "border-signal bg-signal text-signal-foreground"
+                  : "border-input bg-surface-2 hover:bg-surface",
+              )}
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wide opacity-80">
+                {wd}
+              </span>
+              <span className="font-display text-[24px] leading-none">{dayNum}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-4 text-[13px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+        Time
+      </p>
+      <div role="group" aria-label="Time" className="mt-2 grid grid-cols-3 gap-2">
+        {TIME_SLOTS.map((t) => {
+          const unavailable = !date || !isSlotAvailable(date, t);
+          return (
+            <button
+              key={t}
+              type="button"
+              disabled={unavailable}
+              aria-pressed={time === t}
+              onClick={() => onTime(t)}
+              className={cn(
+                "press min-h-12 rounded-full border text-[14px] font-semibold disabled:cursor-not-allowed disabled:opacity-35",
+                time === t
+                  ? "border-signal bg-signal text-signal-foreground"
+                  : "border-input bg-surface-2 hover:bg-surface",
+              )}
+            >
+              {t}
+            </button>
+          );
+        })}
+      </div>
+      {!date ? (
+        <p className="mt-2 text-[12px] text-muted-foreground">Pick a day to see the times.</p>
       ) : null}
-    </AppShell>
+    </div>
   );
 }
 
@@ -673,12 +921,14 @@ function ChoiceCard({
   selected,
   onClick,
   radio,
+  icon,
   children,
 }: {
   selected: boolean;
   onClick: () => void;
   /** Part of a one-of-several group, so it is announced that way. */
   radio?: boolean;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -689,7 +939,7 @@ function ChoiceCard({
       aria-pressed={radio ? undefined : selected}
       onClick={onClick}
       className={cn(
-        "press flex items-center gap-3.5 rounded-2xl border p-4 text-left transition-[border-color,background-color,box-shadow]",
+        "press flex min-h-14 items-center gap-3.5 rounded-2xl border px-4 py-3 text-left",
         selected
           ? "border-signal bg-signal/8 shadow-[0_0_0_1px_var(--color-signal)]"
           : "border-hairline bg-surface hover:bg-surface-2",
@@ -698,53 +948,22 @@ function ChoiceCard({
       <span
         aria-hidden
         className={cn(
-          "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+          "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2",
           selected ? "border-signal bg-signal text-signal-foreground" : "border-input bg-surface",
         )}
       >
-        {selected ? <Check className="h-3 w-3" strokeWidth={3.4} /> : null}
+        {selected ? <Check className="h-3 w-3" strokeWidth={3.4} /> : (icon ?? null)}
       </span>
       <span className="min-w-0 flex-1">{children}</span>
     </button>
   );
 }
 
-/** "Step 2 of 3" and the name of the part, at the top of each part of the booking. */
-function StepHead({ n, title }: { n: number; title: string }) {
-  return (
-    <div>
-      <p className="eyebrow text-signal-deep">Step {n} of 3</p>
-      <h2 className="mt-1 font-display text-[34px] leading-none">{title}</h2>
-    </div>
-  );
-}
-
-/** A lettered group inside a step: a, b, c, d, in the order to answer them. */
-function GroupLabel({ n, children }: { n: string; children: React.ReactNode }) {
-  return (
-    <p className="flex items-center gap-2.5 text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-      <span
-        aria-hidden
-        className="grid h-5 w-5 place-items-center rounded-full bg-surface-2 font-mono text-[10px] font-medium normal-case tracking-normal text-foreground"
-      >
-        {n}
-      </span>
-      {children}
-    </p>
-  );
-}
-
 function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3 text-[14px]">
-      <span className="text-muted-foreground">{label}</span>
+      <span className="shrink-0 text-muted-foreground">{label}</span>
       <span className="text-right font-medium">{children}</span>
     </div>
   );
-}
-
-function prevStep(step: Step): Step {
-  const order: Step[] = ["vehicle", "schedule", "review"];
-  const idx = order.indexOf(step);
-  return order[Math.max(0, idx - 1)] ?? "vehicle";
 }

@@ -97,7 +97,7 @@ function DetailsPage() {
     <AppShell
       area="customer"
       width="narrow"
-      eyebrow="Your Details"
+      eyebrow="Settings"
       title={
         <>
           YOUR DETAILS<span className="text-signal">.</span>
