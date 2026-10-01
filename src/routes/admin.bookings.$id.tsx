@@ -362,7 +362,7 @@ function AdminBookingDetail() {
                     });
                     setAddrOpen(true);
                   }}
-                  className="press -mb-2 mt-0 inline-flex min-h-11 items-center text-[12px] font-medium text-muted-foreground underline underline-offset-2"
+                  className="press -mb-2 mt-0 inline-flex min-h-11 min-w-11 items-center justify-center text-[12px] font-medium text-muted-foreground underline underline-offset-2"
                 >
                   Edit
                 </button>
@@ -677,7 +677,7 @@ function AdminBookingDetail() {
                     type="button"
                     disabled={emailMutation.isPending || !customer?.email}
                     onClick={() => emailMutation.mutate({ kind, force: Boolean(at) })}
-                    className="press shrink-0 rounded-full border border-hairline px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2 disabled:opacity-40"
+                    className="press inline-flex min-h-11 shrink-0 items-center rounded-full border border-hairline px-4 text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-surface-2 disabled:opacity-40"
                   >
                     {at ? "Resend" : "Send"}
                   </button>

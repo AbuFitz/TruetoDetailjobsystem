@@ -215,7 +215,7 @@ export function AppShell({
             <Link
               to={back.to}
               params={back.params as never}
-              className="press mb-4 inline-flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-foreground/55 hover:text-ink-foreground"
+              className="press -mt-2 mb-2 inline-flex min-h-11 items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-foreground/55 hover:text-ink-foreground"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={2.4} />
               {back.label}

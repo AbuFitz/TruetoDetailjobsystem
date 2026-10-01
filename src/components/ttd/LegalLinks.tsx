@@ -6,19 +6,19 @@ export function LegalLinks({ className }: { className?: string }) {
   return (
     <p
       className={cn(
-        "flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground",
+        "flex flex-wrap items-center justify-center gap-x-3 text-[11px] text-muted-foreground",
         className,
       )}
     >
-      <a href={ttdSiteLinks.terms} className="hover:text-foreground">
+      <a href={ttdSiteLinks.terms} className="inline-block py-2.5 hover:text-foreground">
         Terms
       </a>
       <span aria-hidden>·</span>
-      <a href={ttdSiteLinks.privacy} className="hover:text-foreground">
+      <a href={ttdSiteLinks.privacy} className="inline-block py-2.5 hover:text-foreground">
         Privacy
       </a>
       <span aria-hidden>·</span>
-      <a href={ttdSiteLinks.cookies} className="hover:text-foreground">
+      <a href={ttdSiteLinks.cookies} className="inline-block py-2.5 hover:text-foreground">
         Cookies
       </a>
     </p>
