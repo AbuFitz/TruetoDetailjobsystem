@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, Link2 } from "lucide-react";
@@ -13,7 +13,6 @@ import {
 } from "@/components/ttd/TrackingExtras";
 import { journeyEvents, timeOnSiteMinutes } from "@/lib/journey";
 import { LiveJobPanel, StepTracker, viewFromBooking } from "@/components/ttd/LiveJob";
-import { JobHero } from "@/components/ttd/JobHero";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { useRequireCustomerSession } from "@/hooks/use-session";
@@ -24,7 +23,7 @@ import {
   LIVE_JOB_STATUSES,
 } from "@/lib/bookings";
 import { formatAppointment } from "@/lib/format";
-import { customerHeadline, customerStepIndex } from "@/lib/progress";
+import { customerHeadline, customerStepIndex, formatDuration } from "@/lib/progress";
 import { sendBookingEmail } from "@/lib/portal-email";
 import { copyText } from "@/lib/clipboard";
 import { supabase } from "@/lib/supabase";
@@ -87,17 +86,6 @@ function BookingDetail() {
     const i = done.findIndex((b) => b.id === id);
     return i >= 0 ? i + 1 : null;
   }, [allBookings, booking?.status, id]);
-
-  // A job that finishes while this page is open gets its moment: the finish arrives with a pass of light.
-  const lastStatus = useRef<string | null>(null);
-  const [finishedLive, setFinishedLive] = useState(false);
-  useEffect(() => {
-    const now = booking?.status ?? null;
-    if (lastStatus.current && lastStatus.current !== "completed" && now === "completed") {
-      setFinishedLive(true);
-    }
-    lastStatus.current = now;
-  }, [booking?.status]);
 
   async function handleCancel() {
     setCancelError(null);
@@ -166,20 +154,6 @@ function BookingDetail() {
           <StatusBadge status={booking.status} />
         </span>
       }
-      stage={
-        booking.status === "cancelled" ? undefined : (
-          <JobHero
-            bookingId={booking.id}
-            view={view}
-            startIso={booking.scheduled_start}
-            where={`${booking.service_address_line1}, ${booking.service_postcode}`}
-            visitNumber={visitNumber}
-            required={REWARD_VISITS_REQUIRED}
-            timeOnSiteMinutes={timeOnSiteMinutes(booking)}
-            justFinished={finishedLive}
-          />
-        )
-      }
     >
       {/*
         One column on a phone, in the order a customer needs it: where things stand, the
@@ -189,13 +163,7 @@ function BookingDetail() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr_auto] lg:gap-x-6">
         <div className="lg:col-start-1 lg:row-start-1">
           {live ? (
-            <LiveJobPanel
-              view={view}
-              showHeadline={false}
-              showEta={false}
-              showFinish={false}
-              showChecklist={false}
-            />
+            <LiveJobPanel view={view} showHeadline={false} />
           ) : (
             <section className="rounded-2xl border border-hairline bg-surface p-5 sm:p-6">
               <div className="flex items-center justify-between gap-3">
@@ -220,7 +188,14 @@ function BookingDetail() {
               ) : null}
               {booking.status === "completed" ? (
                 <p className="mt-5 text-[14px] leading-relaxed text-muted-foreground">
-                  Thank you for booking with us. See you next time.
+                  Thank you for booking with us.
+                  {timeOnSiteMinutes(booking)
+                    ? ` ${formatDuration(timeOnSiteMinutes(booking)! * 60)} on site.`
+                    : ""}
+                  {visitNumber && visitNumber <= REWARD_VISITS_REQUIRED
+                    ? ` That is visit ${visitNumber} of ${REWARD_VISITS_REQUIRED}.`
+                    : ""}{" "}
+                  See you next time.
                 </p>
               ) : null}
               {booking.status === "cancelled" ? (
@@ -239,7 +214,7 @@ function BookingDetail() {
             addons={booking.addon_labels}
             dayLabel={dayLabel}
             timeLabel={timeLabel}
-            startIso={booking.status === "cancelled" ? booking.scheduled_start : undefined}
+            startIso={booking.scheduled_start}
             vehicleDescription={booking.vehicle_description}
             registration={booking.vehicle_registration}
             where={`${booking.service_address_line1}, ${booking.service_postcode}`}

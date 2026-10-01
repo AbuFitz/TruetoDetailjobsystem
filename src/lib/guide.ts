@@ -38,7 +38,9 @@ export function guideTo(
   // Let the choice render first (prices, disabled slots) so positions are final.
   window.setTimeout(() => {
     const parent = scrollParent(el);
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const reduced =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ||
+      document.documentElement.classList.contains("ttd-still");
     if (!comfortablyVisible(el, parent)) {
       const box = parent ? parent.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
       const delta = el.getBoundingClientRect().top - box.top - topGap(box.bottom - box.top);

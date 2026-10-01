@@ -15,6 +15,7 @@ import {
 import { TtdLogo } from "@/components/ttd/Header";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
+import { useStillPage } from "@/hooks/use-still";
 import { signOut } from "@/lib/auth";
 import { ttdSiteLinks } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -91,11 +92,6 @@ interface AppShellProps {
   back?: { to: string; label: string; params?: Record<string, string> };
   /** "narrow" for forms and single records, "wide" (default) for dashboards and lists. */
   width?: "narrow" | "medium" | "wide";
-  /**
-   * A living surface behind the hero (the customer portal's paint). It fills the
-   * hero, which then keeps a fixed height so the page does not jump when it loads.
-   */
-  stage?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -107,9 +103,10 @@ export function AppShell({
   actions,
   back,
   width = "wide",
-  stage,
   children,
 }: AppShellProps) {
+  // The customer portal is completely still: no entrances, loops or sliding.
+  useStillPage(area === "customer");
   const path = useRouterState({ select: (s) => s.location.pathname });
   const nav = area === "admin" ? ADMIN_NAV : CUSTOMER_NAV;
   const home = HOME[area];
@@ -196,21 +193,8 @@ export function AppShell({
         </div>
       </header>
 
-      <div
-        className={cn(
-          "relative text-ink-foreground",
-          stage !== undefined && "min-h-[404px] sm:min-h-[384px]",
-        )}
-      >
-        {stage}
-        <div
-          className={cn(
-            "relative mx-auto w-full max-w-6xl px-5 pb-12 pt-7 sm:px-8 sm:pb-14 sm:pt-10",
-            // Over a stage the words must not block the surface's own controls or torch.
-            stage !== undefined &&
-              "pointer-events-none pb-4 sm:pb-4 [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_h1]:[text-shadow:0_2px_30px_rgb(12_12_12/0.6)]",
-          )}
-        >
+      <div className="relative text-ink-foreground">
+        <div className="relative mx-auto w-full max-w-6xl px-5 pb-12 pt-7 sm:px-8 sm:pb-14 sm:pt-10">
           {back ? (
             <Link
               to={back.to}
@@ -243,7 +227,7 @@ export function AppShell({
       <main className="flex-1 rounded-t-[28px] bg-background pb-28 text-foreground lg:pb-16">
         <div
           className={cn(
-            "page-in mx-auto w-full px-5 pt-7 sm:px-8 sm:pt-9",
+            "mx-auto w-full px-5 pt-7 sm:px-8 sm:pt-9",
             width === "narrow" ? "max-w-3xl" : width === "medium" ? "max-w-5xl" : "max-w-6xl",
           )}
         >

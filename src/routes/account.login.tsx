@@ -6,6 +6,7 @@ import { TtdLogo } from "@/components/ttd/Header";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
+import { useStillPage } from "@/hooks/use-still";
 import { QuickBookingModal } from "@/components/ttd/QuickBookingModal";
 import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 import { signIn, isStaff, hasSignedInBefore } from "@/lib/auth";
@@ -66,6 +67,7 @@ interface FormValues {
 }
 
 function AccountLogin() {
+  useStillPage();
   const navigate = useNavigate();
   const search = useSearch({ from: "/account/login" });
   const next = safeNext(search.next);

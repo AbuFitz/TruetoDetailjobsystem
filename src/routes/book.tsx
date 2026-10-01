@@ -7,7 +7,7 @@ import { sendBookingEmail, type EmailResult } from "@/lib/portal-email";
 import { confirmationNotice } from "@/lib/booking-email";
 import { guideTo } from "@/lib/guide";
 import { DateBlock } from "@/components/ttd/DateBlock";
-import { BookHero } from "@/components/ttd/BookHero";
+import { BookProgress } from "@/components/ttd/BookProgress";
 import { whenParts } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { SuccessMark } from "@/components/ttd/SuccessMark";
@@ -229,15 +229,13 @@ function BookingFlow() {
           BOOK A DETAIL<span className="text-signal">.</span>
         </>
       }
-      stage={
-        <BookHero
-          step={step}
-          total={totalPrice}
-          summary={`${selectedPackage.name} · ${VEHICLE_SIZE_LABELS[vehicleSize]}`}
-          onStep={setStep}
-        />
-      }
     >
+      <BookProgress
+        step={step}
+        total={totalPrice}
+        summary={`${selectedPackage.name} · ${VEHICLE_SIZE_LABELS[vehicleSize]}`}
+        onStep={setStep}
+      />
       {step !== "vehicle" && step !== "done" ? (
         <button
           type="button"

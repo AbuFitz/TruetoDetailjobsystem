@@ -12,7 +12,7 @@ import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { ErrorState } from "@/components/ttd/ErrorState";
 import { Avatar } from "@/components/ttd/Avatar";
 import { StepTracker } from "@/components/ttd/StepTracker";
-import { VisitHero } from "@/components/ttd/VisitHero";
+import { RewardsCard } from "@/components/ttd/RewardsCard";
 import { DashboardSkeleton } from "@/components/ttd/Skeleton";
 import { useRequireCustomerSession } from "@/hooks/use-session";
 import { getMyProfile } from "@/lib/customers";
@@ -36,7 +36,6 @@ const plateKey = (reg: string) => reg.replace(/\s+/g, "").toUpperCase();
 
 function AccountDashboard() {
   const { session, loading: authLoading } = useRequireCustomerSession();
-  const [selectedVisit, setSelectedVisit] = useState<number | null>(null);
   const [showEarlier, setShowEarlier] = useState(false);
 
   // "Welcome back" should only say "back" once someone has actually been
@@ -125,7 +124,6 @@ function AccountDashboard() {
       ),
     [previous],
   );
-  const selectedBookingId = selectedVisit ? completedVisits[selectedVisit - 1]?.id : undefined;
 
   // Completed visits per car, from the same bookings, so the garage and history agree.
   const visitsByCar = useMemo(() => {
@@ -165,18 +163,6 @@ function AccountDashboard() {
           <span className="text-signal">.</span>
         </>
       }
-      stage={
-        // Only once the real bookings are known: a count of zero while loading would be remembered as "nothing earned".
-        bookings ? (
-          <VisitHero
-            visits={completedVisits}
-            required={REWARD_VISITS_REQUIRED}
-            storageKey={session.user.id}
-            selected={selectedVisit}
-            onSelect={setSelectedVisit}
-          />
-        ) : undefined
-      }
     >
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-10">
@@ -212,6 +198,17 @@ function AccountDashboard() {
             </Link>
           </div>
 
+          {/* On a phone the rewards sit right after the booking buttons, not at the very bottom. */}
+          {bookings && !dataFailed ? (
+            <div className="lg:hidden">
+              <RewardsCard
+                visits={completedVisits}
+                required={REWARD_VISITS_REQUIRED}
+                storageKey={session.user.id}
+              />
+            </div>
+          ) : null}
+
           {dataFailed ? null : (
             <section aria-label="Your visits">
               <h2 className="font-display text-[28px] leading-none">YOUR VISITS</h2>
@@ -220,7 +217,6 @@ function AccountDashboard() {
                   bookings={railItems}
                   upcomingCount={otherUpcoming.length}
                   visitNumber={visitNumber}
-                  selectedId={selectedBookingId}
                 />
               ) : (
                 <p className="mt-4 border-l-2 border-hairline pl-5 text-[14px] text-muted-foreground">
@@ -241,6 +237,16 @@ function AccountDashboard() {
         </div>
 
         <aside className="flex min-w-0 flex-col gap-10">
+          {/* Only once the real bookings are known: a count of zero while loading would be remembered as "nothing earned". */}
+          {bookings && !dataFailed ? (
+            <div className="hidden lg:block">
+              <RewardsCard
+                visits={completedVisits}
+                required={REWARD_VISITS_REQUIRED}
+                storageKey={session.user.id}
+              />
+            </div>
+          ) : null}
           <section aria-label="Your garage">
             <h2 className="font-display text-[28px] leading-none">YOUR GARAGE</h2>
             {vehicles && vehicles.length > 0 ? (
@@ -336,12 +342,10 @@ function VisitRail({
   bookings,
   upcomingCount,
   visitNumber,
-  selectedId,
 }: {
   bookings: BookingWithDetailer[];
   upcomingCount: number;
   visitNumber: Map<string, number>;
-  selectedId: string | undefined;
 }) {
   return (
     <ol className="relative ml-[6px] mt-4 border-l border-hairline">
@@ -349,28 +353,19 @@ function VisitRail({
         const upcoming = i < upcomingCount;
         const { dayLabel, timeLabel } = formatAppointment(b.scheduled_start);
         const n = upcoming ? 0 : (visitNumber.get(b.id) ?? 0);
-        const selected = selectedId === b.id;
         return (
-          <li key={b.id} className="rise-in relative" style={{ animationDelay: `${i * 45}ms` }}>
+          <li key={b.id} className="relative">
             <span
               aria-hidden
               className={cn(
-                "state-transition absolute -left-[7px] top-[26px] h-[13px] w-[13px] rounded-full border-2",
-                upcoming
-                  ? "border-signal bg-background"
-                  : selected
-                    ? "border-signal bg-signal"
-                    : "border-foreground bg-foreground",
+                "absolute -left-[7px] top-[26px] h-[13px] w-[13px] rounded-full border-2",
+                upcoming ? "border-signal bg-background" : "border-foreground bg-foreground",
               )}
             />
             <Link
               to="/account/bookings/$id"
               params={{ id: b.id }}
-              aria-current={selected ? "true" : undefined}
-              className={cn(
-                "press state-transition flex items-center gap-3.5 py-3.5 pl-6 pr-2 hover:bg-surface-2",
-                selected && "bg-signal/8",
-              )}
+              className="flex items-center gap-3.5 py-3.5 pl-6 pr-2 hover:bg-surface-2"
             >
               <CalendarTile iso={b.scheduled_start} />
               <div className="min-w-0 flex-1">

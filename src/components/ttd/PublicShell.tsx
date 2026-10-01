@@ -1,5 +1,6 @@
 import { TtdLogo } from "@/components/ttd/Header";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
+import { useStillPage } from "@/hooks/use-still";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { ttdSiteLinks } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ export function PublicShell({
   children: React.ReactNode;
   width?: "narrow" | "wide";
 }) {
+  useStillPage();
   return (
     <main className="relative flex min-h-screen flex-col bg-ink text-ink-foreground">
       <ThemeToggle className="absolute right-5 top-5 z-10 border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />

@@ -388,16 +388,6 @@
   }
 }
 
-/* One pass of light across the finished paint. Units are the car's own 400 unit grid. */
-@keyframes ttd-pass {
-  from {
-    transform: translateX(-60px);
-  }
-  to {
-    transform: translateX(470px);
-  }
-}
-
 @keyframes ttd-draw {
   to {
     stroke-dashoffset: 0;
@@ -482,10 +472,6 @@
   animation: ttd-slide-down 320ms var(--ease-out) both;
 }
 
-@utility car-pass {
-  animation: ttd-pass 1100ms var(--ease-out) 700ms 1 both;
-}
-
 /* A stroke that draws itself. Give the path pathLength="1". */
 @utility draw-in {
   stroke-dasharray: 1;
@@ -567,15 +553,6 @@
     opacity var(--dur-base) var(--ease-out);
 }
 
-/* The inspection torch: visible only while a finger or cursor is on the paint. */
-.torch {
-  opacity: 0;
-  transition: opacity var(--dur-base) var(--ease-out);
-}
-[data-torch="on"] .torch {
-  opacity: 1;
-}
-
 /* People who ask their device for less motion get none: no entrances, no
    loops, no shimmer. State still changes, it just does not travel. */
 @media (prefers-reduced-motion: reduce) {
@@ -601,12 +578,31 @@
     opacity: 0.35;
     transform: scale(1.4);
   }
-  .burst-dot,
-  .car-pass,
-  .torch {
+  .burst-dot {
     display: none;
   }
   .draw-in {
     stroke-dashoffset: 0;
   }
+}
+
+/* The customer portal and its sign-in pages do not move at all: no entrances,
+   no loops, no shimmer, no sliding, nothing that travels. State still changes,
+   it just changes instantly. The class is set on <html> by useStillPage(). */
+html.ttd-still *,
+html.ttd-still *::before,
+html.ttd-still *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html.ttd-still .draw-in {
+  stroke-dashoffset: 0;
+}
+html.ttd-still .pulse-ring {
+  opacity: 0.35;
+  transform: scale(1.4);
+}
+html.ttd-still .burst-dot {
+  display: none;
 }
