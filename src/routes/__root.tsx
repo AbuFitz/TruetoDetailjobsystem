@@ -109,8 +109,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         crossOrigin: "anonymous",
       },
       { rel: "preload", href: dmSansUrl, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+      // ?v= makes browsers that cached an older favicon fetch the current mark.
+      { rel: "icon", href: "/favicon.ico?v=2", sizes: "48x48" },
+      { rel: "icon", href: "/icons/icon-512.png?v=2", sizes: "512x512", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png?v=2", sizes: "180x180" },
     ],
   }),
 
