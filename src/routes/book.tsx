@@ -258,6 +258,8 @@ function BookingFlow() {
 
   const at = step === "done" ? QUESTIONS.length : QUESTIONS.findIndex((q) => q.key === step);
   const question = step === "done" ? null : QUESTIONS[at]!;
+  // No price until the package step, where the customer first sees what things cost.
+  const priced = at >= QUESTIONS.findIndex((q) => q.key === "package");
 
   const vehicleText =
     vehicleChoice === "new"
@@ -315,17 +317,19 @@ function BookingFlow() {
     if (target) setStep(target.key);
   }
 
-  const summary: { label: string; value: string }[] = [
+  // Only what has been answered already, so the panel never shows a default as a choice.
+  const summary: { label: string; value: string; after: number }[] = [
     {
       label: "Car",
       value: vehicleText ? `${vehicleText}${vehicleReg ? ` (${vehicleReg})` : ""}` : "",
+      after: 0,
     },
-    { label: "Size", value: VEHICLE_SIZE_LABELS[vehicleSize] },
-    { label: "Package", value: selectedPackage.name },
-    { label: "Extras", value: addonText },
-    { label: "When", value: whenText },
-    { label: "Where", value: addressText },
-  ].filter((r) => r.value);
+    { label: "Size", value: VEHICLE_SIZE_LABELS[vehicleSize], after: 1 },
+    { label: "Package", value: selectedPackage.name, after: 2 },
+    { label: "Extras", value: addonText, after: 3 },
+    { label: "When", value: whenText, after: 4 },
+    { label: "Where", value: addressText, after: 5 },
+  ].filter((r) => r.value && at > r.after);
 
   return (
     <main className="flex h-dvh touch-manipulation flex-col overflow-hidden bg-ink text-ink-foreground lg:flex-row">
@@ -336,14 +340,6 @@ function BookingFlow() {
             <TtdLogo tone="light" size="md" />
           </Link>
           <div className="flex items-center gap-2">
-            {step === "done" ? null : (
-              <p
-                className="mr-1 font-display text-[28px] leading-none lg:hidden"
-                aria-label={`Total so far, ${totalPrice} pounds`}
-              >
-                £{totalPrice}
-              </p>
-            )}
             <ThemeToggle className="border-white/15 bg-white/5 text-ink-foreground/70 hover:text-ink-foreground" />
             <Link
               to="/account"
@@ -415,10 +411,14 @@ function BookingFlow() {
                   ))}
                 </dl>
               ) : null}
-              <p className="eyebrow text-ink-foreground/55">Total so far</p>
-              <p className="font-display text-[56px] leading-none" aria-hidden>
-                £{totalPrice}
-              </p>
+              {priced ? (
+                <>
+                  <p className="eyebrow text-ink-foreground/55">Total so far</p>
+                  <p className="font-display text-[56px] leading-none" aria-hidden>
+                    £{totalPrice}
+                  </p>
+                </>
+              ) : null}
             </div>
           </>
         )}
@@ -490,25 +490,26 @@ function BookingFlow() {
 
           {step === "size" ? (
             <div>
-              <div role="radiogroup" aria-label="Vehicle size" className="flex flex-col gap-2.5">
+              <div role="radiogroup" aria-label="Vehicle size" className="flex flex-col gap-2">
                 {(Object.keys(VEHICLE_SIZE_LABELS) as VehicleSize[]).map((size) => (
                   <ChoiceCard
                     key={size}
                     radio
+                    compact
                     selected={vehicleSize === size}
                     onClick={() => setVehicleSize(size)}
                   >
                     <p className="text-[15px] font-semibold">{VEHICLE_SIZE_LABELS[size]}</p>
-                    <p className="text-[13px] text-foreground/80">
+                    <p className="text-[13px] leading-snug text-foreground/80">
                       {VEHICLE_SIZE_GUIDE[size].body}
                     </p>
-                    <p className="text-[12px] text-muted-foreground">
+                    <p className="text-[11.5px] leading-snug text-muted-foreground">
                       {VEHICLE_SIZE_GUIDE[size].examples}
                     </p>
                   </ChoiceCard>
                 ))}
               </div>
-              <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+              <p className="mt-2 text-[11.5px] leading-snug text-muted-foreground">
                 {VEHICLE_SIZE_NOTE}
               </p>
             </div>
@@ -799,7 +800,7 @@ function BookingFlow() {
                     "Send request"
                   ) : (
                     <>
-                      Continue
+                      {priced ? `Continue · £${totalPrice}` : "Continue"}
                       <ChevronRight className="h-4 w-4" strokeWidth={2.6} />
                     </>
                   )}
@@ -921,6 +922,7 @@ function ChoiceCard({
   selected,
   onClick,
   radio,
+  compact,
   icon,
   children,
 }: {
@@ -928,6 +930,8 @@ function ChoiceCard({
   onClick: () => void;
   /** Part of a one-of-several group, so it is announced that way. */
   radio?: boolean;
+  /** Tighter padding, for the step with the most to read. */
+  compact?: boolean;
   icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -939,7 +943,8 @@ function ChoiceCard({
       aria-pressed={radio ? undefined : selected}
       onClick={onClick}
       className={cn(
-        "press flex min-h-14 items-center gap-3.5 rounded-2xl border px-4 py-3 text-left",
+        "press flex min-h-14 items-center gap-3.5 rounded-2xl border px-4 text-left",
+        compact ? "py-2" : "py-3",
         selected
           ? "border-signal bg-signal/8 shadow-[0_0_0_1px_var(--color-signal)]"
           : "border-hairline bg-surface hover:bg-surface-2",

@@ -216,9 +216,9 @@ test("the booking popup asks for the vehicle size with the UK guide", async ({ p
   await page.waitForTimeout(400);
   await page.getByRole("button", { name: /book a detail/i }).click();
   const group = page.getByRole("radiogroup", { name: /vehicle size/i });
-  await expect(group).toContainText("Hatchbacks and coupes");
-  await expect(group).toContainText("Saloons and estates");
-  await expect(group).toContainText("SUVs, 4x4s and people carriers");
+  await expect(group).toContainText("Hatchbacks, coupes and small crossovers");
+  await expect(group).toContainText("Saloons, estates and compact SUVs");
+  await expect(group).toContainText("Large SUVs, 4x4s and people carriers");
   await expect(page.locator("body")).not.toContainText(/sedan/i);
 });
 
@@ -231,7 +231,7 @@ test("the signed-in booking flow asks one question per screen and keeps your cho
   await page.getByRole("button", { name: /continue/i }).click();
   await expect(page.getByRole("heading", { name: /car size/i })).toBeVisible();
   await expect(page.getByRole("radiogroup", { name: /vehicle size/i })).toContainText(
-    "Saloons and estates",
+    "Saloons, estates and compact SUVs",
   );
   await page.getByRole("radio", { name: /Large SUV/ }).click();
   await page.getByRole("button", { name: /continue/i }).click();
@@ -849,15 +849,16 @@ test.describe("book a detail and booking status pages", () => {
     await page.goto("/book", { waitUntil: "networkidle" });
     const steps = page.getByRole("list", { name: "Booking steps" });
     await expect(steps.getByRole("listitem").nth(0)).toHaveAttribute("aria-current", "step");
-    await expect(page.getByLabel(/Total so far, 155 pounds/)).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("£");
     await page.getByRole("button", { name: /continue/i }).click();
+    await expect(page.locator("body")).not.toContainText("£");
     await page.getByRole("button", { name: /continue/i }).click();
     // Choosing a bigger package and an add-on moves the total.
     await page.getByRole("radio", { name: /Premium Full Car Detail/ }).click();
-    await expect(page.getByLabel(/Total so far, 240 pounds/)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Continue · £240/ })).toBeVisible();
     await page.getByRole("button", { name: /continue/i }).click();
     await page.getByRole("checkbox", { name: /Engine Bay Clean/ }).check();
-    await expect(page.getByLabel(/Total so far, 280 pounds/)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Continue · £280/ })).toBeVisible();
     await page.getByRole("button", { name: /continue/i }).click();
 
     await expect(steps.getByRole("listitem").nth(4)).toHaveAttribute("aria-current", "step");
