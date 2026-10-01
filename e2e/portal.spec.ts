@@ -216,8 +216,8 @@ test("the booking popup asks for the vehicle size with the UK guide", async ({ p
   await page.waitForTimeout(400);
   await page.getByRole("button", { name: /book a detail/i }).click();
   const group = page.getByRole("radiogroup", { name: /vehicle size/i });
-  await expect(group).toContainText("Hatchbacks, coupes and small crossovers");
-  await expect(group).toContainText("Saloons, estates and compact SUVs");
+  await expect(group).toContainText("Hatchbacks and coupes");
+  await expect(group).toContainText("Saloons, estates, crossovers and compact SUVs");
   await expect(group).toContainText("Large SUVs, 4x4s and people carriers");
   await expect(page.locator("body")).not.toContainText(/sedan/i);
 });
@@ -231,7 +231,7 @@ test("the signed-in booking flow asks one question per screen and keeps your cho
   await page.getByRole("button", { name: /continue/i }).click();
   await expect(page.getByRole("heading", { name: /car size/i })).toBeVisible();
   await expect(page.getByRole("radiogroup", { name: /vehicle size/i })).toContainText(
-    "Saloons, estates and compact SUVs",
+    "Saloons, estates, crossovers and compact SUVs",
   );
   await page.getByRole("radio", { name: /Large SUV/ }).click();
   await page.getByRole("button", { name: /continue/i }).click();

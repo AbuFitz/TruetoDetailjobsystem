@@ -67,8 +67,8 @@ test("durations", () => {
 test("the size guide uses UK words and matches the rule: hatchbacks and coupes small, saloons and estates mid-size", () => {
   const all = JSON.stringify(VEHICLE_SIZE_GUIDE);
   expect(all).not.toMatch(/sedan|wagon|minivan/i);
-  expect(VEHICLE_SIZE_GUIDE.small.body).toBe("Hatchbacks, coupes and small crossovers");
-  expect(VEHICLE_SIZE_GUIDE.midsize.body).toBe("Saloons, estates and compact SUVs");
+  expect(VEHICLE_SIZE_GUIDE.small.body).toBe("Hatchbacks and coupes");
+  expect(VEHICLE_SIZE_GUIDE.midsize.body).toBe("Saloons, estates, crossovers and compact SUVs");
   expect(VEHICLE_SIZE_GUIDE.largesuv.body).toMatch(/Large SUVs, 4x4s and people carriers/);
   expect(Object.keys(VEHICLE_SIZE_GUIDE)).toEqual(Object.keys(VEHICLE_SIZE_LABELS));
 });

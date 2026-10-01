@@ -26,18 +26,18 @@ export const VEHICLE_SIZE_LABELS: Record<VehicleSize, string> = {
 /**
  * Plain-English size guide with UK body-type names, shown wherever a size is
  * picked (this app's forms and the website's booking popup, which use the same
- * wording), by how big the car is: hatchbacks, coupes and small crossovers
- * (Mokka, Juke) are small; saloons, estates and compact SUVs (Evoque, Qashqai)
- * are mid-size; large SUVs, 4x4s and people carriers are large.
+ * wording), by how big the car is: hatchbacks and coupes are small; saloons,
+ * estates, crossovers and compact SUVs (Mokka, Juke, Evoque, Qashqai) are
+ * mid-size; large SUVs, 4x4s and people carriers are large.
  */
 export const VEHICLE_SIZE_GUIDE: Record<VehicleSize, { body: string; examples: string }> = {
   small: {
-    body: "Hatchbacks, coupes and small crossovers",
-    examples: "Ford Fiesta, VW Golf, Vauxhall Corsa, Vauxhall Mokka, Nissan Juke, Audi TT",
+    body: "Hatchbacks and coupes",
+    examples: "Ford Fiesta, VW Golf, Vauxhall Corsa, Audi TT",
   },
   midsize: {
-    body: "Saloons, estates and compact SUVs",
-    examples: "BMW 3 Series, Skoda Octavia Estate, Range Rover Evoque, Nissan Qashqai",
+    body: "Saloons, estates, crossovers and compact SUVs",
+    examples: "BMW 3 Series, Skoda Octavia Estate, Vauxhall Mokka, Nissan Juke, Range Rover Evoque",
   },
   largesuv: {
     body: "Large SUVs, 4x4s and people carriers",
