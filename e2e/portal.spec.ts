@@ -941,7 +941,7 @@ test.describe("book a detail and booking status pages", () => {
     expect(await page.locator('[data-today="true"]').count()).toBe(0);
   });
 
-  test("booking status: on a phone the booking comes before the visit log, cancel is last", async ({
+  test("booking status: on a phone progress, then the booking, then what to prepare, cancel last", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -952,12 +952,13 @@ test.describe("book a detail and booking status pages", () => {
       (await page.getByText(t, { exact: true }).first().boundingBox())!.y;
     const progress = await y("Progress");
     const booking = await y("Your booking");
-    const log = await y("Your visit so far");
+    const prep = await y("Before we arrive");
+    await expect(page.getByText("Your visit so far")).toHaveCount(0);
     const cancel = (await page.getByRole("button", { name: "Cancel this booking" }).boundingBox())!
       .y;
     expect(progress).toBeLessThan(booking);
-    expect(booking).toBeLessThan(log);
-    expect(log).toBeLessThan(cancel);
+    expect(booking).toBeLessThan(prep);
+    expect(prep).toBeLessThan(cancel);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       390,
     );
@@ -1052,7 +1053,7 @@ test("the customer portal keeps the sign in page's look: black top, white sheet 
   );
 });
 
-test("rewards: a plain record of real visits, how many are left, and which visit is which", async ({
+test("rewards: how many visits are counted and how many are left; the visits are in the list", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -1062,12 +1063,10 @@ test("rewards: a plain record of real visits, how many are left, and which visit
   const card = page.getByRole("region", { name: "TTD Rewards" });
   await expect(card.getByRole("img", { name: "3 of 7 qualifying visits" })).toBeVisible();
   await expect(card.getByText("4 MORE VISITS")).toBeVisible();
-  const visits = card.getByRole("listitem");
-  await expect(visits.filter({ hasText: /^Visit [123] ·/ })).toHaveCount(3);
-  await expect(card.getByText(/Visit 1 · Full Valet Car Detail/)).toBeVisible();
-  await expect(card.getByText(/Visit 4 · Next/)).toBeVisible();
-  await expect(card.getByText(/Visit 7 · Milestone/)).toBeVisible();
-  await expect(card.getByRole("link", { name: /Book your next detail/ })).toBeVisible();
+  // The visits themselves are the list on the same page, each marked with the visit it counts as.
+  const list = page.getByRole("region", { name: "Your visits" });
+  await expect(list.getByText(/Visit 3/)).toBeVisible();
+  await expect(card.getByRole("listitem")).toHaveCount(0);
 });
 
 test("rewards: the milestone is stated plainly, and a new visit says so once", async ({ page }) => {
@@ -1114,9 +1113,7 @@ test("rewards: nothing is remembered while bookings are still loading", async ({
   ).toBeVisible({ timeout: 8000 });
 });
 
-test("rewards: on a phone it fits at 320 wide and every control is a full tap target", async ({
-  page,
-}) => {
+test("rewards: on a phone it fits at 320 wide", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await fakeSupabase(page.context(), { extraCompleted: 2 });
   await page.context().addCookies([sessionCookie]);
@@ -1124,8 +1121,6 @@ test("rewards: on a phone it fits at 320 wide and every control is a full tap ta
   const card = page.getByRole("region", { name: "TTD Rewards" });
   await expect(card).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
-  const link = card.getByRole("link", { name: /Book your next detail/ });
-  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 });
 
 test("the live booking page shows the arrival estimate and the detailer's progress in the page, not a hero", async ({

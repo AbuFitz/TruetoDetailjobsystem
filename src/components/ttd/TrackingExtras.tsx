@@ -344,12 +344,26 @@ export function PrepList({ className }: { className?: string }) {
     { icon: PawPrint, text: "Pets kept indoors while we work" },
   ];
   return (
-    <section className={cn("rounded-2xl border border-hairline bg-surface p-5", className)}>
-      <p className="eyebrow text-muted-foreground">Before we arrive</p>
-      <p className="mt-1.5 text-[13px] text-muted-foreground">
+    <details className={cn("group rounded-2xl border border-hairline bg-surface", className)}>
+      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between px-5 [&::-webkit-details-marker]:hidden">
+        <span className="eyebrow text-muted-foreground">Before we arrive</span>
+        <span
+          aria-hidden
+          className="text-[18px] leading-none text-muted-foreground group-open:hidden"
+        >
+          +
+        </span>
+        <span
+          aria-hidden
+          className="hidden text-[18px] leading-none text-muted-foreground group-open:inline"
+        >
+          –
+        </span>
+      </summary>
+      <p className="px-5 text-[13px] text-muted-foreground">
         We bring our own water and power. Just:
       </p>
-      <ul className="mt-3 flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-2.5 px-5 pb-5 pt-3">
         {items.map(({ icon: Icon, text }) => (
           <li key={text} className="flex items-start gap-3 text-[14px]">
             <Icon className="mt-0.5 h-4 w-4 shrink-0 text-signal-deep" strokeWidth={2.2} />
@@ -357,6 +371,6 @@ export function PrepList({ className }: { className?: string }) {
           </li>
         ))}
       </ul>
-    </section>
+    </details>
   );
 }

@@ -250,7 +250,9 @@ function BookingDetail() {
         </aside>
 
         <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-2">
-          {booking.status !== "requested" ? <JourneyLog events={events} /> : null}
+          {booking.status === "completed" || booking.status === "cancelled" ? (
+            <JourneyLog events={events} />
+          ) : null}
           {upcoming ? <PrepList /> : null}
         </div>
 
