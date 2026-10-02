@@ -1,3 +1,5 @@
+import { RevealButton } from "@/components/ttd/PasswordFields";
+import { useState } from "react";
 import { TtdLogo } from "@/components/ttd/Header";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
 import { useStillPage } from "@/hooks/use-still";
@@ -61,8 +63,38 @@ export function AuthField({
   id,
   label,
   hint,
+  revealable,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { id: string; label: string; hint?: string }) {
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  id: string;
+  label: string;
+  hint?: string;
+  /** A password box with its own show/hide control. */
+  revealable?: boolean;
+}) {
+  const [show, setShow] = useState(false);
+  if (revealable) {
+    return (
+      <div>
+        <label
+          htmlFor={id}
+          className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/60"
+        >
+          {label}
+        </label>
+        <div className="relative">
+          <input
+            id={id}
+            className="mt-2.5 w-full border border-black/12 bg-white py-3.5 pl-4 pr-12 text-base text-ink outline-none transition-colors focus:border-signal"
+            {...props}
+            type={show ? "text" : "password"}
+          />
+          <RevealButton show={show} onToggle={() => setShow((v) => !v)} className="top-[10px]" />
+        </div>
+        {hint ? <p className="mt-1.5 text-[12px] text-muted-foreground">{hint}</p> : null}
+      </div>
+    );
+  }
   return (
     <div>
       <label

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
+import { RevealButton } from "@/components/ttd/PasswordFields";
 
 /** Shared text-input treatment for booking/admin/detailer forms. */
 export function Field({
@@ -22,21 +24,28 @@ export function Field({
   className?: string;
   inputProps: UseFormRegisterReturn;
 }) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === "password";
   return (
     <div className={className}>
       <label htmlFor={id} className="eyebrow block text-muted-foreground">
         {label}
       </label>
-      <input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        aria-invalid={Boolean(error)}
-        className={`mt-2 min-h-12 w-full rounded-2xl border bg-surface-2 px-3.5 text-base font-medium outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/60 focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30 ${
-          error ? "border-destructive/50" : "border-input"
-        } ${mono ? "font-mono" : ""} ${upper ? "uppercase tracking-wide" : ""}`}
-        {...inputProps}
-      />
+      <div className="relative">
+        <input
+          id={id}
+          type={isPassword && show ? "text" : type}
+          placeholder={placeholder}
+          aria-invalid={Boolean(error)}
+          className={`mt-2 min-h-12 w-full rounded-2xl border bg-surface-2 ${isPassword ? "pl-3.5 pr-12" : "px-3.5"} text-base font-medium outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/60 focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30 ${
+            error ? "border-destructive/50" : "border-input"
+          } ${mono ? "font-mono" : ""} ${upper ? "uppercase tracking-wide" : ""}`}
+          {...inputProps}
+        />
+        {isPassword ? (
+          <RevealButton show={show} onToggle={() => setShow((v) => !v)} className="top-[8px]" />
+        ) : null}
+      </div>
       {error ? <p className="mt-1.5 text-[12px] text-destructive">{error}</p> : null}
     </div>
   );

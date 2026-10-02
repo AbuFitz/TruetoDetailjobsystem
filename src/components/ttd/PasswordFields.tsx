@@ -5,6 +5,32 @@ import { cn } from "@/lib/utils";
 
 export const MIN_PASSWORD = 8;
 
+/** The one show/hide control for a password box. The browser's own reveal icon is switched off in the stylesheet. */
+export function RevealButton({
+  show,
+  onToggle,
+  className,
+}: {
+  show: boolean;
+  onToggle: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={show ? "Hide password" : "Show password"}
+      aria-pressed={show}
+      className={cn(
+        "press absolute right-1 grid h-11 w-11 place-items-center text-muted-foreground hover:text-foreground",
+        className,
+      )}
+    >
+      {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+    </button>
+  );
+}
+
 export function passwordProblems(pw: string): string[] {
   const out: string[] = [];
   if (pw.length < MIN_PASSWORD) out.push(`At least ${MIN_PASSWORD} characters`);
@@ -47,14 +73,7 @@ export function NewPasswordFields({
           onChange={(e) => onPassword(e.target.value)}
           required
         />
-        <button
-          type="button"
-          onClick={() => setShow((s) => !s)}
-          aria-label={show ? "Hide password" : "Show password"}
-          className="press absolute right-3 top-[34px] grid h-10 w-10 place-items-center text-muted-foreground hover:text-foreground"
-        >
-          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
+        <RevealButton show={show} onToggle={() => setShow((v) => !v)} className="top-[27px]" />
       </div>
       <AuthField
         id="confirm-password"

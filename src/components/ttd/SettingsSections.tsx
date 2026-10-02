@@ -99,6 +99,7 @@ export function PasswordSection({ customer = false }: { customer?: boolean }) {
           id="current-password"
           label="Current password"
           type="password"
+          revealable
           autoComplete="current-password"
           value={current}
           onChange={(e) => setCurrent(e.target.value)}

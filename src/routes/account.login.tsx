@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { TriangleAlert } from "lucide-react";
 import { z } from "zod";
 import { TtdLogo } from "@/components/ttd/Header";
+import { RevealButton } from "@/components/ttd/PasswordFields";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { LegalLinks } from "@/components/ttd/LegalLinks";
 import { ThemeToggle } from "@/components/ttd/ThemeToggle";
@@ -29,6 +30,8 @@ function LoginField({
   type?: string;
   inputProps: UseFormRegisterReturn;
 }) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === "password";
   return (
     <div>
       <label
@@ -37,12 +40,17 @@ function LoginField({
       >
         {label}
       </label>
-      <input
-        id={id}
-        type={type}
-        className="mt-2.5 w-full border border-black/12 bg-white px-4 py-3.5 text-base text-ink outline-none transition-colors focus:border-signal"
-        {...inputProps}
-      />
+      <div className="relative">
+        <input
+          id={id}
+          type={isPassword && show ? "text" : type}
+          className={`mt-2.5 w-full border border-black/12 bg-white py-3.5 pl-4 text-base text-ink outline-none transition-colors focus:border-signal ${isPassword ? "pr-12" : "pr-4"}`}
+          {...inputProps}
+        />
+        {isPassword ? (
+          <RevealButton show={show} onToggle={() => setShow((v) => !v)} className="top-[10px]" />
+        ) : null}
+      </div>
     </div>
   );
 }

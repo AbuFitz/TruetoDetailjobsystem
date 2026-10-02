@@ -1,3 +1,4 @@
+import { RevealButton } from "@/components/ttd/PasswordFields";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { X, Check, Loader2 } from "lucide-react";
@@ -70,6 +71,7 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
   const [bookingId, setBookingId] = useState("");
 
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [signupSubmitting, setSignupSubmitting] = useState(false);
   const [signupError, setSignupError] = useState("");
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false);
@@ -698,13 +700,20 @@ export function QuickBookingModal({ open, onClose }: { open: boolean; onClose: (
 
               <div>
                 <label className="eyebrow block text-muted-foreground">Create a password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 px-3.5 text-base font-medium outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="mt-2 min-h-12 w-full rounded-xl border border-input bg-surface-2 py-0 pl-3.5 pr-12 text-base font-medium outline-none focus:border-signal focus:bg-surface focus:ring-2 focus:ring-signal/30"
+                  />
+                  <RevealButton
+                    show={showPassword}
+                    onToggle={() => setShowPassword((v) => !v)}
+                    className="top-[8px]"
+                  />
+                </div>
               </div>
 
               {signupError ? (

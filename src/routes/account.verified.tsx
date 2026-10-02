@@ -155,6 +155,7 @@ function Verified() {
             id="password"
             label="Password"
             type="password"
+            revealable
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

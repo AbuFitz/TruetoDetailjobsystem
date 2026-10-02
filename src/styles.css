@@ -198,6 +198,12 @@
   --hairline: rgb(255 255 255 / 12%);
 }
 
+/* One show/hide control per password box: ours. Edge adds its own, which doubled it up. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
