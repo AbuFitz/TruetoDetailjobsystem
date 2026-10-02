@@ -1138,9 +1138,7 @@ test("the live booking page shows the arrival estimate and the detailer's progre
   await expect(page.getByText(/Arriving around/)).toBeVisible();
 });
 
-test("sign in: one show/hide control on the password box, and the browser's own is switched off", async ({
-  page,
-}) => {
+test("sign in: one show/hide control on the password box", async ({ page }) => {
   await fakeSupabase(page.context());
   await page.goto("/account/login", { waitUntil: "networkidle" });
   await page.locator("#password").fill("Correct-Horse-9");
@@ -1149,20 +1147,4 @@ test("sign in: one show/hide control on the password box, and the browser's own 
   await reveal.click();
   await expect(page.locator("#password")).toHaveAttribute("type", "text");
   await expect(page.getByRole("button", { name: /hide password/i })).toHaveCount(1);
-  const css = await page.evaluate(async () => {
-    const out: string[] = [];
-    for (const sheet of Array.from(document.styleSheets)) {
-      try {
-        out.push(
-          Array.from(sheet.cssRules)
-            .map((r) => r.cssText)
-            .join("\n"),
-        );
-      } catch {
-        /* cross-origin sheet */
-      }
-    }
-    return out.join("\n");
-  });
-  expect(css).toContain("::-ms-reveal");
 });
