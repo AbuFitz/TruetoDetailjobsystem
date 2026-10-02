@@ -37,7 +37,12 @@ const POLL_INTERVAL_MS = 20_000;
 function DetailerQueue() {
   const { token } = Route.useParams();
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    isError: profileError,
+    refetch: refetchProfile,
+  } = useQuery({
     queryKey: ["detailer-profile", token],
     queryFn: () => getDetailerProfile(token),
   });
@@ -63,6 +68,28 @@ function DetailerQueue() {
     return (
       <div className="min-h-screen bg-background">
         <BrandedLoading label="Loading your link" />
+      </div>
+    );
+  }
+
+  // A bad connection is not a bad link: say so, and let them try again.
+  if (profileError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto w-full max-w-md px-5 py-16 text-center">
+          <EmptyState
+            icon={Wrench}
+            title="Couldn't load your link"
+            description="Check your connection and try again. Your link is fine."
+          />
+          <button
+            type="button"
+            onClick={() => void refetchProfile()}
+            className="press mt-4 inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-8 text-[12px] font-bold uppercase tracking-[0.1em] text-ink-foreground"
+          >
+            Try again
+          </button>
+        </div>
       </div>
     );
   }

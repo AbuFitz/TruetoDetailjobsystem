@@ -8,7 +8,7 @@ import { Field } from "@/components/ttd/FormField";
 import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { useRequireStaffSession } from "@/hooks/use-session";
 import { createDetailer } from "@/lib/detailers";
-import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { DetailerLinkRow } from "@/components/ttd/DetailerLinkRow";
 
 export const Route = createFileRoute("/admin/detailers_/new")({
   head: () => ({
@@ -28,7 +28,6 @@ interface FormValues {
 function NewDetailer() {
   useRequireStaffSession();
   const navigate = useNavigate();
-  const { copied, copy } = useCopyToClipboard();
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const { register, handleSubmit } = useForm<FormValues>({
     defaultValues: { name: "", phone: "", jobTitle: "", vehicleDescription: "", bio: "" },
@@ -66,17 +65,7 @@ function NewDetailer() {
           <p className="mt-1 text-[13px] text-muted-foreground">
             Send them their persistent job link. No login needed.
           </p>
-          <div className="mt-3 flex items-center gap-2 rounded-xl border border-hairline bg-surface p-2.5">
-            <p className="min-w-0 flex-1 truncate text-[13px]">{link}</p>
-            <button
-              type="button"
-              onClick={() => copy(link)}
-              aria-label={copied ? "Link copied" : "Copy detailer link"}
-              className="press grid h-8 w-8 shrink-0 place-items-center rounded-full border border-hairline"
-            >
-              {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-            </button>
-          </div>
+          <DetailerLinkRow link={link} className="mt-3" />
           <Link to="/admin/detailers" className="mt-4 inline-block">
             <PrimaryActionButton size="md" className="w-auto px-6">
               Done

@@ -384,7 +384,7 @@ export async function fakeSupabase(ctx: BrowserContext, opts: FakeOptions = {}) 
       return json([
         { id: "v1", customer_id: "c1", make: "Ford", model: "Focus", registration: "AB12CDE" },
       ]);
-    if (p.includes("/rest/v1/detailers")) return json([detailer]);
+    if (p.includes("/rest/v1/detailers")) return json(wantsObject ? detailer : [detailer]);
     if (p.includes("/rest/v1/booking_notifications"))
       return json([{ kind: "booked_in", sent_at: iso(now - 3600e3) }]);
     if (p.includes("/rest/v1/booking_stage_progress")) {

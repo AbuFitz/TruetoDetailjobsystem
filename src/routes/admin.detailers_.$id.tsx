@@ -8,7 +8,7 @@ import { PrimaryActionButton } from "@/components/ttd/PrimaryActionButton";
 import { BrandedLoading } from "@/components/ttd/BrandedLoading";
 import { useRequireStaffSession } from "@/hooks/use-session";
 import { getDetailerById, updateDetailer } from "@/lib/detailers";
-import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { DetailerLinkRow } from "@/components/ttd/DetailerLinkRow";
 
 export const Route = createFileRoute("/admin/detailers_/$id")({
   head: () => ({
@@ -29,7 +29,6 @@ function EditDetailer() {
   useRequireStaffSession();
   const { id } = Route.useParams();
   const queryClient = useQueryClient();
-  const { copied, copy } = useCopyToClipboard();
 
   const { data: detailer, isLoading } = useQuery({
     queryKey: ["detailer", id],
@@ -101,17 +100,7 @@ function EditDetailer() {
       }
       back={{ to: "/admin/detailers", label: "Detailers" }}
     >
-      <div className="mt-3 flex items-center gap-2 rounded-xl border border-hairline bg-surface p-2.5">
-        <p className="min-w-0 flex-1 truncate text-[13px]">{link}</p>
-        <button
-          type="button"
-          onClick={() => copy(link)}
-          aria-label={copied ? "Link copied" : "Copy detailer link"}
-          className="press grid h-8 w-8 shrink-0 place-items-center rounded-full border border-hairline"
-        >
-          {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-        </button>
-      </div>
+      <DetailerLinkRow link={link} className="mt-3" />
 
       <form
         onSubmit={handleSubmit((v) => updateMutation.mutate(v))}

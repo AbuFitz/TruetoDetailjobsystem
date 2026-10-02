@@ -544,7 +544,12 @@ function AdminBookingDetail() {
           {detailerLink ? (
             <p className="mt-2 truncate text-[12px] text-muted-foreground">
               Detailer link:{" "}
-              <a href={detailerLink} className="underline">
+              <a
+                href={detailerLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
                 {detailerLink}
               </a>
             </p>

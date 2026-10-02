@@ -1148,3 +1148,22 @@ test("sign in: one show/hide control on the password box", async ({ page }) => {
   await expect(page.locator("#password")).toHaveAttribute("type", "text");
   await expect(page.getByRole("button", { name: /hide password/i })).toHaveCount(1);
 });
+
+test("detailer link: it can be opened from the admin pages, and a bad connection is not called a bad link", async ({
+  page,
+  context,
+}) => {
+  await fakeSupabase(context, { staff: true });
+  await context.addCookies([sessionCookie]);
+  await page.goto("/admin/detailers/d1", { waitUntil: "networkidle" });
+  const open = page.getByRole("link", { name: /open detailer link/i });
+  await expect(open).toHaveAttribute("href", /\/d\/tok-jamie$/);
+  await expect(open).toHaveAttribute("target", "_blank");
+  await expect(page.getByRole("link", { name: /\/d\/tok-jamie$/ })).toBeVisible();
+
+  const other = await context.newPage();
+  await context.route("**/rpc/get_detailer_profile", (r) => r.abort("failed"));
+  await other.goto("/d/tok-jamie", { waitUntil: "networkidle" });
+  await expect(other.getByText("Couldn't load your link")).toBeVisible({ timeout: 20000 });
+  await expect(other.getByRole("button", { name: "Try again" })).toBeVisible();
+});
